@@ -17,14 +17,17 @@ export class CokeORM {
     */
    public static async connect(connectionOptions: ConnectionOptions): Promise<Connection | null> {
       if (CokeORM.connections[connectionOptions.name ?? 'default'] != null) {
-         throw Error(`A conexão '${connectionOptions.name}' já existe`);
+         throw Error(`The '${connectionOptions.name}' connection already exists`);
       }
 
       const connection: Connection = new Connection(connectionOptions);
-      await connection.connect();
+      //await connection.connect();
 
       try {
 
+         if (connection.options.migrations?.runMigrations) {
+            await connection.schema.load();
+         }
          /// carregar os dados mapeados
          /// rodar as migrations
 

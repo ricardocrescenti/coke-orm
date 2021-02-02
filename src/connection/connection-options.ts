@@ -1,4 +1,5 @@
 import { DatabaseDriver } from "../drivers/driver-type";
+import { MigrationOptions } from "./migration-options";
 import { PoolOptions } from "./pool-options";
 
 export class ConnectionOptions {
@@ -12,6 +13,11 @@ export class ConnectionOptions {
     * Database driver used by this connection.
     */
    public readonly driver: DatabaseDriver;
+
+   /**
+    * 
+    */
+   public readonly schema?: string;
    
    /**
     * 
@@ -48,15 +54,22 @@ export class ConnectionOptions {
     */
    public readonly pool?: PoolOptions;
 
+   /**
+    * 
+    */
+   public readonly migrations?: MigrationOptions;
+
    constructor(options: ConnectionOptions) {
-      this.name = options.name ?? 'default';
-      this.driver = options.driver;
-      this.host = options.host;
-      this.port = options.port;
-      this.user = options.user;
-      this.password = options.password;
-      this.database = options.database;
-      this.connectionString = options.connectionString;
-      this.pool = new PoolOptions(options.pool);
+      this.name = options?.name ?? 'default';
+      this.driver = options?.driver;
+      this.schema = options?.schema;
+      this.host = options?.host;
+      this.port = options?.port;
+      this.user = options?.user;
+      this.password = options?.password;
+      this.database = options?.database;
+      this.connectionString = options?.connectionString;
+      this.pool = new PoolOptions(options?.pool);
+      this.migrations = new MigrationOptions(options?.migrations);
    }
 }

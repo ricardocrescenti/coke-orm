@@ -1,10 +1,12 @@
 import { Driver } from "../driver";
-import * as pg from "pg";
 import { ConnectionOptions } from "../../connection/connection-options";
+import { Schema } from "../../schema/schema";
+import { PostgresSchema } from "./postgres-schema";
 
 export class PostgresDriver extends Driver {
 
-   public readonly client: pg.Pool;
+   public readonly postgres: any;
+   public readonly client: any;
 
    /**
     * 
@@ -12,7 +14,13 @@ export class PostgresDriver extends Driver {
    constructor(connectionOptions: ConnectionOptions) {
       super();
 
-      this.client = new pg.Pool({
+      this.postgres = require("pg");
+      try {
+          const pgNative = require("pg-native");
+          if (pgNative && this.postgres.native) this.postgres = this.postgres.native;
+      } catch (e) { }
+
+      this.client = new this.postgres.Pool({
          application_name: 'CokeORM',
          host: connectionOptions.host,
          port: connectionOptions.port,
@@ -26,12 +34,31 @@ export class PostgresDriver extends Driver {
       });
    }
    
-   public async connect(): Promise<void> {
-      await this.client.connect();
+   public async connect(): Promise<any> {
+      return await this.client.connect();
    }
    
    public async disconnect(): Promise<void> {
-      
+      await this.client.end();
+   }
+
+   public async executeQuery(query: string, ): Promise<any> {
+      const connection = await this.connect();
+
+      return new Promise((resolve, reject) => {
+         connection.query(query, (error: any, result: any) => {
+             
+            if (error) {
+               return reject(error);
+            }
+            resolve(result);
+
+         });
+     });
+   }
+   
+   public createSchema(): Schema {
+      return new PostgresSchema(this);
    }
 
 }

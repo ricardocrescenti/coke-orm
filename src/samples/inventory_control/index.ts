@@ -18,6 +18,12 @@ console.log('2 - Metadata');
 console.log('3 - Conecting');
 
 CokeORM.connect({
+   // driver: DatabaseDriver.Postgres,
+   // host: '34.122.198.83',
+   // port: 9815,
+   // user: 'admin',
+   // password: 'd3v@Master*',
+   // database: 'hant-dev'
    driver: DatabaseDriver.Postgres,
    host: 'localhost',
    port: 2815,

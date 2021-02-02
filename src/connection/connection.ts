@@ -1,6 +1,7 @@
 import { Driver } from "../drivers/driver";
 import { DatabaseDriver } from "../drivers/driver-type";
 import { PostgresDriver } from "../drivers/postgres/postgres-driver";
+import { Schema } from "../schema/schema";
 import { ConnectionOptions } from "./connection-options";
 
 export class Connection {
@@ -14,9 +15,12 @@ export class Connection {
       return this._isConnected;
    }
 
+   public readonly schema: Schema;
+
    constructor(options: ConnectionOptions) {
       this.options = new ConnectionOptions(options);
       this.driver = this.getDriver(options.driver);
+      this.schema = this.driver.createSchema();
    }
 
    public async connect(): Promise<boolean> {
