@@ -3,7 +3,7 @@ import { WarehouseModel } from "./models/warehouse.model";
 import { ProductModel } from "./models/product.model";
 import { MetadataUtils } from "../../utils/metadata-utils";
 import { CokeORM } from "../../coke-orm";
-import { DatabaseDriver } from "../../drivers/driver-type";
+import { DatabaseDriver } from "../../common/enum/driver-type";
 
 console.log('1 - Creating Models');
 
@@ -32,7 +32,7 @@ CokeORM.connect({
    database: 'cokeorm'
 }).then((connection) => {
 
-   console.log('4 - Connected');
+   console.log('4 - Connected', JSON.stringify(Metadata.get()));
 
 }).catch((error) => {
 

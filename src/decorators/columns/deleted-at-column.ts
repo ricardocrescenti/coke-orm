@@ -5,7 +5,7 @@ import { ColumnOperation } from "./column-operation";
 
 export function DeletedAtColumn(options?: Omit<ColumnOptions<any>, "relation" | "primary">): PropertyDecorator {
   return function (target: any, propertyKey: any) {
-    const columnMetadata: ColumnMetadata = new ColumnMetadata(target, propertyKey, ColumnOperation.DeletedAtColumn, options as any);
+    const columnMetadata: ColumnMetadata = new ColumnMetadata(target, propertyKey, ColumnOperation.DeletedAt, options as any);
     Metadata.get('').addColumn(columnMetadata);
   };
 }

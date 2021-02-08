@@ -1,4 +1,4 @@
-import { DatabaseDriver } from "../drivers/driver-type";
+import { DatabaseDriver } from "../common/enum/driver-type";
 import { MigrationOptions } from "./migration-options";
 import { PoolOptions } from "./pool-options";
 
@@ -52,7 +52,17 @@ export class ConnectionOptions {
    /**
     * 
     */
+   public readonly timezone?: string;
+
+   /**
+    * 
+    */
    public readonly pool?: PoolOptions;
+
+   /**
+    * 
+    */
+   public readonly synchronize?: boolean
 
    /**
     * 
@@ -69,7 +79,9 @@ export class ConnectionOptions {
       this.password = options?.password;
       this.database = options?.database;
       this.connectionString = options?.connectionString;
+      this.timezone = options?.timezone;
       this.pool = new PoolOptions(options?.pool);
+      this.synchronize = options?.synchronize ?? false;
       this.migrations = new MigrationOptions(options?.migrations);
    }
 }

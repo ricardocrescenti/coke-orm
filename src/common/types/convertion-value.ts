@@ -1,0 +1,1 @@
+export type ConvertionValue<S, V = any, R = any> = (sender: S, value: V) => Promise<R>;

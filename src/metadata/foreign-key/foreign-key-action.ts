@@ -1,0 +1,1 @@
+export type ForeignKeyAction = "RESTRICT" | "CASCADE" | "SET NULL" | "SET DEFAULT";

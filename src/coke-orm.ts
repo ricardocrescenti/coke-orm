@@ -21,13 +21,18 @@ export class CokeORM {
       }
 
       const connection: Connection = new Connection(connectionOptions);
-      //await connection.connect();
+      await connection.connect();
 
       try {
 
-         if (connection.options.migrations?.runMigrations) {
-            await connection.schema.load();
+         if (connection.options.synchronize) {
+            await connection.syncronize();
          }
+
+         if (connection.options.migrations?.runMigrations) {
+            await connection.runMigrations();
+         }
+         
          /// carregar os dados mapeados
          /// rodar as migrations
 

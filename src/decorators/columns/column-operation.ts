@@ -1,5 +1,5 @@
 export enum ColumnOperation {
-   CreatedAtColumn,
-   UpdatedAtColumn,
-   DeletedAtColumn,
+   CreatedAt,
+   UpdatedAt,
+   DeletedAt,
 }
