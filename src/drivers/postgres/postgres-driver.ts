@@ -6,7 +6,7 @@ import { ColumnOptions } from "../../metadata/columns/column-options";
 import { InvalidColumnOption } from "../../errors/invalid-column-options";
 import { QueryRunner } from "../../query-runner/query-runner";
 import { Connection } from "../../connection/connection";
-import { TableSchema } from "../../schema/table-schema";
+import { ModelSchema } from "../../schema/model-schema";
 import { ColumnSchema } from "../../schema/column-schema";
 import { ConstraintSchema } from "../../schema/constraint-schema";
 import { Metadata } from "../../metadata/metadata";
@@ -21,6 +21,10 @@ import { DeleteForeignKeyQueryBuilder } from "../../query-builder/delete-foreign
 import { DeleteIndexQueryBuilder } from "../../query-builder/delete-index";
 import { DeleteUniqueQueryBuilder } from "../../query-builder/delete-unique";
 import { ColumnMetadata } from "../../metadata/columns/column-metadata";
+import { PrimaryKeySchema } from "../../schema/primary-key-schema";
+import { ForeignKeySchema } from "../../schema/foreign-key-schema";
+import { IndexSchema } from "../../schema/index-schema";
+import { UniqueSchema } from "../../schema/unique-schema";
 
 export class PostgresDriver extends Driver {
 
@@ -66,8 +70,7 @@ export class PostgresDriver extends Driver {
    }
    
    public async releaseQueryRunner(queryRunner: QueryRunner): Promise<void> {
-      const client = await queryRunner.client;
-      await client.release();
+      await queryRunner.client.release();
    }
    
    public async disconnect(): Promise<void> {
@@ -75,10 +78,8 @@ export class PostgresDriver extends Driver {
    }
 
    public async executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<any> {
-      const client = await queryRunner.client;
-
       return new Promise((resolve, reject) => {
-         client.query(query, (error: any, result: any) => {
+         queryRunner.client.query(query, (error: any, result: any) => {
              
             if (error) {
                return reject(error);
@@ -89,28 +90,38 @@ export class PostgresDriver extends Driver {
      });
    }
    
-   public async loadSchema(connection: Connection): Promise<Map<TableSchema>> {
-      const tables: Map<TableSchema> = {};
+   public async loadSchema(connection: Connection): Promise<Map<ModelSchema>> {
+      const tables: Map<ModelSchema> = {};
 
       const informationSchema = await connection.query(`
-         SELECT t.table_name, c.column_name, c.ordinal_position, c.column_default, c.is_nullable, c.data_type, c.numeric_precision, c.numeric_scale, c.constraint_name, c.constraint_type
+         SELECT t.table_name, c.column_name, c.ordinal_position, c.column_default, c.is_nullable, c.data_type, c.numeric_precision, c.numeric_scale, c.constraint_name, c.constraint_type, c.constraint_position, c.unique_constraint_name
          FROM information_schema.tables t
-         LEFT JOIN (SELECT c.table_schema, c.table_name, c.column_name, c.ordinal_position, c.column_default, c.is_nullable, c.data_type, c.numeric_precision, c.numeric_scale, ccu.constraint_name, ccu.constraint_type
-               FROM information_schema.columns c
-               LEFT JOIN (SELECT ccu.table_schema, ccu.table_name, ccu.column_name, ccu.constraint_name, tc.constraint_type
-                  FROM information_schema.constraint_column_usage ccu
-                  INNER JOIN information_schema.table_constraints  tc on (tc.table_schema = ccu.table_schema and tc.table_name = ccu.table_name and tc.constraint_name = ccu.constraint_name)
-                  ORDER BY ccu.table_schema, ccu.table_name, ccu.column_name) ccu on (ccu.table_schema = c.table_schema and ccu.table_name = c.table_name and ccu.column_name = c.column_name)
-               ORDER BY c.table_schema, c.table_name, c.column_name, ccu.constraint_name) c on (c.table_schema = t.table_schema and c.table_name = t.table_name)
-         WHERE t.table_schema = 'public'
+         LEFT JOIN (
+
+            SELECT c.table_schema, c.table_name, c.column_name, c.ordinal_position, c.column_default, c.is_nullable, c.data_type, c.numeric_precision, c.numeric_scale, ccu.constraint_name, ccu.constraint_type, ccu.constraint_position, ccu.unique_constraint_name
+            FROM information_schema.columns c
+            LEFT JOIN (
+               
+               SELECT tc.table_schema, tc.table_name, tc.constraint_name, tc.constraint_type, kcu.column_name as column_name, kcu.ordinal_position as constraint_position, (case when tc.constraint_type = 'FOREIGN KEY' then string_agg(rc.unique_constraint_name, '^') else null end) as unique_constraint_name
+               FROM information_schema.key_column_usage kcu
+               INNER JOIN information_schema.table_constraints tc on (tc.table_schema = kcu.table_schema and tc.table_name = kcu.table_name and tc.constraint_name = kcu.constraint_name)
+               LEFT JOIN information_schema.referential_constraints rc on (rc.constraint_schema = tc.table_schema and rc.constraint_name = tc.constraint_name)
+               GROUP BY tc.table_schema, tc.table_name, tc.constraint_name, tc.constraint_type, kcu.column_name, kcu.ordinal_position
+               ORDER BY table_schema, table_name, column_name) ccu on (ccu.table_schema = c.table_schema and ccu.table_name = c.table_name and ccu.column_name = c.column_name)
+
+            ORDER BY c.table_schema, c.table_name, c.column_name, ccu.constraint_name) c on (c.table_schema = t.table_schema and c.table_name = t.table_name)
+
+         WHERE t.table_schema = '${connection.options.schema ?? 'public'}'
          ORDER BY t.table_name, c.ordinal_position, c.column_name`);
 
       if (informationSchema.rows.length > 0) {
          let tableName: string = '';
          let columnName: string = '';
          let columns: Map<ColumnSchema> = {};
-         let constraintName: string = '';
-         let constraints: Map<ConstraintSchema> = {};
+         let primaryKey: PrimaryKeySchema | undefined = undefined;
+         let foreignKeys: Map<ForeignKeySchema> = {};
+         let indexs: Map<IndexSchema> = {};
+         let uniques: Map<UniqueSchema> = {};
          
          for (let index = 0; index <= informationSchema.rows.length; index++) {
             const info = (index < informationSchema.rows.length ? informationSchema.rows[index] : null);
@@ -118,10 +129,13 @@ export class PostgresDriver extends Driver {
             if (tableName != info?.table_name) {
 
                if (tableName != '') {
-                  tables[tableName] = new TableSchema({
+                  tables[tableName] = new ModelSchema({
                      name: tableName, 
                      columns: columns, 
-                     constraints: constraints
+                     primaryKey: primaryKey,
+                     foreignKeys: foreignKeys,
+                     indexs: indexs,
+                     uniques: uniques
                   });
                }
 
@@ -131,7 +145,10 @@ export class PostgresDriver extends Driver {
 
                tableName = info.table_name;
                columns = {};
-               constraints = {};
+               primaryKey = undefined;
+               foreignKeys = {};
+               indexs = {};
+               uniques = {};
             }
 
             if (columnName != info.column_name) {
@@ -148,14 +165,37 @@ export class PostgresDriver extends Driver {
                columnName = info.column_name;
             }
 
-            if (info.constraint_name && constraintName != info.constraint_name) {
-               constraints[info.constraint_name] = new ConstraintSchema({
-                  name: info.constraint_name,
-                  type: info.constraint_type
-               });
+            if (info.constraint_name) {
 
-               constraints[info.constraint_name].columns[info.column_name] = columns[info.column_name];
-               columns[info.column_name].constraints[info.constraint_name] = constraints[info.constraint_name];
+               if (info.constraint_type == 'PRIMARY KEY') {
+
+                  if (primaryKey == null) {
+                     primaryKey = new PrimaryKeySchema({ name: info.constraint_name });
+                  }
+                  primaryKey.columns.push(columns[info.column_name]);
+                  columns[info.column_name].primaryKey = primaryKey;
+
+               } else if (info.constraint_type == 'UNIQUE') {
+
+                  let unique = uniques[info.constraint_name];
+                  if (!unique) {
+                     unique = new UniqueSchema({ name: info.constraint_name });
+                     uniques[info.constraint_name] = unique;
+                  }
+                  unique.columns.push(columns[info.column_name]);
+                  columns[info.column_name].uniques[unique.name] = unique;
+
+               } else if (info.constraint_type == 'UNIQUE') {
+
+                  let unique = uniques[info.constraint_name];
+                  if (!unique) {
+                     unique = new UniqueSchema({ name: info.constraint_name });
+                     uniques[info.constraint_name] = unique;
+                  }
+                  unique.columns.push(columns[info.column_name]);
+                  columns[info.column_name].uniques[unique.name] = unique;
+
+               }
             }
 
          }
@@ -220,23 +260,33 @@ export class PostgresDriver extends Driver {
 
       for (const tableMetadata of Metadata.get(connection.options.schema).getTables()) {
 
-         const tableSchema: TableSchema = tablesSchema[tableMetadata.name as string];
+         const tableSchema: ModelSchema = tablesSchema[tableMetadata.name as string];
          if (!tableSchema) {
 
             // create new table
             const createTable: CreateTableQueryBuilder = new CreateTableQueryBuilder(connection, tableMetadata);
-            sqlMigrations.push(createTable.sql());
+            sqlMigrationsCreateTable.push(createTable.sql());
 
          } else {
 
             /// verify columns
-
+            
 
 
          }
 
       }
 
+      const sqlMigrations: any[] = [];
+      sqlMigrations.push(sqlMigrationsCreateTable);
+      sqlMigrations.push(sqlMigrationsCreateColumns);
+      sqlMigrations.push(sqlMigrationsCreateUniques);
+      sqlMigrations.push(sqlMigrationsCreateIndex);
+      sqlMigrations.push(sqlMigrationsCreateForeignKeys);
+      sqlMigrations.push(sqlMigrationsDropForeignKeys);
+      sqlMigrations.push(sqlMigrationsDropUniques);
+      sqlMigrations.push(sqlMigrationsDropIndex);
+      sqlMigrations.push(sqlMigrationsDropColumns);
       return sqlMigrations;
    }
    

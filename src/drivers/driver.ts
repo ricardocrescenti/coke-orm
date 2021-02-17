@@ -14,7 +14,7 @@ import { DeleteTableQueryBuilder } from "../query-builder/delete-table";
 import { DeleteUniqueQueryBuilder } from "../query-builder/delete-unique";
 import { QueryBuilder } from "../query-builder/query-builder";
 import { QueryRunner } from "../query-runner/query-runner";
-import { TableSchema } from "../schema/table-schema";
+import { ModelSchema } from "../schema/model-schema";
 import { DefaultColumnOptions } from "../metadata/columns/default-column-options";
 import { ColumnMetadata } from "../metadata/columns/column-metadata";
 
@@ -93,7 +93,7 @@ export abstract class Driver {
    /**
     * 
     */
-   public abstract loadSchema(connection: Connection): Promise<Map<TableSchema>>;
+   public abstract loadSchema(connection: Connection): Promise<Map<ModelSchema>>;
 
    /**
     * 

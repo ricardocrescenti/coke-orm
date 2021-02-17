@@ -5,7 +5,9 @@ import "reflect-metadata";
 
 export function Column(options?: Omit<ColumnOptions<any>, "relation" | "primary">): PropertyDecorator {
   return function (target: any, propertyKey: any) {
+
     const columnMetadata: ColumnMetadata = new ColumnMetadata(target, propertyKey, null, options as any);  
     Metadata.get('').addColumn(columnMetadata);
+    
   };
 }

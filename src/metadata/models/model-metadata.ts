@@ -4,10 +4,10 @@ import { ColumnMetadata } from "../columns/column-metadata";
 import { EventMetadata } from "../events/event-metadata";
 import { Map } from "../../common/interfaces/map";
 import { Metadata } from "../metadata";
-import { TableOptions } from "./table-options";
+import { ModelOptions } from "./model-options";
 import { EventType } from "../events/event-type";
 
-export class TableMetadata extends TableOptions {
+export class ModelMetadata extends ModelOptions {
    
    /**
     * Class referenced to this table.
@@ -59,7 +59,7 @@ export class TableMetadata extends TableOptions {
     */
    public readonly AfterDeleteEvents: EventMetadata[];
    
-   constructor(target: any, options?: TableOptions) {
+   constructor(target: any, options?: ModelOptions) {
       super(target, options);
       this.target = target;
       this.inheritances = MetadataUtils.getInheritanceTree(target).reverse();

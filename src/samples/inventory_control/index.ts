@@ -1,41 +1,47 @@
 import { Metadata } from "../../metadata/metadata";
 import { WarehouseModel } from "./models/warehouse.model";
 import { ProductModel } from "./models/product.model";
-import { MetadataUtils } from "../../utils/metadata-utils";
 import { CokeORM } from "../../coke-orm";
 import { DatabaseDriver } from "../../common/enum/driver-type";
+import { Connection } from "../../connection/connection";
 
-console.log('1 - Creating Models');
+export async function test() {
 
-const warehouse = new WarehouseModel();
-const product = new ProductModel();
+   console.log('1 - Creating Models');
 
-console.log('2 - Metadata');
+   const warehouse = new WarehouseModel();
+   const product = new ProductModel();
 
-//const tables = Metadata.get().getTables();
-//console.log('Metadata.tables', JSON.stringify(tables));
+   console.log('2 - Metadata');
 
-console.log('3 - Conecting');
+   //const tables = Metadata.get().getTables();
+   //console.log('Metadata.tables', JSON.stringify(tables));
 
-CokeORM.connect({
-   // driver: DatabaseDriver.Postgres,
-   // host: '34.122.198.83',
-   // port: 9815,
-   // user: 'admin',
-   // password: 'd3v@Master*',
-   // database: 'hant-dev'
-   driver: DatabaseDriver.Postgres,
-   host: 'localhost',
-   port: 2815,
-   user: 'cokeorm',
-   password: 'cokeorm',
-   database: 'cokeorm'
-}).then((connection) => {
+   console.log('3 - Conecting');
+
+   const connection: Connection = await CokeORM.connect({
+      // driver: DatabaseDriver.Postgres,
+      // host: '34.122.198.83',
+      // port: 9815,
+      // user: 'admin',
+      // password: 'd3v@Master*',
+      // database: 'hant-dev'
+      driver: DatabaseDriver.Postgres,
+      host: 'localhost',
+      port: 2815,
+      user: 'cokeorm',
+      password: 'cokeorm',
+      database: 'cokeorm',
+      models: [
+         WarehouseModel
+      ],
+      synchronize: true
+   });
 
    console.log('4 - Connected', JSON.stringify(Metadata.get()));
 
-}).catch((error) => {
+}
 
+test().catch((error) => {
    console.log('4 - ', error);
-   
 })

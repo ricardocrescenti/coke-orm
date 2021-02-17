@@ -29,7 +29,7 @@ export class Connection {
    /**
     * 
     */
-   public readonly queryRunners: QueryRunner[] = [];
+   public readonly activeQueryRunners: QueryRunner[] = [];
 
    constructor(options: ConnectionOptions) {
       this.options = new ConnectionOptions(options);
@@ -45,8 +45,7 @@ export class Connection {
          throw new AlreadyConnectedError();
       }
 
-      const queryRunner = this.createQueryRunner();
-      await queryRunner.client;
+      const queryRunner: QueryRunner = await this.createQueryRunner();
       await queryRunner.release();
 
       this._isConnected = true;
@@ -58,7 +57,7 @@ export class Connection {
     * 
     */
    public async disconnect(): Promise<void> {
-      for (const queryRunner of this.queryRunners) {
+      for (const queryRunner of this.activeQueryRunners) {
          await queryRunner.release();
       }
       this._isConnected = false;
@@ -67,11 +66,8 @@ export class Connection {
    /**
     * 
     */
-   public createQueryRunner(): QueryRunner {  
-      return new QueryRunner(this);    
-      // const queryRunner: QueryRunner = 
-      // this.queryRunners.push(queryRunner);
-      // return queryRunner;
+   public createQueryRunner(): Promise<QueryRunner> {  
+      return QueryRunner.create(this);
    }
 
    /**
@@ -81,7 +77,7 @@ export class Connection {
     * @param queryRunner 
     */
    public async query(query: string, params?: any[]) {
-      const queryRunner = this.createQueryRunner();
+      const queryRunner: QueryRunner = await this.createQueryRunner();
       try {
           return await queryRunner.query(query, params);  // await is needed here because we are using finally
       } finally {
@@ -94,7 +90,7 @@ export class Connection {
     * @param transactionProcess 
     */
    public async transaction<T = any>(transactionProcess: TransactionProcess<T>): Promise<T> {
-      const queryRunner: QueryRunner = this.createQueryRunner();
+      const queryRunner: QueryRunner = await this.createQueryRunner();
 
       try {
 

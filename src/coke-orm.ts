@@ -1,6 +1,7 @@
 import { ConnectionOptions } from "./connection/connection-options";
 import { Map } from  "./common/interfaces/map";
 import { Connection } from "./connection/connection";
+import { ConnectionAlreadyExistsError } from "./errors/connection-already-exists";
 
 export class CokeORM {
 
@@ -9,15 +10,19 @@ export class CokeORM {
     */
    public static readonly connections: Map<Connection> = {};
 
+   /**
+    * O construtor está declarado somente para não permitir que uma instância 
+    * do CokeORM seja criado sem as validações necessárias
+    */
    private constructor() {}
 
    /**
     * 
     * @param connectionOptions 
     */
-   public static async connect(connectionOptions: ConnectionOptions): Promise<Connection | null> {
+   public static async connect(connectionOptions: ConnectionOptions): Promise<Connection> {
       if (CokeORM.connections[connectionOptions.name ?? 'default'] != null) {
-         throw Error(`The '${connectionOptions.name}' connection already exists`);
+         throw new ConnectionAlreadyExistsError(connectionOptions.name ?? 'default');
       }
 
       const connection: Connection = new Connection(connectionOptions);

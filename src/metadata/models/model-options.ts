@@ -1,6 +1,6 @@
 import { StringUtils } from "../../utils/string-utils";
 
-export class TableOptions {
+export class ModelOptions {
    /**
     * Metadata name, used to group database models.
     */
@@ -15,7 +15,7 @@ export class TableOptions {
     */
    public readonly orderBy?: any;
 
-   constructor(target: any, options?: TableOptions) {
+   constructor(target: any, options?: ModelOptions) {
       this.metadata = options?.metadata ?? 'default';
       this.name = options?.name ?? StringUtils.snakeCase(target.name);
       this.orderBy = options?.orderBy;

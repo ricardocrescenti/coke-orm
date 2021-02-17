@@ -1,5 +1,5 @@
 import { ColumnMetadata } from "./columns/column-metadata";
-import { TableMetadata } from "./tables/table-metadata";
+import { ModelMetadata } from "./models/model-metadata";
 import { Map } from "../common/interfaces/map";
 import { EventMetadata } from "./events/event-metadata";
 
@@ -8,7 +8,7 @@ export class Metadata {
    private static columns: ColumnMetadata[] = [];
    private static events: EventMetadata[] = [];
 
-   private tables: TableMetadata[] = [];
+   private tables: ModelMetadata[] = [];
 
    private constructor(private name: string) {}
 
@@ -26,7 +26,7 @@ export class Metadata {
    public addTable(table: any): void {
       this.tables.push(table);
    }
-   public getTables(): TableMetadata[] {
+   public getTables(): ModelMetadata[] {
       return this.tables;
    }
 

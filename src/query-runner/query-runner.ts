@@ -10,10 +10,10 @@ export class QueryRunner {
    /**
     * 
     */
-   public get client(): Promise<any> {
+   public get client(): any {
       return this._client;
    }
-   public _client: Promise<any>;
+   public _client: any;
 
    /**
     * 
@@ -31,18 +31,19 @@ export class QueryRunner {
    }
    private _inTransaction: boolean = false;
 
-   constructor(connection: Connection) {
+   private constructor(connection: Connection) {
       this.connection = connection;
-      this._client = this.connection.connect();
-      this.connection.queryRunners.push(this);
+   }
+
+   private async initializeClient() {
+      this._client = await this.connection.driver.getClient();
    }
 
    /**
     * 
     */
    public async beginTransaction(): Promise<void> {
-      const client = await this.client;
-      await this.connection.driver.beginTransaction(client);
+      await this.connection.driver.beginTransaction(this.client);
       this._inTransaction = true;
    }
 
@@ -50,8 +51,7 @@ export class QueryRunner {
     * 
     */
    public async commitTransaction(): Promise<void> {
-      const client = await this.client;
-      await this.connection.driver.commitTransaction(client);
+      await this.connection.driver.commitTransaction(this.client);
       this._inTransaction = false;
    }
 
@@ -59,8 +59,7 @@ export class QueryRunner {
     * 
     */
    public async rollbackTransaction(): Promise<void> {
-      const client = await this.client;
-      await this.connection.driver.rollbackTransaction(client);
+      await this.connection.driver.rollbackTransaction(this.client);
       this._inTransaction = false;
    }
 
@@ -71,16 +70,14 @@ export class QueryRunner {
     * @returns
     */
    public async query(query: string, params?: any[]): Promise<any> {
-      const client = await this.client;
-      return this.connection.driver.executeQuery(client, query, params);
+      return this.connection.driver.executeQuery(this, query, params);
    }
 
    /**
     * 
     * @returns
     */
-   public async release(): Promise<void> {
-      
+   public async release(): Promise<void> {      
       if (this.isReleased) {
          return;
       }
@@ -88,10 +85,22 @@ export class QueryRunner {
       await this.connection.driver.releaseQueryRunner(this);
       this._isReleased = true;
 
-      const index = this.connection.queryRunners.indexOf(this);
+      const index = this.connection.activeQueryRunners.indexOf(this);
       if (index >= 0) {
-         this.connection.queryRunners.splice(index, 1);
+         this.connection.activeQueryRunners.splice(index, 1);
       }
+   }
+
+   /**
+    * 
+    * @param connection 
+    */
+   public static async create(connection: Connection): Promise<QueryRunner> {
+      const queryRunner: QueryRunner = new QueryRunner(connection);
+      await queryRunner.initializeClient();
+
+      connection.activeQueryRunners.push(queryRunner);
+      return queryRunner;
    }
 
 }

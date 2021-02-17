@@ -4,18 +4,21 @@ import { ConstraintSchema } from "./constraint-schema";
 import { ForeignKeySchema } from "./foreign-key-schema";
 import { IndexSchema } from "./index-schema";
 import { UniqueSchema } from "./unique-schema";
+import { PrimaryKeySchema } from "./primary-key-schema";
 
-export class TableSchema {
+export class ModelSchema {
 
    public readonly name: string;
    public readonly columns: Map<ColumnSchema>;
+   public readonly primaryKey?: PrimaryKeySchema;
    public readonly foreignKeys: Map<ForeignKeySchema>;
    public readonly indexs: Map<IndexSchema>;
    public readonly uniques: Map<UniqueSchema>;
 
-   constructor(table: TableSchema) {
+   constructor(table: ModelSchema) {
       this.name = table.name;
       this.columns = table.columns;
+      this.primaryKey = table.primaryKey;
       this.foreignKeys = table.foreignKeys;
       this.indexs = table.indexs;
       this.uniques = table.uniques;

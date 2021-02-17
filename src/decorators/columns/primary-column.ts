@@ -4,6 +4,7 @@ import { Metadata } from "../../metadata/metadata";
 
 export function PrimaryColumn(options?: Omit<ColumnOptions<any>, "relation" | "primary">): PropertyDecorator {
   return function (target: any, propertyKey: any) {
+
     if (!options) {
       options = {}
     }
@@ -11,5 +12,6 @@ export function PrimaryColumn(options?: Omit<ColumnOptions<any>, "relation" | "p
 
     const columnMetadata: ColumnMetadata = new ColumnMetadata(target, propertyKey, null, options as any);
     Metadata.get('').addColumn(columnMetadata);
+    
   };
 }

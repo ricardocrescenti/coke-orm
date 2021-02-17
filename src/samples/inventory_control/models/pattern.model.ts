@@ -1,4 +1,4 @@
-import { Column, PrimaryColumn } from "../../../decorators";
+import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, UpdatedAtColumn } from "../../../decorators";
 
 export abstract class PatterModel {
 
@@ -8,13 +8,13 @@ export abstract class PatterModel {
    @Column()
    public uuid?: string;
 
-   @Column()
+   @CreatedAtColumn()
    public createdAt?: Date;
 
-   @Column()
+   @UpdatedAtColumn()
    public updatedAt?: Date;
 
-   @Column()
+   @DeletedAtColumn()
    public deletedAt?: Date;
 
 }
