@@ -1,14 +1,14 @@
-import { BeforeInsert, Column, ManyToOne, Model } from "../../../decorators";
+import { BeforeInsert, Column, ManyToOne, Table } from "../../../decorators";
 import { PatterModel } from "./pattern.model";
 import { WarehouseModel } from "./warehouse.model";
 
-@Model({ name: 'products' })
+@Table({ name: 'products' })
 export class ProductModel extends PatterModel {
 
    @Column()
    public name?: string;
 
-   @ManyToOne({ name: 'warehouse_id', relation: { target: WarehouseModel, targetColumnName: 'id' } })
+   @ManyToOne({ name: 'warehouse_id', relation: { target: 'WarehouseModel', targetColumnName: 'id', cascade: false } })
    public warehouse?: WarehouseModel;
 
    @BeforeInsert()

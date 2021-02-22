@@ -1,24 +1,18 @@
-import { Map } from "../common/interfaces/map";
+import { SimpleMap } from "../common/interfaces/map";
 import { Connection } from "../connection/connection";
-import { InvalidQueryBuilder } from "../errors/invalid-query-builder";
 import { ColumnOptions } from "../metadata/columns/column-options";
-import { CreateColumnQueryBuilder } from "../query-builder/create-column";
-import { CreateForeignKeyQueryBuilder } from "../query-builder/create-foreign-key";
-import { CreateIndexQueryBuilder } from "../query-builder/create-index";
-import { CreateTableQueryBuilder } from "../query-builder/create-table";
-import { CreateUniqueQueryBuilder } from "../query-builder/create-unique";
-import { DeleteColumnQueryBuilder } from "../query-builder/delete-column";
-import { DeleteForeignKeyQueryBuilder } from "../query-builder/delete-foreign-key";
-import { DeleteIndexQueryBuilder } from "../query-builder/delete-index";
-import { DeleteTableQueryBuilder } from "../query-builder/delete-table";
-import { DeleteUniqueQueryBuilder } from "../query-builder/delete-unique";
-import { QueryBuilder } from "../query-builder/query-builder";
-import { QueryRunner } from "../query-runner/query-runner";
-import { ModelSchema } from "../schema/model-schema";
+import { QueryExecutor } from "../query-executor/query-executor";
+import { TableSchema } from "../schema/table-schema";
 import { DefaultColumnOptions } from "../metadata/columns/default-column-options";
-import { ColumnMetadata } from "../metadata/columns/column-metadata";
+import { BasicQueryBuilder } from "../query-builder/basic-query-builder";
+import { QueryBuilderDriver } from "./query-builder-driver";
 
 export abstract class Driver {
+
+   /**
+    * 
+    */
+   public readonly querybuilder: QueryBuilderDriver;
 
    /**
     * 
@@ -43,14 +37,16 @@ export abstract class Driver {
    /**
     * 
     */
-   public readonly defaultColumnTypesOptions: Map<DefaultColumnOptions>;
+   public readonly defaultColumnTypesOptions: SimpleMap<DefaultColumnOptions>;
 
    /**
     * 
     */
-   public readonly defaultColumnOperationOptions: Map<DefaultColumnOptions>;
+   public readonly defaultColumnOperationOptions: SimpleMap<DefaultColumnOptions>;
 
+   
    constructor() {
+      this.querybuilder = this.getQueryBuilder();
       this.supportedColumnsTypes = this.getSupportedColumnsType();
       this.columnTypesWithLength = this.getColumnsTypeWithLength();
       this.columnTypesWithPrecision = this.getColumnsTypeWithPrecision();
@@ -63,43 +59,48 @@ export abstract class Driver {
     * 
     */
    public abstract getClient(): Promise<any>;
+
+   /**
+    * 
+    */
+   protected abstract getQueryBuilder(): QueryBuilderDriver;
    
    /**
     * 
     */
-   public abstract beginTransaction(queryRunner: QueryRunner): Promise<void>;
+   public abstract beginTransaction(queryExecutor: QueryExecutor): Promise<void>;
 
    /**
     * 
     */
-   public abstract commitTransaction(queryRunner: QueryRunner): Promise<void>;
+   public abstract commitTransaction(queryExecutor: QueryExecutor): Promise<void>;
 
    /**
     * 
     */
-   public abstract rollbackTransaction(queryRunner: QueryRunner): Promise<void>;
+   public abstract rollbackTransaction(queryExecutor: QueryExecutor): Promise<void>;
 
    /**
     * 
     */
-   public abstract releaseQueryRunner(queryRunner: QueryRunner): Promise<void>;
+   public abstract releaseQueryRunner(queryExecutor: QueryExecutor): Promise<void>;
 
    /**
     * 
     * @param query 
     */
-   public abstract executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<any>;
+   public abstract executeQuery(queryExecutor: QueryExecutor, query: string, params?: any[]): Promise<any>;
 
    /**
     * 
     */
-   public abstract loadSchema(connection: Connection): Promise<Map<ModelSchema>>;
+   public abstract loadSchema(connection: Connection): Promise<SimpleMap<TableSchema>>;
 
    /**
     * 
     * @param connection 
     */
-   public abstract generateSQLsMigrations(connection: Connection): Promise<string[]>;
+   public abstract generateSQLsMigrations(connection: Connection): Promise<BasicQueryBuilder[]>;
 
    /**
     * 
@@ -124,111 +125,15 @@ export abstract class Driver {
    /**
     * 
     */
-   protected abstract getDefaultColumnTypesOptions(): Map<DefaultColumnOptions>;
+   protected abstract getDefaultColumnTypesOptions(): SimpleMap<DefaultColumnOptions>;
 
    /**
     * 
     */
-   protected abstract getDefaultColumnOperationOptions(): Map<DefaultColumnOptions>;
+   protected abstract getDefaultColumnOperationOptions(): SimpleMap<DefaultColumnOptions>;
    
    /**
     * 
     */
    public abstract validateColumnOptions(column: ColumnOptions): void;
-
-   /**
-    * 
-    * @param queryBuilder
-    */
-   public createSQL(queryBuilder: QueryBuilder): string {
-      if (queryBuilder instanceof CreateColumnQueryBuilder) {
-         return this.generateCreateColumnSQL(queryBuilder);
-      } else if (queryBuilder instanceof CreateForeignKeyQueryBuilder) {
-         return this.generateCreateForeignKeySQL(queryBuilder);
-      } else if (queryBuilder instanceof CreateIndexQueryBuilder) {
-         return this.generateCreateIndexSQL(queryBuilder);
-      } else if (queryBuilder instanceof CreateTableQueryBuilder) {
-         return this.generateCreateTableSQL(queryBuilder);
-      } else if (queryBuilder instanceof CreateUniqueQueryBuilder) {
-         return this.generateCreateUniqueSQL(queryBuilder);
-      } else if (queryBuilder instanceof DeleteColumnQueryBuilder) {
-         return this.generateDeleteColumnSQL(queryBuilder);
-      } else if (queryBuilder instanceof DeleteForeignKeyQueryBuilder) {
-         return this.generateDeleteForeignKeySQL(queryBuilder);
-      } else if (queryBuilder instanceof DeleteIndexQueryBuilder) {
-         return this.generateDeleteIndexSQL(queryBuilder);
-      } else if (queryBuilder instanceof DeleteTableQueryBuilder) {
-         return this.generateDeleteTableSQL(queryBuilder);
-      } else if (queryBuilder instanceof DeleteUniqueQueryBuilder) {
-         return this.generateDeleteUniqueSQL(queryBuilder);
-      } else {
-         throw new InvalidQueryBuilder();
-      }
-   }
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateCreateColumnSQL(queryBuilder: CreateColumnQueryBuilder): string;
-
-   /**
-    * 
-    * @param column 
-    */
-   protected abstract generateColumnTypeSQL(column: ColumnMetadata): string;
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateCreateForeignKeySQL(queryBuilder: CreateForeignKeyQueryBuilder): string;
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateCreateIndexSQL(queryBuilder: CreateIndexQueryBuilder): string;
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateCreateTableSQL(queryBuilder: CreateTableQueryBuilder): string;
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateCreateUniqueSQL(queryBuilder: CreateUniqueQueryBuilder): string;
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateDeleteColumnSQL(queryBuilder: DeleteColumnQueryBuilder): string;
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateDeleteForeignKeySQL(queryBuilder: DeleteForeignKeyQueryBuilder): string;
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateDeleteIndexSQL(queryBuilder: DeleteIndexQueryBuilder): string;
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateDeleteTableSQL(queryBuilder: DeleteTableQueryBuilder): string;
-
-   /**
-    * 
-    * @param queryBuilder 
-    */
-   protected abstract generateDeleteUniqueSQL(queryBuilder: DeleteUniqueQueryBuilder): string;
 }

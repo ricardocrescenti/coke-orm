@@ -1,6 +1,6 @@
 import { Connection } from "../connection/connection";
 
-export class QueryRunner {
+export class QueryExecutor {
 
    /**
     * 
@@ -85,9 +85,9 @@ export class QueryRunner {
       await this.connection.driver.releaseQueryRunner(this);
       this._isReleased = true;
 
-      const index = this.connection.activeQueryRunners.indexOf(this);
+      const index = this.connection.activeQueryExecutors.indexOf(this);
       if (index >= 0) {
-         this.connection.activeQueryRunners.splice(index, 1);
+         this.connection.activeQueryExecutors.splice(index, 1);
       }
    }
 
@@ -95,11 +95,11 @@ export class QueryRunner {
     * 
     * @param connection 
     */
-   public static async create(connection: Connection): Promise<QueryRunner> {
-      const queryRunner: QueryRunner = new QueryRunner(connection);
+   public static async create(connection: Connection): Promise<QueryExecutor> {
+      const queryRunner: QueryExecutor = new QueryExecutor(connection);
       await queryRunner.initializeClient();
 
-      connection.activeQueryRunners.push(queryRunner);
+      connection.activeQueryExecutors.push(queryRunner);
       return queryRunner;
    }
 

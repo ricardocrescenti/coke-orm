@@ -1,3 +1,3 @@
-import { QueryRunner } from "../../query-runner/query-runner";
+import { QueryExecutor } from "../../query-executor/query-executor";
 
-export type TransactionProcess<T> = (queryRunner: QueryRunner) => Promise<T>;
+export type TransactionProcess<T> = (queryRunner: QueryExecutor) => Promise<T>;

@@ -1,17 +1,17 @@
 import { Connection } from "../connection/connection";
 import { ForeignKeyMetadata } from "../metadata/foreign-key/foreign-key-metadata";
-import { ModelMetadata } from "../metadata/models/model-metadata";
-import { QueryBuilder } from "./query-builder";
+import { TableMetadata } from "../metadata/tables/table-metadata";
+import { BasicQueryBuilder } from "./basic-query-builder";
 
-export class CreateForeignKeyQueryBuilder extends QueryBuilder {
+export class CreateForeignKeyQueryBuilder extends BasicQueryBuilder {
 
-   public readonly table: ModelMetadata;
-   public readonly foreignKey: ForeignKeyMetadata;
-
-   constructor(connection: Connection, table: ModelMetadata, foreignKey: ForeignKeyMetadata) {
+   constructor(connection: Connection) {
       super(connection);
-      this.table = table;
-      this.foreignKey = foreignKey;
+   }
+
+   fromMetadata(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeyMetadata): this {
+      this._sql = this.connection.driver.querybuilder.createForeignKeyFromMatadata(tableMetadata, foreignKeyMetadata)
+      return this;
    }
 
 }

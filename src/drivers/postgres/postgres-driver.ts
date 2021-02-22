@@ -1,30 +1,24 @@
 import { Driver } from "../driver";
 import { ConnectionOptions } from "../../connection/connection-options";
-import { Map } from "../../common/interfaces/map";
+import { SimpleMap } from "../../common/interfaces/map";
 import { DefaultColumnOptions } from "../../metadata/columns/default-column-options";
 import { ColumnOptions } from "../../metadata/columns/column-options";
 import { InvalidColumnOption } from "../../errors/invalid-column-options";
-import { QueryRunner } from "../../query-runner/query-runner";
+import { QueryExecutor } from "../../query-executor/query-executor";
 import { Connection } from "../../connection/connection";
-import { ModelSchema } from "../../schema/model-schema";
+import { TableSchema } from "../../schema/table-schema";
 import { ColumnSchema } from "../../schema/column-schema";
-import { ConstraintSchema } from "../../schema/constraint-schema";
 import { Metadata } from "../../metadata/metadata";
-import { CreateTableQueryBuilder } from "../../query-builder/create-table";
-import { CreateColumnQueryBuilder } from "../../query-builder/create-column";
-import { CreateForeignKeyQueryBuilder } from "../../query-builder/create-foreign-key";
-import { CreateIndexQueryBuilder } from "../../query-builder/create-index";
-import { CreateUniqueQueryBuilder } from "../../query-builder/create-unique";
-import { DeleteTableQueryBuilder } from "../../query-builder/delete-table";
-import { DeleteColumnQueryBuilder } from "../../query-builder/delete-column";
-import { DeleteForeignKeyQueryBuilder } from "../../query-builder/delete-foreign-key";
-import { DeleteIndexQueryBuilder } from "../../query-builder/delete-index";
-import { DeleteUniqueQueryBuilder } from "../../query-builder/delete-unique";
-import { ColumnMetadata } from "../../metadata/columns/column-metadata";
 import { PrimaryKeySchema } from "../../schema/primary-key-schema";
 import { ForeignKeySchema } from "../../schema/foreign-key-schema";
 import { IndexSchema } from "../../schema/index-schema";
 import { UniqueSchema } from "../../schema/unique-schema";
+import { QueryBuilderDriver } from "../query-builder-driver";
+import { PostgresQueryBuilderDriver } from "./postgres-query-builder-driver";
+import { BasicQueryBuilder } from "../../query-builder/basic-query-builder";
+import { ForeignKeyMetadata } from "../../metadata/foreign-key/foreign-key-metadata";
+import { UniqueMetadata } from "../../metadata/unique/unique-metadata";
+import { IndexMetadata } from "../../metadata/index/index-metadata";
 
 export class PostgresDriver extends Driver {
 
@@ -56,30 +50,34 @@ export class PostgresDriver extends Driver {
    public async getClient(): Promise<any> {
       return await this.client.connect();
    }
-   
-   public async beginTransaction(queryRunner: QueryRunner): Promise<void> {
 
-   }
-
-   public async commitTransaction(queryRunner: QueryRunner): Promise<void> {
-
-   }
-
-   public async rollbackTransaction(queryRunner: QueryRunner): Promise<void> {
-
+   protected getQueryBuilder(): QueryBuilderDriver {
+      return new PostgresQueryBuilderDriver(this);
    }
    
-   public async releaseQueryRunner(queryRunner: QueryRunner): Promise<void> {
-      await queryRunner.client.release();
+   public async beginTransaction(queryExecutor: QueryExecutor): Promise<void> {
+      await queryExecutor.query(`BEGIN TRANSACTION`);
+   }
+
+   public async commitTransaction(queryExecutor: QueryExecutor): Promise<void> {
+      await queryExecutor.query(`COMMIT TRANSACTION`);
+   }
+
+   public async rollbackTransaction(queryExecutor: QueryExecutor): Promise<void> {
+      await queryExecutor.query(`ROLLBACK TRANSACTION`);
+   }
+   
+   public async releaseQueryRunner(queryExecutor: QueryExecutor): Promise<void> {
+      await queryExecutor.client.release();
    }
    
    public async disconnect(): Promise<void> {
       await this.client.end();
    }
 
-   public async executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<any> {
+   public async executeQuery(queryExecutor: QueryExecutor, query: string, params?: any[]): Promise<any> {
       return new Promise((resolve, reject) => {
-         queryRunner.client.query(query, (error: any, result: any) => {
+         queryExecutor.client.query(query, (error: any, result: any) => {
              
             if (error) {
                return reject(error);
@@ -90,204 +88,247 @@ export class PostgresDriver extends Driver {
      });
    }
    
-   public async loadSchema(connection: Connection): Promise<Map<ModelSchema>> {
-      const tables: Map<ModelSchema> = {};
+   public async loadSchema(connection: Connection): Promise<SimpleMap<TableSchema>> {
+      const tables: SimpleMap<TableSchema> = new SimpleMap<TableSchema>();
 
+      console.time('schema query');
       const informationSchema = await connection.query(`
-         SELECT t.table_name, c.column_name, c.ordinal_position, c.column_default, c.is_nullable, c.data_type, c.numeric_precision, c.numeric_scale, c.constraint_name, c.constraint_type, c.constraint_position, c.unique_constraint_name
+         SELECT t.table_schema, t.table_name, c.columns
          FROM information_schema.tables t
          LEFT JOIN (
-
-            SELECT c.table_schema, c.table_name, c.column_name, c.ordinal_position, c.column_default, c.is_nullable, c.data_type, c.numeric_precision, c.numeric_scale, ccu.constraint_name, ccu.constraint_type, ccu.constraint_position, ccu.unique_constraint_name
+         
+            SELECT c.table_schema, c.table_name, json_agg(json_build_object('column_name', c.column_name, 'ordinal_position', c.ordinal_position, 'column_default', c.column_default, 'is_nullable', c.is_nullable, 'data_type', c.data_type, 'numeric_precision', c.numeric_precision, 'numeric_scale', c.numeric_scale, 'constraints', constraints) ORDER BY c.ordinal_position) as columns
             FROM information_schema.columns c
             LEFT JOIN (
-               
-               SELECT tc.table_schema, tc.table_name, tc.constraint_name, tc.constraint_type, kcu.column_name as column_name, kcu.ordinal_position as constraint_position, (case when tc.constraint_type = 'FOREIGN KEY' then string_agg(rc.unique_constraint_name, '^') else null end) as unique_constraint_name
+         
+               SELECT tc.table_schema, tc.table_name, kcu.column_name, json_agg(json_build_object('constraint_name', tc.constraint_name, 'constraint_type', tc.constraint_type, 'ordinal_position', kcu.ordinal_position, 'unique_constraint_name', (case when tc.constraint_type = 'FOREIGN KEY' then rc.unique_constraint_name else null end))) as constraints
                FROM information_schema.key_column_usage kcu
                INNER JOIN information_schema.table_constraints tc on (tc.table_schema = kcu.table_schema and tc.table_name = kcu.table_name and tc.constraint_name = kcu.constraint_name)
                LEFT JOIN information_schema.referential_constraints rc on (rc.constraint_schema = tc.table_schema and rc.constraint_name = tc.constraint_name)
-               GROUP BY tc.table_schema, tc.table_name, tc.constraint_name, tc.constraint_type, kcu.column_name, kcu.ordinal_position
+               GROUP BY tc.table_schema, tc.table_name, kcu.column_name
                ORDER BY table_schema, table_name, column_name) ccu on (ccu.table_schema = c.table_schema and ccu.table_name = c.table_name and ccu.column_name = c.column_name)
-
-            ORDER BY c.table_schema, c.table_name, c.column_name, ccu.constraint_name) c on (c.table_schema = t.table_schema and c.table_name = t.table_name)
-
-         WHERE t.table_schema = '${connection.options.schema ?? 'public'}'
-         ORDER BY t.table_name, c.ordinal_position, c.column_name`);
+         
+            GROUP BY c.table_schema, c.table_name 
+            ORDER BY c.table_schema, c.table_name) c on (c.table_schema = t.table_schema and c.table_name = t.table_name)
+         
+         WHERE t.table_schema = '${connection.options.schema}'
+         ORDER BY t.table_name`);
+      console.timeLog('schema query');
 
       if (informationSchema.rows.length > 0) {
-         let tableName: string = '';
-         let columnName: string = '';
-         let columns: Map<ColumnSchema> = {};
-         let primaryKey: PrimaryKeySchema | undefined = undefined;
-         let foreignKeys: Map<ForeignKeySchema> = {};
-         let indexs: Map<IndexSchema> = {};
-         let uniques: Map<UniqueSchema> = {};
          
-         for (let index = 0; index <= informationSchema.rows.length; index++) {
-            const info = (index < informationSchema.rows.length ? informationSchema.rows[index] : null);
+         console.time('schema load');
+         for (const table of informationSchema.rows) {
 
-            if (tableName != info?.table_name) {
+            let columns: SimpleMap<ColumnSchema> = new SimpleMap<ColumnSchema>();
+            let primaryKey: PrimaryKeySchema | undefined;
 
-               if (tableName != '') {
-                  tables[tableName] = new ModelSchema({
-                     name: tableName, 
-                     columns: columns, 
-                     primaryKey: primaryKey,
-                     foreignKeys: foreignKeys,
-                     indexs: indexs,
-                     uniques: uniques
-                  });
+            for (const column of table.columns) {
+
+               let foreignKeys: SimpleMap<ForeignKeySchema> = new SimpleMap<ForeignKeySchema>();
+               let uniques: SimpleMap<UniqueSchema> = new SimpleMap<UniqueSchema>();
+               let indexs: SimpleMap<IndexSchema> = new SimpleMap<IndexSchema>();
+
+               for (const constraint of column.constraints ?? []) {
+
+                  if (constraint.constraint_type == 'PRIMARY KEY') {
+
+                     if (primaryKey == null) {
+                        primaryKey = new PrimaryKeySchema({ name: constraint.constraint_name });
+                     }
+                     primaryKey.columns.push(column.column_name);
+   
+                  } else if (constraint.constraint_type == 'UNIQUE') {
+   
+                     let unique = uniques[constraint.constraint_name];
+                     if (!unique) {
+                        unique = new UniqueSchema({ name: constraint.constraint_name });
+                        uniques[constraint.constraint_name] = unique;
+                     }
+                     unique.columns.push(column.column_name);
+   
+                  } else if (constraint.constraint_type == 'INDEX') {
+   
+                     let index = indexs[constraint.constraint_name];
+                     if (!index) {
+                        index = new UniqueSchema({ name: constraint.constraint_name });
+                        indexs[constraint.constraint_name] = index;
+                     }
+                     index.columns.push(column.column_name);
+                  }
+
                }
 
-               if (!info) {
-                  break;
-               }
-
-               tableName = info.table_name;
-               columns = {};
-               primaryKey = undefined;
-               foreignKeys = {};
-               indexs = {};
-               uniques = {};
-            }
-
-            if (columnName != info.column_name) {
-               columns[info.column_name] = new ColumnSchema({
-                  name: info.column_name,
-                  position: info.ordinal_position,
-                  defaultValue: info.column_default,
-                  isNullable: info.is_nullable,
-                  type: info.data_type,
-                  length: info.numeric_precision,
-                  scale: info.numeric_scale,
+               columns[column.column_name] = new ColumnSchema({
+                  name: column.column_name,
+                  position: column.ordinal_position,
+                  default: column.column_default,
+                  nullable: column.is_nullable,
+                  type: column.data_type,
+                  length: column.numeric_precision,
+                  scale: column.numeric_scale,
+                  primaryKey: primaryKey,
+                  foreignKeys: foreignKeys,
+                  indexs: indexs,
+                  uniques: uniques
                });
 
-               columnName = info.column_name;
             }
 
-            if (info.constraint_name) {
-
-               if (info.constraint_type == 'PRIMARY KEY') {
-
-                  if (primaryKey == null) {
-                     primaryKey = new PrimaryKeySchema({ name: info.constraint_name });
-                  }
-                  primaryKey.columns.push(columns[info.column_name]);
-                  columns[info.column_name].primaryKey = primaryKey;
-
-               } else if (info.constraint_type == 'UNIQUE') {
-
-                  let unique = uniques[info.constraint_name];
-                  if (!unique) {
-                     unique = new UniqueSchema({ name: info.constraint_name });
-                     uniques[info.constraint_name] = unique;
-                  }
-                  unique.columns.push(columns[info.column_name]);
-                  columns[info.column_name].uniques[unique.name] = unique;
-
-               } else if (info.constraint_type == 'UNIQUE') {
-
-                  let unique = uniques[info.constraint_name];
-                  if (!unique) {
-                     unique = new UniqueSchema({ name: info.constraint_name });
-                     uniques[info.constraint_name] = unique;
-                  }
-                  unique.columns.push(columns[info.column_name]);
-                  columns[info.column_name].uniques[unique.name] = unique;
-
-               }
-            }
-
+            tables[table.table_name] = new TableSchema({
+               name: table.table_name,
+               columns: columns,
+               schema: table.table_schema
+            });
+            
          }
+         console.timeLog('schema load');
+
       }
 
       return tables;
-
-      // const tables = await this.driver.executeQuery(`
-      //    SELECT t.table_name, c.columns
-      //    FROM information_schema.tables t
-      //    LEFT JOIN 
-      //       (
-      //          SELECT c.table_schema, c.table_name, json_agg(json_build_object('name', c.column_name, 'position', c.ordinal_position, 'isDefault', c.column_default, 'nullable', c.is_nullable, 'type', c.data_type, 'length', c.numeric_precision, 'scale', c.numeric_scale, 'constraints', ccu.constraints) order by c.ordinal_position, c.column_name) as columns
-      //          FROM information_schema.columns c
-      //          LEFT JOIN (
-      //             SELECT ccu.table_schema, ccu.table_name, ccu.column_name, json_agg(json_build_object('name', ccu.constraint_name, 'type', tc.constraint_type)) as constraints
-      //             FROM information_schema.constraint_column_usage ccu
-      //             INNER JOIN information_schema.table_constraints  tc on (tc.table_schema = ccu.table_schema and tc.table_name = ccu.table_name and tc.constraint_name = ccu.constraint_name)
-      //             GROUP BY ccu.table_schema, ccu.table_name, ccu.column_name) ccu on (ccu.table_schema = c.table_schema and ccu.table_name = c.table_name and ccu.column_name = c.column_name)
-      //          GROUP BY c.table_schema, c.table_name
-      //       ) c on (
-      //          c.table_schema = t.table_schema and 
-      //          c.table_name = t.table_name)
-      //    WHERE t.table_schema = 'public'
-      //    ORDER BY t.table_name`);
-
-      // for (const table of tables) {
-      //    const columns: Map<ColumnSchema> = {};
-      //    const constraints: Map<ConstraintSchema> = {};
-
-      //    for (const column of table.columns) {
-      //       columns[column.name] = new ColumnSchema(column);
-
-      //       for (const constraint of column.constraints) {
-      //          if (!constraints[constraint.name]) {
-      //             constraints[constraint.name] = new ConstraintSchema(constraint);
-      //          }
-
-      //          constraints[constraint.name].columns[column.name] = columns[column.name];
-      //          columns[column.name].constraints[constraint.name] = constraints[constraint.name];
-      //       }
-      //    }
-         
-      //    this.tables[table.name] = new TableSchema(table.name, columns, constraints);
-      // }
    }
 
-   public async generateSQLsMigrations(connection: Connection): Promise<string[]> {
+   public async generateSQLsMigrations(connection: Connection): Promise<BasicQueryBuilder[]> {
 
       const tablesSchema = await this.loadSchema(connection);
 
-      const sqlMigrationsCreateTable: string[] = [];
-      const sqlMigrationsCreateColumns: string[] = [];
-      const sqlMigrationsCreateForeignKeys: string[] = [];
-      const sqlMigrationsCreateUniques: string[] = [];
-      const sqlMigrationsCreateIndex: string[] = [];
+      const sqlMigrationsCreateTable: BasicQueryBuilder[] = [];
+      const sqlMigrationsCreateColumns: BasicQueryBuilder[] = [];
+      const sqlMigrationsAlterColumns: BasicQueryBuilder[] = [];
 
-      const sqlMigrationsDropColumns: string[] = [];
-      const sqlMigrationsDropForeignKeys: string[] = [];
-      const sqlMigrationsDropUniques: string[] = [];
-      const sqlMigrationsDropIndex: string[] = [];
+      const sqlMigrationsDropForeignKeys: BasicQueryBuilder[] = [];
+      const sqlMigrationsDropUniques: BasicQueryBuilder[] = [];
+      const sqlMigrationsDropIndex: BasicQueryBuilder[] = [];
 
+      const sqlMigrationsCreateIndex: BasicQueryBuilder[] = [];
+      const sqlMigrationsCreateUniques: BasicQueryBuilder[] = [];
+      const sqlMigrationsCreateForeignKeys: BasicQueryBuilder[] = [];
+
+      const sqlMigrationsDropColumns: BasicQueryBuilder[] = [];
+
+      const deletedForeignKeys: string[] = [];
+      const deletedIndex: string[] = [];
+      const deletedUniques: string[] = [];
+
+      console.time('generate SQLs migrations');
+      
       for (const tableMetadata of Metadata.get(connection.options.schema).getTables()) {
 
-         const tableSchema: ModelSchema = tablesSchema[tableMetadata.name as string];
+         const tableSchema: TableSchema = tablesSchema[tableMetadata.name as string];
          if (!tableSchema) {
 
             // create new table
-            const createTable: CreateTableQueryBuilder = new CreateTableQueryBuilder(connection, tableMetadata);
-            sqlMigrationsCreateTable.push(createTable.sql());
+            sqlMigrationsCreateTable.push(connection.queryBuilder.createTable().fromMetadata(tableMetadata));
 
          } else {
 
-            /// verify columns
-            
+            // schema columns that have not been checked, this information is 
+            // used to detect the columns that must be deleted
+            const pendingColumnsSchema: string[] = Object.keys(tableSchema.columns);
 
+            // check column diferences
+            for (const columnName in tableMetadata.columns) {
+               const columnMetadata = tableMetadata.columns[columnName];
+               const columnSchema = tableSchema.columns[columnName];
+
+               if (!columnSchema) {
+
+                  // create new column
+                  sqlMigrationsCreateColumns.push(connection.queryBuilder.createColumn().fromMetadata(tableMetadata, columnMetadata));
+               
+               } else {
+
+                  if (columnMetadata.type != columnSchema.type ||
+                     columnMetadata.length != columnSchema.length || 
+                     columnMetadata.scale != columnSchema.scale || 
+                     columnMetadata.nullable != columnSchema.nullable ||
+                     columnMetadata.default != columnSchema.default) {
+
+                     // alter column type
+                     sqlMigrationsAlterColumns.push(connection.queryBuilder.alterColumn().fromMatadata(tableMetadata, columnMetadata, columnSchema));
+
+                  }
+
+                  pendingColumnsSchema.splice(pendingColumnsSchema.indexOf(columnName), 1);
+
+               }
+
+            }
+
+            // delete columns
+            for (const columnName in pendingColumnsSchema) {
+               const columnSchema = tableSchema.columns[columnName];
+
+               // delete the foreign keys related to this field
+               for (const foreignKeyName in columnSchema.foreignKeys) {
+                  sqlMigrationsDropForeignKeys.push(connection.queryBuilder.deleteForeignKey().fromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]));
+                  deletedForeignKeys.push(foreignKeyName);
+               }
+
+               // delete the indexs related to this field
+               for (const indexName in columnSchema.foreignKeys) {
+                  sqlMigrationsDropIndex.push(connection.queryBuilder.deleteIndex().fromSchema(tableMetadata, tableSchema.indexs[indexName]));
+                  deletedIndex.push(indexName);
+               }
+
+               // delete the uniques related to this field
+               for (const uniqueName in columnSchema.foreignKeys) {
+                  sqlMigrationsDropUniques.push(connection.queryBuilder.deleteUnique().fromSchema(tableMetadata, tableSchema.uniques[uniqueName]));
+                  deletedUniques.push(uniqueName);
+               }
+
+               sqlMigrationsDropColumns.push(connection.queryBuilder.deleteColumn().fromSchema(tableMetadata, columnSchema));
+            }
+
+            // check uniques
+            for (const uniqueName in tableMetadata.uniques) {
+               const uniqueMetadata: UniqueMetadata = tableMetadata.uniques[uniqueName];
+               const uniqueSchema: UniqueSchema = tableSchema.uniques[uniqueName];
+               
+               if (!uniqueSchema || deletedUniques.indexOf(uniqueName) >= 0) {
+                  sqlMigrationsCreateUniques.push(connection.queryBuilder.createUnique().fromMetadata(tableMetadata, uniqueMetadata));
+               }
+            }
+
+            // check indexs
+            for (const indexName in tableMetadata.indexs) {
+               const indexMetadata: IndexMetadata = tableMetadata.indexs[indexName];
+               const indexSchema: IndexSchema = tableSchema.indexs[indexName];
+               
+               if (!indexSchema || deletedForeignKeys.indexOf(indexName) >= 0) {
+                  sqlMigrationsCreateIndex.push(connection.queryBuilder.createIndex().fromMetadata(tableMetadata, indexMetadata));
+               }
+            }
+
+            // check foreign keys
+            for (const foreignKeyName in tableMetadata.foreignKeys) {
+               const foreignKeyMetadata: ForeignKeyMetadata = tableMetadata.foreignKeys[foreignKeyName];
+               const foreignKeySchema: ForeignKeySchema = tableSchema.foreignKeys[foreignKeyName];
+               
+               if (!foreignKeySchema || deletedForeignKeys.indexOf(foreignKeyName) >= 0) {
+                  sqlMigrationsCreateForeignKeys.push(connection.queryBuilder.createForeignKey().fromMetadata(tableMetadata, foreignKeyMetadata));
+               }
+            }
 
          }
 
       }
 
-      const sqlMigrations: any[] = [];
-      sqlMigrations.push(sqlMigrationsCreateTable);
-      sqlMigrations.push(sqlMigrationsCreateColumns);
-      sqlMigrations.push(sqlMigrationsCreateUniques);
-      sqlMigrations.push(sqlMigrationsCreateIndex);
-      sqlMigrations.push(sqlMigrationsCreateForeignKeys);
-      sqlMigrations.push(sqlMigrationsDropForeignKeys);
-      sqlMigrations.push(sqlMigrationsDropUniques);
-      sqlMigrations.push(sqlMigrationsDropIndex);
-      sqlMigrations.push(sqlMigrationsDropColumns);
-      return sqlMigrations;
+      console.timeLog('generate SQLs migrations');
+
+      const sqlMigrations: BasicQueryBuilder[] = [];
+
+      return sqlMigrations.concat(
+         sqlMigrationsDropForeignKeys,
+         sqlMigrationsDropUniques,
+         sqlMigrationsDropIndex,
+         sqlMigrationsDropColumns,
+         sqlMigrationsCreateTable,
+         sqlMigrationsCreateColumns,
+         sqlMigrationsCreateUniques,
+         sqlMigrationsCreateIndex,
+         sqlMigrationsCreateForeignKeys);
    }
    
    protected getSupportedColumnsType(): string[] {
@@ -475,7 +516,7 @@ export class PostgresDriver extends Driver {
       ];
    }
 
-   protected getDefaultColumnTypesOptions(): Map<DefaultColumnOptions> {
+   protected getDefaultColumnTypesOptions(): SimpleMap<DefaultColumnOptions> {
       return {
          "character": { length: 1 },
          "bit": { length: 1 },
@@ -487,7 +528,7 @@ export class PostgresDriver extends Driver {
       }
    }
 
-   protected getDefaultColumnOperationOptions(): Map<DefaultColumnOptions> {
+   protected getDefaultColumnOperationOptions(): SimpleMap<DefaultColumnOptions> {
       return {
          'ColumnOperation.CreatedAt': { type: "timestamp", default: "now()", nullable: false },
          'ColumnOperation.UpdatedAt': { type: "timestamp", default: "now()", nullable: false },
@@ -499,71 +540,6 @@ export class PostgresDriver extends Driver {
       if (column.name?.length ?? 0 > 63) {
          throw new InvalidColumnOption(`The maximum size of the ${column.name?.length} field name cannot be longer than 63 characters`);
       }
-   }
-
-   protected generateCreateTableSQL(queryBuilder: CreateTableQueryBuilder): string {
-      
-      const columns: string[] = [];
-      for (const columnName in queryBuilder.table.columns) {
-         const column: ColumnMetadata = queryBuilder.table.columns[columnName];
-         const notNull: string = (!column.nullable ? ` NOT NULL` : '');
-         const defaultValue: string = (column.default ? ` DEFAULT ${column.default}` : '')
-         columns.push(`"${column.name}" ${this.generateColumnTypeSQL(column)}${notNull}${defaultValue}`);
-      }
-
-      return `CREATE TABLE "${queryBuilder.table.name}" (${columns.join(', ')}`;
-   }
-
-   protected generateCreateColumnSQL(queryBuilder: CreateColumnQueryBuilder): string {
-      return `ALTER TABLE ${queryBuilder.connection.options.schema}.${queryBuilder.table.name} ADD COLUMN ${queryBuilder.column.name} ${this.generateColumnTypeSQL(queryBuilder.column)};`
-   }
-
-   protected generateColumnTypeSQL(column: ColumnMetadata): string {
-      let type: string = column.type as string;
-
-      if ((this.columnTypesWithLength.indexOf(type) >= 0 || this.columnTypesWithPrecision.indexOf(type) >= 0)) {
-
-         type += '(' + column.length;
-         if (this.columnTypesWithScale.indexOf(type) >= 0) {
-            type += ',' + column.scale;
-         }
-         type += ')'
-
-      }
-
-      return type;
-   }
-   
-   protected generateCreateForeignKeySQL(queryBuilder: CreateForeignKeyQueryBuilder): string {
-      return `ALTER TABLE ${queryBuilder.connection.options.schema}.${queryBuilder.table.name} ADD CONSTRAINT ${queryBuilder.foreignKey.name} FOREIGN KEY (${queryBuilder.foreignKey.columns.join(', ')}) REFERENCES ${queryBuilder.foreignKey.referencedTable.name} (${queryBuilder.foreignKey.referencedColumns.join(', ')}) MATCH SIMPLE ON UPDATE ${queryBuilder.foreignKey.onUpdate} ON DELETE ${queryBuilder.foreignKey.onDelete}`;
-   }
-
-   protected generateCreateIndexSQL(queryBuilder: CreateIndexQueryBuilder): string {
-      return `CREATE INDEX ${queryBuilder.index.name} ON ${queryBuilder.connection.options.schema}.${queryBuilder.table.name} USING btree (${queryBuilder.index.columns.join(' ASC NULLS LAST, ')} ASC NULLS LAST);`
-   }
-
-   protected generateCreateUniqueSQL(queryBuilder: CreateUniqueQueryBuilder): string {
-      return `ALTER TABLE ${queryBuilder.connection.options.schema}.${queryBuilder.table.name} ADD CONSTRAINT ${queryBuilder.unique.name} UNIQUE (${queryBuilder.unique.columns.join(', ')});`
-   }
-
-   protected generateDeleteTableSQL(queryBuilder: DeleteTableQueryBuilder): string {
-      throw new Error("Method not implemented.");
-   }
-   
-   protected generateDeleteColumnSQL(queryBuilder: DeleteColumnQueryBuilder): string {
-      throw new Error("Method not implemented.");
-   }
-
-   protected generateDeleteForeignKeySQL(queryBuilder: DeleteForeignKeyQueryBuilder): string {
-      throw new Error("Method not implemented.");
-   }
-
-   protected generateDeleteIndexSQL(queryBuilder: DeleteIndexQueryBuilder): string {
-      throw new Error("Method not implemented.");
-   }
-
-   protected generateDeleteUniqueSQL(queryBuilder: DeleteUniqueQueryBuilder): string {
-      throw new Error("Method not implemented.");
    }
 
 }

@@ -1,17 +1,17 @@
 import { Connection } from "../connection/connection";
 import { IndexMetadata } from "../metadata/index/index-metadata";
-import { ModelMetadata } from "../metadata/models/model-metadata";
-import { QueryBuilder } from "./query-builder";
+import { TableMetadata } from "../metadata/tables/table-metadata";
+import { BasicQueryBuilder } from "./basic-query-builder";
 
-export class CreateIndexQueryBuilder extends QueryBuilder {
+export class CreateIndexQueryBuilder extends BasicQueryBuilder {
 
-   public readonly table: ModelMetadata;
-   public readonly index: IndexMetadata;
-
-   constructor(connection: Connection, table: ModelMetadata, index: IndexMetadata) {
+   constructor(connection: Connection) {
       super(connection);
-      this.table = table;
-      this.index = index;
+   }
+
+   fromMetadata(tableMetadata: TableMetadata, indexMetadata: IndexMetadata): this {
+      this._sql = this.connection.driver.querybuilder.createIndexFromMatadata(tableMetadata, indexMetadata)
+      return this;
    }
 
 }

@@ -62,7 +62,7 @@ export class ConnectionOptions {
    /**
     * 
     */
-   public readonly models: Function[];
+   public readonly tables: Function[];
 
    /**
     * 
@@ -86,7 +86,7 @@ export class ConnectionOptions {
       this.connectionString = options?.connectionString;
       this.timezone = options?.timezone;
       this.pool = new PoolOptions(options?.pool);
-      this.models = options.models;
+      this.tables = options.tables;
       this.synchronize = options?.synchronize ?? false;
       this.migrations = new MigrationOptions(options?.migrations);
    }

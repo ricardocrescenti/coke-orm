@@ -1,7 +1,10 @@
+import { SimpleMap } from "../../common/interfaces/map";
 import { ColumnOperation } from "../../decorators/columns/column-operation";
-import { StringUtils } from "../../utils/string-utils";
-import { Metadata } from "../metadata";
+import { ForeignKeyMetadata } from "../foreign-key/foreign-key-metadata";
+import { IndexMetadata } from "../index/index-metadata";
+import { UniqueMetadata } from "../unique/unique-metadata";
 import { ColumnOptions } from "./column-options";
+import "reflect-metadata";
 
 export class ColumnMetadata extends ColumnOptions<any> {
    
@@ -23,6 +26,21 @@ export class ColumnMetadata extends ColumnOptions<any> {
    /**
     * 
     */
+   public readonly foreignKeys: SimpleMap<ForeignKeyMetadata>;
+   
+   /**
+    * 
+    */
+   public readonly uniques: SimpleMap<UniqueMetadata>;
+   
+   /**
+    * 
+    */
+   public readonly indexs: SimpleMap<IndexMetadata>;
+   
+   /**
+    * 
+    */
    public readonly operation: ColumnOperation | null;
 
    constructor(target: any, propertyName: string, operation: ColumnOperation | null, options: ColumnOptions<any>) {
@@ -30,6 +48,9 @@ export class ColumnMetadata extends ColumnOptions<any> {
       this.target = target;
       this.propertyName = propertyName;
       this.propertyType = Reflect.getMetadata("design:type", target, propertyName).name
+      this.foreignKeys = new SimpleMap<ForeignKeyMetadata>();
+      this.uniques = new SimpleMap<UniqueMetadata>();
+      this.indexs = new SimpleMap<IndexMetadata>();
       this.operation = operation;
    }
 

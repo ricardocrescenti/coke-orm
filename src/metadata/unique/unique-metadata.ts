@@ -1,13 +1,15 @@
-import { ColumnMetadata } from "../columns/column-metadata";
+import { UniqueOptions } from "./unique-options";
 
-export class UniqueMetadata {
+export class UniqueMetadata extends UniqueOptions {
+   
+   /**
+    * Class referenced to this table.
+    */
+   public readonly target: any;
 
-   public readonly name: string;
-   public readonly columns: ColumnMetadata[];
-
-   constructor(name: string, columns: ColumnMetadata[]) {
-      this.name = name;
-      this.columns = columns;
+   constructor(target: any, options: UniqueOptions) {
+      super(options);
+      this.target = target;
    }
 
 }

@@ -1,17 +1,17 @@
 import { Connection } from "../connection/connection";
 import { ColumnMetadata } from "../metadata/columns/column-metadata";
-import { ModelMetadata } from "../metadata/models/model-metadata";
-import { QueryBuilder } from "./query-builder";
+import { TableMetadata } from "../metadata/tables/table-metadata";
+import { BasicQueryBuilder } from "./basic-query-builder";
 
-export class CreateColumnQueryBuilder extends QueryBuilder {
+export class CreateColumnQueryBuilder extends BasicQueryBuilder {
 
-   public readonly table: ModelMetadata;
-   public readonly column: ColumnMetadata;
-
-   constructor(connection: Connection, table: ModelMetadata, column: ColumnMetadata) {
+   constructor(connection: Connection) {
       super(connection);
-      this.table = table;
-      this.column = column;
+   }
+
+   fromMetadata(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata): this {
+      this._sql = this.connection.driver.querybuilder.createColumnFromMatadata(tableMetadata, columnMetadata)
+      return this;
    }
 
 }

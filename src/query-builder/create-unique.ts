@@ -1,17 +1,17 @@
 import { Connection } from "../connection/connection";
-import { ModelMetadata } from "../metadata/models/model-metadata";
+import { TableMetadata } from "../metadata/tables/table-metadata";
 import { UniqueMetadata } from "../metadata/unique/unique-metadata";
-import { QueryBuilder } from "./query-builder";
+import { BasicQueryBuilder } from "./basic-query-builder";
 
-export class CreateUniqueQueryBuilder extends QueryBuilder {
+export class CreateUniqueQueryBuilder extends BasicQueryBuilder {
 
-   public readonly table: ModelMetadata;
-   public readonly unique: UniqueMetadata;
-
-   constructor(connection: Connection, table: ModelMetadata, unique: UniqueMetadata) {
+   constructor(connection: Connection) {
       super(connection);
-      this.table = table;
-      this.unique = unique;
+   }
+
+   fromMetadata(tableMetadata: TableMetadata, uniqueMetadata: UniqueMetadata): this {
+      this._sql = this.connection.driver.querybuilder.createUniqueFromMatadata(tableMetadata, uniqueMetadata)
+      return this;
    }
 
 }

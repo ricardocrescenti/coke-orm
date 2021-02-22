@@ -1,14 +1,16 @@
 import { Connection } from "../connection/connection";
-import { ModelMetadata } from "../metadata/models/model-metadata";
-import { QueryBuilder } from "./query-builder";
+import { TableMetadata } from "../metadata/tables/table-metadata";
+import { BasicQueryBuilder } from "./basic-query-builder";
 
-export class CreateTableQueryBuilder extends QueryBuilder {
+export class CreateTableQueryBuilder extends BasicQueryBuilder {
 
-   public readonly table: ModelMetadata;
-
-   constructor(connection: Connection, table: ModelMetadata) {
+   constructor(connection: Connection) {
       super(connection);
-      this.table = table;
+   }
+
+   fromMetadata(tableMetadata: TableMetadata): this {
+      this._sql = this.connection.driver.querybuilder.createTableFromMatadata(tableMetadata)
+      return this;
    }
 
 }

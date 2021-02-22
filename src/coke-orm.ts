@@ -1,5 +1,5 @@
 import { ConnectionOptions } from "./connection/connection-options";
-import { Map } from  "./common/interfaces/map";
+import { SimpleMap } from  "./common/interfaces/map";
 import { Connection } from "./connection/connection";
 import { ConnectionAlreadyExistsError } from "./errors/connection-already-exists";
 
@@ -8,7 +8,7 @@ export class CokeORM {
    /**
     * 
     */
-   public static readonly connections: Map<Connection> = {};
+   public static readonly connections: SimpleMap<Connection> = {};
 
    /**
     * O construtor está declarado somente para não permitir que uma instância 

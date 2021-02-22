@@ -1,13 +1,15 @@
 import { MetadataUtils } from "../../utils/metadata-utils";
-import { StringUtils } from "../../utils/string-utils";
 import { ColumnMetadata } from "../columns/column-metadata";
 import { EventMetadata } from "../events/event-metadata";
-import { Map } from "../../common/interfaces/map";
+import { SimpleMap } from "../../common/interfaces/map";
 import { Metadata } from "../metadata";
-import { ModelOptions } from "./model-options";
+import { TableOptions } from "./table-options";
 import { EventType } from "../events/event-type";
+import { ForeignKeyMetadata } from "../foreign-key/foreign-key-metadata";
+import { UniqueMetadata } from "../unique/unique-metadata";
+import { IndexMetadata } from "../index/index-metadata";
 
-export class ModelMetadata extends ModelOptions {
+export class TableMetadata extends TableOptions {
    
    /**
     * Class referenced to this table.
@@ -22,12 +24,27 @@ export class ModelMetadata extends ModelOptions {
    /**
     * 
     */
-   public readonly columns: Map<ColumnMetadata>;
+   public readonly columns: SimpleMap<ColumnMetadata>;
    
    /**
     * 
     */
-   public readonly primaryColumns: Map<ColumnMetadata>;
+   public readonly primaryColumns: SimpleMap<ColumnMetadata>;
+   
+   /**
+    * 
+    */
+   public readonly foreignKeys: SimpleMap<ForeignKeyMetadata>;
+   
+   /**
+    * 
+    */
+   public readonly uniques: SimpleMap<UniqueMetadata>;
+   
+   /**
+    * 
+    */
+   public readonly indexs: SimpleMap<IndexMetadata>;
    
    /**
     * 
@@ -59,14 +76,19 @@ export class ModelMetadata extends ModelOptions {
     */
    public readonly AfterDeleteEvents: EventMetadata[];
    
-   constructor(target: any, options?: ModelOptions) {
+   constructor(target: any, options?: TableOptions) {
       super(target, options);
       this.target = target;
       this.inheritances = MetadataUtils.getInheritanceTree(target).reverse();
 
-      this.columns = {};
-      this.primaryColumns = {};
+      this.columns = new SimpleMap<ColumnMetadata>();
+      this.primaryColumns = new SimpleMap<ColumnMetadata>();
       this.loadColumns();
+
+      this.foreignKeys = new SimpleMap<ForeignKeyMetadata>();
+      this.uniques = new SimpleMap<UniqueMetadata>();
+      this.indexs = new SimpleMap<IndexMetadata>();
+      this.loadConstraints();
 
       this.beforeInsertEvents = [];
       this.afterInsertEvents = [];
@@ -77,6 +99,9 @@ export class ModelMetadata extends ModelOptions {
       this.loadEvents();
    }
 
+   /**
+    * 
+    */
    private loadColumns(): void {
       for (const column of Metadata.get(this.metadata).getColumns(this.inheritances as Function[])) {
          this.columns[column.propertyName as string] = column;
@@ -86,6 +111,24 @@ export class ModelMetadata extends ModelOptions {
       }
    }
 
+   /**
+    * 
+    */
+   private loadConstraints(): void {
+      for (const columnName in this.columns) {
+         const columnMetadata = this.columns[columnName];
+
+         // if (columnMetadata.relation) {
+         //    if (columnMetadata.relation.)
+         //    const foreignKey: ForeignKeyMetadata = new ForeignKeyMetadata();
+         // }
+
+      }
+   }
+
+   /**
+    * 
+    */
    private loadEvents(): void {
       for (const event of Metadata.get(this.metadata).getEvents(this.inheritances as Function[])) {
          switch (event.type) {

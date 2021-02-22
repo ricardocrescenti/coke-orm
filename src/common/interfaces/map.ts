@@ -1,3 +1,3 @@
-export class Map<V> {
+export class SimpleMap<V> {
    [key: string]: V;
 }

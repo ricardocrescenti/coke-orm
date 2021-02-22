@@ -4,7 +4,7 @@ export abstract class ConstraintSchema {
 
    public readonly name: string;
    //public readonly type: string;
-   public readonly columns: ColumnSchema[] = [];
+   public readonly columns: string[] = [];
 
    constructor(constraint: Omit<ConstraintSchema, "columns">) {
       this.name = constraint.name;

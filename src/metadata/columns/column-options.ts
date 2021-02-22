@@ -3,7 +3,7 @@ import { StringUtils } from "../../utils/string-utils";
 import { ColumnMetadata } from "./column-metadata";
 import { RelationOptions } from "./relation-options";
 
-export class ColumnOptions<T = any> {
+export class ColumnOptions<T = any, R = RelationOptions<T>> {
    
    /**
     * Column name in the database.
@@ -44,14 +44,9 @@ export class ColumnOptions<T = any> {
    public readonly primary?: boolean;
    
    /**
-    * Column comment. Not supported by all database types.
-    */
-   public readonly comment?: string;
-   
-   /**
     * Field relationship settings
     */
-   public readonly relation?: RelationOptions<T>;
+   public readonly relation?: R;
    
    /**
     * Indicates if column is always selected by QueryBuilder and find operations.
@@ -77,18 +72,18 @@ export class ColumnOptions<T = any> {
     */
    public readonly convertionToSave?: ConvertionValue<ColumnMetadata>;
 
-   constructor(propertyName: string, options: ColumnOptions<T>) {
-      this.name = options?.name ?? StringUtils.snakeCase(propertyName);
-      this.type = options?.type;
-      this.length = options?.length;
-      this.scale = options?.scale;
-      this.default = options?.default;
-      this.nullable = options?.nullable ?? true;
-      this.primary = options?.primary ?? false;
-      this.comment = options?.comment;
-      this.canSelect = options?.canSelect ?? true;
-      this.canInsert = options?.canInsert ?? true;
-      this.canUpdate = options?.canUpdate ?? true;
-      this.convertionToSave = options?.convertionToSave;
+   constructor(propertyName: string, options: ColumnOptions<T, RelationOptions<T>>) {
+      this.name = options.name ?? StringUtils.snakeCase(propertyName);
+      this.type = options.type;
+      this.length = options.length;
+      this.scale = options.scale;
+      this.default = options.default;
+      this.nullable = options.nullable ?? true;
+      this.primary = options.primary ?? false;
+      this.relation = options.relation as any;
+      this.canSelect = options.canSelect ?? true;
+      this.canInsert = options.canInsert ?? true;
+      this.canUpdate = options.canUpdate ?? true;
+      this.convertionToSave = options.convertionToSave;
    }
 }

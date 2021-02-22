@@ -12,7 +12,9 @@ import { AfterUpdate } from "./events/after-update";
 import { BeforeDelete } from "./events/before-delete";
 import { BeforeInsert } from "./events/before-insert";
 import { BeforeUpdate } from "./events/before-update";
-import { Model } from "./models/model";
+import { Index } from "./index/index";
+import { Table } from "./tables/table";
+import { Unique } from "./unique/unique";
 
 export {
    AfterInsert,
@@ -29,5 +31,7 @@ export {
    ManyToOne,
    OneToMany,
    OneToOne,
-   Model
+   Table,
+   Unique,
+   Index
 }

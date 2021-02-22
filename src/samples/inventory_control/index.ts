@@ -28,11 +28,11 @@ export async function test() {
       // database: 'hant-dev'
       driver: DatabaseDriver.Postgres,
       host: 'localhost',
-      port: 2815,
-      user: 'cokeorm',
-      password: 'cokeorm',
-      database: 'cokeorm',
-      models: [
+      port: 5432,
+      user: 'devmaster',
+      password: 'supadm',
+      database: 'devmaster',
+      tables: [
          WarehouseModel
       ],
       synchronize: true
