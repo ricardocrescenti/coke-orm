@@ -1,6 +1,8 @@
 import { StringUtils } from "../../utils/string-utils";
+import { IndexMetadata } from "../index/index-metadata";
+import { UniqueMetadata } from "../unique/unique-metadata";
 
-export class TableOptions {
+export class TableOptions<U = UniqueMetadata, I = IndexMetadata> {
    
    /**
     * Metadata name, used to group database models.
@@ -17,13 +19,23 @@ export class TableOptions {
     * 
     */
    public readonly schema?: string;
+
+   /**
+    * 
+    */
+   public readonly uniques?: U[];
+
+   /**
+    * 
+    */
+   public readonly indexs?: I[];
    
    /**
     * Specifies a default order by used for queries from this table when no explicit order by is specified.
     */
    public readonly orderBy?: any;
 
-   constructor(target: any, options?: TableOptions) {
+   constructor(target: any, options: TableOptions) {
       this.metadata = options?.metadata ?? 'default';
       this.name = options?.name ?? StringUtils.snakeCase(target.name);
       this.schema = options?.schema;

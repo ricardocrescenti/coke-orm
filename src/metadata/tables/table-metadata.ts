@@ -34,17 +34,7 @@ export class TableMetadata extends TableOptions {
    /**
     * 
     */
-   public readonly foreignKeys: SimpleMap<ForeignKeyMetadata>;
-   
-   /**
-    * 
-    */
-   public readonly uniques: SimpleMap<UniqueMetadata>;
-   
-   /**
-    * 
-    */
-   public readonly indexs: SimpleMap<IndexMetadata>;
+   public readonly foreignKeys: ForeignKeyMetadata[];
    
    /**
     * 
@@ -76,19 +66,19 @@ export class TableMetadata extends TableOptions {
     */
    public readonly AfterDeleteEvents: EventMetadata[];
    
-   constructor(target: any, options?: TableOptions) {
-      super(target, options);
+   constructor(target: any, options: TableOptions) {
+      super(target, {
+         ...options,
+         uniques: (options.uniques ?? []).map<UniqueMetadata>((unique) => new UniqueMetadata(target, unique)),
+         indexs: (options.indexs ?? []).map<IndexMetadata>((index) => new IndexMetadata(target, index))
+      });
       this.target = target;
       this.inheritances = MetadataUtils.getInheritanceTree(target).reverse();
 
       this.columns = new SimpleMap<ColumnMetadata>();
       this.primaryColumns = new SimpleMap<ColumnMetadata>();
+      this.foreignKeys = [];
       this.loadColumns();
-
-      this.foreignKeys = new SimpleMap<ForeignKeyMetadata>();
-      this.uniques = new SimpleMap<UniqueMetadata>();
-      this.indexs = new SimpleMap<IndexMetadata>();
-      this.loadConstraints();
 
       this.beforeInsertEvents = [];
       this.afterInsertEvents = [];
@@ -103,10 +93,16 @@ export class TableMetadata extends TableOptions {
     * 
     */
    private loadColumns(): void {
-      for (const column of Metadata.get(this.metadata).getColumns(this.inheritances as Function[])) {
+      for (const column of Metadata.getColumns(this.inheritances as Function[])) {
          this.columns[column.propertyName as string] = column;
+         
          if (column.primary) {
             this.primaryColumns[column.propertyName as string] = column;
+         }
+         
+         if (column.relation && (column.relation.relationType == 'OneToOne' || column.relation.relationType == 'ManyToOne')) {
+            const foreignKeyMetadata: ForeignKeyMetadata = new ForeignKeyMetadata(column.target, column, column.relation);
+            this.foreignKeys.push(foreignKeyMetadata);
          }
       }
    }
@@ -114,23 +110,8 @@ export class TableMetadata extends TableOptions {
    /**
     * 
     */
-   private loadConstraints(): void {
-      for (const columnName in this.columns) {
-         const columnMetadata = this.columns[columnName];
-
-         // if (columnMetadata.relation) {
-         //    if (columnMetadata.relation.)
-         //    const foreignKey: ForeignKeyMetadata = new ForeignKeyMetadata();
-         // }
-
-      }
-   }
-
-   /**
-    * 
-    */
    private loadEvents(): void {
-      for (const event of Metadata.get(this.metadata).getEvents(this.inheritances as Function[])) {
+      for (const event of Metadata.getEvents(this.inheritances as Function[])) {
          switch (event.type) {
             case EventType.BeforeInsert: this.beforeInsertEvents.push(event); break;
             case EventType.AfterInsert: this.afterInsertEvents.push(event); break;

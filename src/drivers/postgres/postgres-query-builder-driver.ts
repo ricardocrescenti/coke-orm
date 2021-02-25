@@ -1,6 +1,7 @@
 import { ColumnMetadata } from "../../metadata/columns/column-metadata";
 import { ForeignKeyMetadata } from "../../metadata/foreign-key/foreign-key-metadata";
 import { IndexMetadata } from "../../metadata/index/index-metadata";
+import { Metadata } from "../../metadata/metadata";
 import { TableMetadata } from "../../metadata/tables/table-metadata";
 import { UniqueMetadata } from "../../metadata/unique/unique-metadata";
 import { ColumnSchema } from "../../schema/column-schema";
@@ -49,7 +50,10 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
    }
 
    public createForeignKeyFromMatadata(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeyMetadata): string {
-      return `ALTER TABLE "${tableMetadata.schema ?? 'public'}"."${tableMetadata.name}" ADD CONSTRAINT "${foreignKeyMetadata.name}" FOREIGN KEY ("${foreignKeyMetadata.columns.join('", "')}") REFERENCES "${foreignKeyMetadata.referencedTable.schema ?? 'public'}"."${foreignKeyMetadata.referencedTable.name}" ("${foreignKeyMetadata.referencedColumns.join('", "')}") MATCH SIMPLE ON UPDATE ${foreignKeyMetadata.onUpdate} ON DELETE ${foreignKeyMetadata.onDelete};`;
+      const referencedTableMetadata: TableMetadata = foreignKeyMetadata.getReferencedTableMetadata();
+      const referencedColumnMetadata: ColumnMetadata = foreignKeyMetadata.getReferencedColumnMetadata();
+
+      return `ALTER TABLE "${tableMetadata.schema ?? 'public'}"."${tableMetadata.name}" ADD CONSTRAINT "${foreignKeyMetadata.name}" FOREIGN KEY ("${foreignKeyMetadata.column.name}") REFERENCES "${referencedTableMetadata.schema ?? 'public'}"."${referencedTableMetadata.name}" ("${referencedColumnMetadata.name}") MATCH SIMPLE ON UPDATE ${foreignKeyMetadata.onUpdate} ON DELETE ${foreignKeyMetadata.onDelete};`;
    }
 
    public createIndexFromMatadata(tableMetadata: TableMetadata, indexMetadata: IndexMetadata): string {

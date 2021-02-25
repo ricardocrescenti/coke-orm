@@ -6,7 +6,7 @@ export function AfterDelete(): MethodDecorator {
   return function (target: Object, propertyKey: any) {
 
     const eventMetadata: EventMetadata = new EventMetadata(target, propertyKey, EventType.AfterDelete);
-    Metadata.get('').addEvent(eventMetadata);
+    Metadata.addEvent(eventMetadata);
     
   };
 }

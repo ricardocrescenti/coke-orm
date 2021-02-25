@@ -1,5 +1,5 @@
 import { SimpleMap } from "../../common/interfaces/map";
-import { ColumnOperation } from "../../decorators/columns/column-operation";
+import { ColumnOperation } from "./column-operation";
 import { ForeignKeyMetadata } from "../foreign-key/foreign-key-metadata";
 import { IndexMetadata } from "../index/index-metadata";
 import { UniqueMetadata } from "../unique/unique-metadata";

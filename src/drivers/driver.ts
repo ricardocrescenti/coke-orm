@@ -37,22 +37,21 @@ export abstract class Driver {
    /**
     * 
     */
-   public readonly defaultColumnTypesOptions: SimpleMap<DefaultColumnOptions>;
+   public readonly defaultColumnOptionsByOperation: SimpleMap<DefaultColumnOptions>;
 
    /**
     * 
     */
-   public readonly defaultColumnOperationOptions: SimpleMap<DefaultColumnOptions>;
+   public readonly defaultColumnOptionsByPropertyType: SimpleMap<DefaultColumnOptions>;
 
-   
    constructor() {
       this.querybuilder = this.getQueryBuilder();
       this.supportedColumnsTypes = this.getSupportedColumnsType();
       this.columnTypesWithLength = this.getColumnsTypeWithLength();
       this.columnTypesWithPrecision = this.getColumnsTypeWithPrecision();
       this.columnTypesWithScale = this.getColumnsTypeWithScale();
-      this.defaultColumnTypesOptions = this.getDefaultColumnTypesOptions();
-      this.defaultColumnOperationOptions = this.getDefaultColumnOperationOptions();
+      this.defaultColumnOptionsByOperation = this.getDefaultColumnOptionsByOperation();
+      this.defaultColumnOptionsByPropertyType = this.getDefaultColumnOptionsByPropertyType();
    }
 
    /**
@@ -125,12 +124,12 @@ export abstract class Driver {
    /**
     * 
     */
-   protected abstract getDefaultColumnTypesOptions(): SimpleMap<DefaultColumnOptions>;
+   protected abstract getDefaultColumnOptionsByOperation(): SimpleMap<DefaultColumnOptions>;
 
    /**
     * 
     */
-   protected abstract getDefaultColumnOperationOptions(): SimpleMap<DefaultColumnOptions>;
+   protected abstract getDefaultColumnOptionsByPropertyType(): SimpleMap<DefaultColumnOptions>;
    
    /**
     * 

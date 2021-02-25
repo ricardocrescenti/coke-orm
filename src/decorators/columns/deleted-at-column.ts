@@ -1,14 +1,14 @@
 import { ColumnMetadata } from "../../metadata/columns/column-metadata";
 import { ColumnOptions } from "../../metadata/columns/column-options";
-import { RelationOptions } from "../../metadata/columns/relation-options";
+import { ForeignKeyOptions } from "../../metadata/foreign-key/foreign-key-options";
 import { Metadata } from "../../metadata/metadata";
-import { ColumnOperation } from "./column-operation";
+import { ColumnOperation } from "../../metadata/columns/column-operation";
 
-export function DeletedAtColumn(options?: Omit<ColumnOptions<any, RelationOptions<any>>, "relation">): PropertyDecorator {
+export function DeletedAtColumn(options?: Omit<ColumnOptions<any, ForeignKeyOptions>, "relation" | 'createName'>): PropertyDecorator {
   return function (target: any, propertyKey: any) {
 
     const columnMetadata: ColumnMetadata = new ColumnMetadata(target, propertyKey, ColumnOperation.DeletedAt, options as any);
-    Metadata.get('').addColumn(columnMetadata);
+    Metadata.addColumn(columnMetadata);
     
   };
 }

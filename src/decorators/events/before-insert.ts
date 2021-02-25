@@ -6,7 +6,7 @@ export function BeforeInsert(): MethodDecorator {
   return function (target: Object, propertyKey: any) {
 
     const eventMetadata: EventMetadata = new EventMetadata(target, propertyKey, EventType.BeforeInsert);
-    Metadata.get('').addEvent(eventMetadata);
+    Metadata.addEvent(eventMetadata);
     
   };
 }

@@ -38,7 +38,7 @@ export async function test() {
       synchronize: true
    });
 
-   console.log('4 - Connected', JSON.stringify(Metadata.get()));
+   console.log('4 - Connected', JSON.stringify(Metadata.getTables()));
 
 }
 

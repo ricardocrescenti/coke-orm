@@ -1,9 +1,9 @@
 import { ConvertionValue } from "../../common/types/convertion-value";
 import { StringUtils } from "../../utils/string-utils";
 import { ColumnMetadata } from "./column-metadata";
-import { RelationOptions } from "./relation-options";
+import { ForeignKeyOptions } from "../foreign-key/foreign-key-options";
 
-export class ColumnOptions<T = any, R = RelationOptions<T>> {
+export class ColumnOptions<T = any, R = ForeignKeyOptions> {
    
    /**
     * Column name in the database.
@@ -72,18 +72,32 @@ export class ColumnOptions<T = any, R = RelationOptions<T>> {
     */
    public readonly convertionToSave?: ConvertionValue<ColumnMetadata>;
 
-   constructor(propertyName: string, options: ColumnOptions<T, RelationOptions<T>>) {
-      this.name = options.name ?? StringUtils.snakeCase(propertyName);
-      this.type = options.type;
-      this.length = options.length;
-      this.scale = options.scale;
-      this.default = options.default;
-      this.nullable = options.nullable ?? true;
-      this.primary = options.primary ?? false;
-      this.relation = options.relation as any;
-      this.canSelect = options.canSelect ?? true;
-      this.canInsert = options.canInsert ?? true;
-      this.canUpdate = options.canUpdate ?? true;
-      this.convertionToSave = options.convertionToSave;
+   constructor(propertyName: string, options: ColumnOptions<T, ForeignKeyOptions>) {
+      this.name = this.createName(propertyName, options);
+      this.type = options?.type;
+      this.length = options?.length;
+      this.scale = options?.scale;
+      this.default = options?.default;
+      this.nullable = options?.nullable ?? true;
+      this.primary = options?.primary ?? false;
+      this.relation = options?.relation as any;
+      this.canSelect = options?.canSelect ?? true;
+      this.canInsert = options?.canInsert ?? true;
+      this.canUpdate = options?.canUpdate ?? true;
+      this.convertionToSave = options?.convertionToSave;
+   }
+
+   private createName(propertyName: string, options: ColumnOptions<T, ForeignKeyOptions>) {
+      let name: string = options?.name ?? '';
+      
+      if (!name) {
+         name = propertyName;
+
+         if (options?.relation?.relationType == "ManyToOne" || options?.relation?.relationType == "OneToOne") {
+            name += StringUtils.titleCase(options.relation.referencedColumnName);
+         }
+      }
+
+      return StringUtils.snakeCase(name);
    }
 }

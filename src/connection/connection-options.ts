@@ -1,4 +1,5 @@
 import { DatabaseDriver } from "../common/enum/driver-type";
+import { NamingStrategy } from "../naming-strategy/naming-strategy";
 import { MigrationOptions } from "./migration-options";
 import { PoolOptions } from "./pool-options";
 
@@ -74,10 +75,14 @@ export class ConnectionOptions {
     */
    public readonly migrations?: MigrationOptions;
 
+   /**
+    * 
+    */
+   public readonly namingStrategy?: NamingStrategy;
+
    constructor(options: ConnectionOptions) {
       this.name = options?.name ?? 'default';
       this.driver = options?.driver;
-      this.schema = options?.schema;
       this.host = options?.host;
       this.port = options?.port;
       this.user = options?.user;
@@ -89,5 +94,6 @@ export class ConnectionOptions {
       this.tables = options.tables;
       this.synchronize = options?.synchronize ?? false;
       this.migrations = new MigrationOptions(options?.migrations);
+      this.namingStrategy = options.namingStrategy ?? new NamingStrategy();
    }
 }

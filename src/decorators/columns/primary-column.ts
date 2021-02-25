@@ -2,7 +2,7 @@ import { ColumnMetadata } from "../../metadata/columns/column-metadata";
 import { ColumnOptions } from "../../metadata/columns/column-options";
 import { Metadata } from "../../metadata/metadata";
 
-export function PrimaryColumn(options?: Omit<ColumnOptions<any>, "relation" | "primary">): PropertyDecorator {
+export function PrimaryColumn(options?: Omit<ColumnOptions<any>, "relation" | "primary" | 'createName'>): PropertyDecorator {
   return function (target: any, propertyKey: any) {
 
     if (!options) {
@@ -11,7 +11,7 @@ export function PrimaryColumn(options?: Omit<ColumnOptions<any>, "relation" | "p
     (options as any).primary = true;
 
     const columnMetadata: ColumnMetadata = new ColumnMetadata(target, propertyKey, null, options as any);
-    Metadata.get('').addColumn(columnMetadata);
+    Metadata.addColumn(columnMetadata);
     
   };
 }

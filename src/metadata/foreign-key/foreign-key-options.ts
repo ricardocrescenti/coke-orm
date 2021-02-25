@@ -1,23 +1,81 @@
-import { ColumnMetadata } from "../columns/column-metadata";
-import { TableMetadata } from "../tables/table-metadata";
 import { ForeignKeyAction } from "./foreign-key-action";
+import { ForeignKeyType } from "./foreign-key-relation-type";
 
+export type ObjectType<T> = { new (): T }|Function;
+
+/**
+ * Describes all relation's options.
+ */
 export class ForeignKeyOptions {
 
-   public readonly name: string;
-   public readonly columns: string[];
-   public readonly referencedTable: TableMetadata;
-   public readonly referencedColumns: string[];
-   public readonly onUpdate: ForeignKeyAction;
-   public readonly onDelete: ForeignKeyAction;
+    /**
+     * 
+     */
+    public readonly name?: string;
 
-   constructor(options: ForeignKeyOptions) {
-      this.name = options.name;
-      this.columns = options.columns;
-      this.referencedTable = options.referencedTable;
-      this.referencedColumns = options.referencedColumns;
-      this.onUpdate = options.onUpdate;
-      this.onDelete = options.onDelete;
-   }
+    /**
+     * 
+     */
+    public readonly relationType: ForeignKeyType;
 
+    /**
+     * Class referenced to this field
+     */
+    public readonly referencedTable: Function | string;
+
+    /**
+     * Name of the class field referenced to this field
+     */
+    public readonly referencedColumnName: string
+
+    /**
+     * Sets cascades options for the given relation.
+     * If set to true then it means that related object can be allowed to be inserted or updated in the database.
+     * You can separately restrict cascades to insertion or updation using following syntax:
+     *
+     * cascade: ["insert", "update", "remove", "soft-remove", "recover"] // include or exclude one of them
+     */
+    public readonly cascade: boolean|("insert"|"update"|"remove")[];
+
+    /**
+     * Indicates if relation column value can be nullable or not.
+     */
+    public readonly nullable?: boolean;
+
+    /**
+     * Database cascade action on delete.
+     */
+    public readonly onDelete: ForeignKeyAction;
+
+    /**
+     * Database cascade action on update.
+     */
+    public readonly onUpdate: ForeignKeyAction;
+
+    /**
+     * Set this relation to be lazy. Note: lazy relations are promises. When you call them they return promise
+     * which resolve relation result then. If your property's type is Promise then this relation is set to lazy automatically.
+     */
+    public readonly lazy?: boolean;
+
+    /**
+     * Set this relation to be eager.
+     * Eager relations are always loaded automatically when relation's owner entity is loaded using find* methods.
+     * Only using QueryBuilder prevents loading eager relations.
+     * Eager flag cannot be set from both sides of relation - you can eager load only one side of the relationship.
+     */
+    public readonly eager?: boolean;
+
+    constructor(options: ForeignKeyOptions) {
+        this.name = options?.name;
+        this.relationType = options?.relationType;
+        this.referencedTable = options?.referencedTable;
+        this.referencedColumnName = options?.referencedColumnName;
+        this.cascade = options?.cascade;
+        this.nullable = options?.nullable ?? false;
+        this.onDelete = options?.onDelete;
+        this.onUpdate = options?.onUpdate;
+        this.lazy = options?.lazy ?? false;
+        this.eager = options?.eager ?? false;
+    }
 }

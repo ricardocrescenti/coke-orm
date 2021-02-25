@@ -11,7 +11,7 @@ export class WarehouseModel extends PatterModel {
    @Column()
    public isDefault?: boolean;
 
-   @OneToMany({ relation: { target: WarehouseModel, targetColumnName: 'id', cascade: ['insert', 'update'] } })
+   @OneToMany({ relation: { referencedTable: WarehouseModel, referencedColumnName: 'id', cascade: ['insert', 'update'] } })
    public products?: Array<ProductModel>;
 
    constructor() {

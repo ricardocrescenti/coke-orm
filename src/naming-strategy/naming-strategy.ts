@@ -1,7 +1,6 @@
-import { EncriptUtils } from "../utils/encript-utils";
 import { StringUtils } from "../utils/string-utils";
 
-export abstract class NamingStrategy {
+export class NamingStrategy {
 
    /**
      * Normalizes table name.
@@ -41,7 +40,7 @@ export abstract class NamingStrategy {
       clonedColumnNames.sort();
       const replacedTableName = tableName.replace(".", "_");
       const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
-      return "PK_" + EncriptUtils.sha1(key).substr(0, 27);
+      return "PK_" + StringUtils.sha1(key).substr(0, 27);
    }
 
    /**
@@ -53,7 +52,7 @@ export abstract class NamingStrategy {
       clonedColumnNames.sort();
       const replacedTableName = tableName.replace(".", "_");
       const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
-      return "UQ_" + EncriptUtils.sha1(key).substr(0, 27);
+      return "UQ_" + StringUtils.sha1(key).substr(0, 27);
    }
 
    /**
@@ -69,7 +68,7 @@ export abstract class NamingStrategy {
       if (where)
          key += `_${where}`;
 
-      return "REL_" + EncriptUtils.sha1(key).substr(0, 26);
+      return "REL_" + StringUtils.sha1(key).substr(0, 26);
    }
 
    /**
@@ -78,7 +77,7 @@ export abstract class NamingStrategy {
    defaultConstraintName(tableName: string, columnName: string): string {
       const replacedTableName = tableName.replace(".", "_");
       const key = `${replacedTableName}_${columnName}`;
-      return "DF_" + EncriptUtils.sha1(key).substr(0, 27);
+      return "DF_" + StringUtils.sha1(key).substr(0, 27);
    }
 
    /**
@@ -90,7 +89,7 @@ export abstract class NamingStrategy {
       clonedColumnNames.sort();
       const replacedTableName = tableName.replace(".", "_");
       const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
-      return "FK_" + EncriptUtils.sha1(key).substr(0, 27);
+      return "FK_" + StringUtils.sha1(key).substr(0, 27);
    }
 
    /**
@@ -105,7 +104,7 @@ export abstract class NamingStrategy {
       if (where)
           key += `_${where}`;
 
-      return "IDX_" + EncriptUtils.sha1(key).substr(0, 26);
+      return "IDX_" + StringUtils.sha1(key).substr(0, 26);
   }
 
    /**
@@ -114,7 +113,7 @@ export abstract class NamingStrategy {
    checkConstraintName(tableName: string, expression: string): string {
       const replacedTableName = tableName.replace(".", "_");
       const key = `${replacedTableName}_${expression}`;
-      return "CHK_" + EncriptUtils.sha1(key).substr(0, 26);
+      return "CHK_" + StringUtils.sha1(key).substr(0, 26);
    }
 
    /**
@@ -123,7 +122,7 @@ export abstract class NamingStrategy {
    exclusionConstraintName(tableName: string, expression: string): string {
       const replacedTableName = tableName.replace(".", "_");
       const key = `${replacedTableName}_${expression}`;
-      return "XCL_" + EncriptUtils.sha1(key).substr(0, 26);
+      return "XCL_" + StringUtils.sha1(key).substr(0, 26);
    }
 
    /**
