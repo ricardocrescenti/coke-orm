@@ -1,12 +1,16 @@
 import { EventType } from "../../metadata/events/event-type";
-import { EventMetadata } from "../../metadata/events/event-metadata";
-import { Metadata } from "../../metadata/metadata";
+import { EventOptions } from "../../metadata";
+import { DecoratorSchema } from "../decorators-schema";
 
 export function AfterDelete(): MethodDecorator {
-  return function (target: Object, propertyKey: any) {
+	return function (target: Object, propertyKey: any) {
 
-    const eventMetadata: EventMetadata = new EventMetadata(target, propertyKey, EventType.AfterDelete);
-    Metadata.addEvent(eventMetadata);
-    
-  };
+		const event: EventOptions = new EventOptions({
+			target: target, 
+			propertyName: propertyKey,
+			type: EventType.AfterDelete
+		});
+		DecoratorSchema.addEvent(event);
+		
+	};
 }

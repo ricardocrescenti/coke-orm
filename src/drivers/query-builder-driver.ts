@@ -1,4 +1,5 @@
 import { ColumnMetadata } from "../metadata/columns/column-metadata";
+import { ColumnOptions } from "../metadata/columns/column-options";
 import { ForeignKeyMetadata } from "../metadata/foreign-key/foreign-key-metadata";
 import { IndexMetadata } from "../metadata/index/index-metadata";
 import { TableMetadata } from "../metadata/tables/table-metadata";
@@ -25,7 +26,7 @@ export abstract class QueryBuilderDriver {
     * 
     * @param column 
     */
-   protected abstract generateColumnTypeSQL(column: ColumnMetadata): string;
+   public abstract generateColumnTypeSQL(column: ColumnOptions): string;
    
    /**
     * 

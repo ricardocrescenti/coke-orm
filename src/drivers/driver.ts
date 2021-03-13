@@ -3,7 +3,7 @@ import { Connection } from "../connection/connection";
 import { ColumnOptions } from "../metadata/columns/column-options";
 import { QueryExecutor } from "../query-executor/query-executor";
 import { TableSchema } from "../schema/table-schema";
-import { DefaultColumnOptions } from "../metadata/columns/default-column-options";
+import { DefaultColumnOptions } from "./options/default-column-options";
 import { BasicQueryBuilder } from "../query-builder/basic-query-builder";
 import { QueryBuilderDriver } from "./query-builder-driver";
 
@@ -30,11 +30,6 @@ export abstract class Driver {
    public readonly columnTypesWithPrecision: string[];
 
    /**
-    * Gets list of column data types that support scale by a driver.
-    */
-   public readonly columnTypesWithScale: string[];
-
-   /**
     * 
     */
    public readonly defaultColumnOptionsByOperation: SimpleMap<DefaultColumnOptions>;
@@ -49,7 +44,6 @@ export abstract class Driver {
       this.supportedColumnsTypes = this.getSupportedColumnsType();
       this.columnTypesWithLength = this.getColumnsTypeWithLength();
       this.columnTypesWithPrecision = this.getColumnsTypeWithPrecision();
-      this.columnTypesWithScale = this.getColumnsTypeWithScale();
       this.defaultColumnOptionsByOperation = this.getDefaultColumnOptionsByOperation();
       this.defaultColumnOptionsByPropertyType = this.getDefaultColumnOptionsByPropertyType();
    }
@@ -119,11 +113,6 @@ export abstract class Driver {
    /**
     * 
     */
-   protected abstract getColumnsTypeWithScale(): string[];
-
-   /**
-    * 
-    */
    protected abstract getDefaultColumnOptionsByOperation(): SimpleMap<DefaultColumnOptions>;
 
    /**
@@ -131,6 +120,14 @@ export abstract class Driver {
     */
    protected abstract getDefaultColumnOptionsByPropertyType(): SimpleMap<DefaultColumnOptions>;
    
+   /**
+    * 
+    * @param columnOptions 
+    */
+   public getColumnType(columnOptions: ColumnOptions): string {
+      return '';
+   }
+
    /**
     * 
     */

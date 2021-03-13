@@ -1,9 +1,25 @@
 import { ConvertionValue } from "../../common/types/convertion-value";
-import { StringUtils } from "../../utils/string-utils";
 import { ColumnMetadata } from "./column-metadata";
 import { ForeignKeyOptions } from "../foreign-key/foreign-key-options";
+import { ColumnOperation } from "..";
+import "reflect-metadata";
 
 export class ColumnOptions<T = any, R = ForeignKeyOptions> {
+   
+   /**
+    * Class referenced to this column.
+    */
+   public readonly target: any;
+   
+   /**
+    * Original name of the property in the class referenced to this field.
+    */
+   public readonly propertyName: string;
+   
+   /**
+    * Original name of the property in the class referenced to this field.
+    */
+   public readonly propertyType: string;
    
    /**
     * Column name in the database.
@@ -25,7 +41,7 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
     * The precision for a decimal (exact numeric) column (applies only for decimal column), which is the maximum
     * number of digits that are stored for the values.
     */
-   public readonly scale?: number;
+   public readonly precision?: number;
    
    /**
     * Default database value.
@@ -66,38 +82,33 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
     * Default value is "true".
     */
    public readonly canUpdate?: boolean;
+   
+   /**
+    * 
+    */
+   public readonly operation: ColumnOperation | null;
 
    /**
     * 
     */
    public readonly convertionToSave?: ConvertionValue<ColumnMetadata>;
 
-   constructor(propertyName: string, options: ColumnOptions<T, ForeignKeyOptions>) {
-      this.name = this.createName(propertyName, options);
-      this.type = options?.type;
-      this.length = options?.length;
-      this.scale = options?.scale;
-      this.default = options?.default;
-      this.nullable = options?.nullable ?? true;
-      this.primary = options?.primary ?? false;
-      this.relation = options?.relation as any;
-      this.canSelect = options?.canSelect ?? true;
-      this.canInsert = options?.canInsert ?? true;
-      this.canUpdate = options?.canUpdate ?? true;
+   constructor(options: Omit<ColumnOptions<T, ForeignKeyOptions>, "propertyType">) {
+      this.target = options.target;
+      this.propertyName = options.propertyName;
+      this.propertyType = Reflect.getMetadata("design:type", this.target, this.propertyName).name
+      this.name = options.name;
+      this.type = options.type;
+      this.length = options.length;
+      this.precision = options.precision;
+      this.default = options.default;
+      this.nullable = options.nullable ?? true;
+      this.primary = options.primary ?? false;
+      this.relation = options.relation as any;
+      this.canSelect = options.canSelect ?? true;
+      this.canInsert = options.canInsert ?? true;
+      this.canUpdate = options.canUpdate ?? true;
+      this.operation = options.operation;
       this.convertionToSave = options?.convertionToSave;
-   }
-
-   private createName(propertyName: string, options: ColumnOptions<T, ForeignKeyOptions>) {
-      let name: string = options?.name ?? '';
-      
-      if (!name) {
-         name = propertyName;
-
-         if (options?.relation?.relationType == "ManyToOne" || options?.relation?.relationType == "OneToOne") {
-            name += StringUtils.titleCase(options.relation.referencedColumnName);
-         }
-      }
-
-      return StringUtils.snakeCase(name);
    }
 }

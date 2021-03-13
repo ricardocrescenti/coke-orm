@@ -1,5 +1,5 @@
 import { ForeignKeyAction } from "./foreign-key-action";
-import { ForeignKeyType } from "./foreign-key-relation-type";
+import { ForeignKeyType } from "./foreign-key-type";
 
 export type ObjectType<T> = { new (): T }|Function;
 
@@ -7,6 +7,11 @@ export type ObjectType<T> = { new (): T }|Function;
  * Describes all relation's options.
  */
 export class ForeignKeyOptions {
+   
+    /**
+     * Class referenced to this table.
+     */
+    public readonly target: any;
 
     /**
      * 
@@ -21,7 +26,7 @@ export class ForeignKeyOptions {
     /**
      * Class referenced to this field
      */
-    public readonly referencedTable: Function | string;
+    public readonly referencedTable: string;
 
     /**
      * Name of the class field referenced to this field
@@ -67,15 +72,16 @@ export class ForeignKeyOptions {
     public readonly eager?: boolean;
 
     constructor(options: ForeignKeyOptions) {
-        this.name = options?.name;
-        this.relationType = options?.relationType;
-        this.referencedTable = options?.referencedTable;
-        this.referencedColumnName = options?.referencedColumnName;
-        this.cascade = options?.cascade;
-        this.nullable = options?.nullable ?? false;
-        this.onDelete = options?.onDelete;
-        this.onUpdate = options?.onUpdate;
-        this.lazy = options?.lazy ?? false;
-        this.eager = options?.eager ?? false;
+        this.target = options.target;
+        this.name = options.name;
+        this.relationType = options.relationType;
+        this.referencedTable = options.referencedTable;
+        this.referencedColumnName = options.referencedColumnName;
+        this.cascade = options.cascade;
+        this.nullable = options.nullable ?? false;
+        this.onDelete = options.onDelete;
+        this.onUpdate = options.onUpdate;
+        this.lazy = options.lazy ?? false;
+        this.eager = options.eager ?? false;
     }
 }

@@ -1,27 +1,16 @@
 import { SimpleMap } from "../../common/interfaces/map";
-import { ColumnOperation } from "./column-operation";
 import { ForeignKeyMetadata } from "../foreign-key/foreign-key-metadata";
 import { IndexMetadata } from "../index/index-metadata";
+import { TableMetadata } from "../tables/table-metadata";
 import { UniqueMetadata } from "../unique/unique-metadata";
 import { ColumnOptions } from "./column-options";
-import "reflect-metadata";
 
 export class ColumnMetadata extends ColumnOptions<any> {
-   
+
    /**
-    * Class referenced to this column.
+    * 
     */
-   public readonly target: any;
-   
-   /**
-    * Original name of the property in the class referenced to this field.
-    */
-   public readonly propertyName: string;
-   
-   /**
-    * Original name of the property in the class referenced to this field.
-    */
-   public readonly propertyType: string;
+   public readonly table: TableMetadata;
    
    /**
     * 
@@ -37,21 +26,13 @@ export class ColumnMetadata extends ColumnOptions<any> {
     * 
     */
    public readonly indexs: SimpleMap<IndexMetadata>;
-   
-   /**
-    * 
-    */
-   public readonly operation: ColumnOperation | null;
 
-   constructor(target: any, propertyName: string, operation: ColumnOperation | null, options: ColumnOptions<any>) {
-      super(propertyName, options);
-      this.target = target;
-      this.propertyName = propertyName;
-      this.propertyType = Reflect.getMetadata("design:type", target, propertyName).name
+   constructor(options: Omit<ColumnMetadata, 'foreignKeys' | 'uniques' | 'indexs'>) {
+      super(options);
+      this.table = options.table;
       this.foreignKeys = new SimpleMap<ForeignKeyMetadata>();
       this.uniques = new SimpleMap<UniqueMetadata>();
       this.indexs = new SimpleMap<IndexMetadata>();
-      this.operation = operation;
    }
 
 }

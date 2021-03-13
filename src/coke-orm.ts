@@ -26,25 +26,8 @@ export class CokeORM {
       }
 
       const connection: Connection = new Connection(connectionOptions);
-      await connection.connect();
-
-      try {
-
-         if (connection.options.synchronize) {
-            await connection.syncronize();
-         }
-
-         if (connection.options.migrations?.runMigrations) {
-            await connection.runMigrations();
-         }
-         
-         /// carregar os dados mapeados
-         /// rodar as migrations
-
+      if (await connection.connect()) {
          CokeORM.connections[connectionOptions.name ?? 'default'] = connection;
-
-      } catch (error) {
-         throw error;
       }
 
       return CokeORM.connections[connectionOptions.name ?? 'default'];

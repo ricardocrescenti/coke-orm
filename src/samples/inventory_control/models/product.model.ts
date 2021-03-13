@@ -1,16 +1,10 @@
-import { BeforeInsert, Column, ManyToOne, Table } from "../../../decorators";
+import { BeforeInsert, Column, Index, ManyToOne, Table, Unique } from "../../../decorators";
 import { PatterModel } from "./pattern.model";
 import { WarehouseModel } from "./warehouse.model";
 
-@Table({ 
-   name: 'products',
-   uniques: [ 
-      { columns: ['reference'] } 
-   ],
-   indexs: [
-      { columns: ['reference'] }
-   ]
-})
+@Table({ name: 'products' })
+@Unique({ columns: ['reference'] })
+@Index({ columns: ['reference'] })
 export class ProductModel extends PatterModel {
 
    @Column()

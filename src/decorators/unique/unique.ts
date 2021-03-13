@@ -1,12 +1,14 @@
-// import { Metadata } from "../../metadata/metadata";
-// import { UniqueMetadata } from "../../metadata/unique/unique-metadata";
-// import { UniqueOptions } from "../../metadata/unique/unique-options";
+import { UniqueOptions } from "../../metadata/unique/unique-options";
+import { DecoratorSchema } from "../decorators-schema";
 
-// export function Unique(options?: UniqueOptions): ClassDecorator {
-//     return function (target: Function) {
+export function Unique(options: Omit<UniqueOptions, 'target'>): ClassDecorator {
+   return function (target: Function) {
 
-//       const uniqueMetadata: UniqueMetadata = new UniqueMetadata(target, options as any);
-//       Metadata.get('').addUnique(uniqueMetadata);
-      
-//     };
-//  }
+      const unique: UniqueOptions = new UniqueOptions({
+         ...options,
+         target: target
+      });
+      DecoratorSchema.addUnique(unique);
+   
+   };
+ }

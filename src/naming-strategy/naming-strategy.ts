@@ -1,59 +1,62 @@
+import { ColumnMetadata, ColumnOptions, ForeignKeyOptions, IndexOptions, TableMetadata, TableOptions, UniqueOptions } from "../metadata";
 import { StringUtils } from "../utils/string-utils";
 
 export class NamingStrategy {
 
    /**
-     * Normalizes table name.
+     * Create table name
      *
-     * @param targetName Name of the target entity that can be used to generate a table name.
-     * @param userSpecifiedName For example if user specified a table name in a decorator, e.g. @Entity("name")
+     * @param tableOptions 
      */
-   tableName(targetName: string, userSpecifiedName: string | undefined): string {
-      return userSpecifiedName ? userSpecifiedName : StringUtils.snakeCase(targetName);
+   tableName(tableOptions: TableOptions): string {
+      return tableOptions.name ?? StringUtils.snakeCase(tableOptions.target.name);
    }
 
    /**
-    * Gets the table's column name from the given property name.
+    * Create column name
     */
-   columnName(propertyName: string, customName: string | undefined, embeddedPrefixes: string[]): string {
-      const name = customName || propertyName;
+   columnName(tableMetadata: TableMetadata, columnOptions: ColumnOptions): string {
+      let name = columnOptions.propertyName 
+         
+      if (columnOptions.relation?.relationType == 'ManyToOne' || columnOptions.relation?.relationType == 'OneToOne') {
+         name += columnOptions.relation.referencedColumnName;
+      }
 
-      if (embeddedPrefixes.length)
-         return StringUtils.camelCase(embeddedPrefixes.join("_")) + StringUtils.titleCase(name);
-
-      return name;
+      return StringUtils.snakeCase(name);
    }
 
    /**
-    * Gets the table's relation name from the given property name.
+    * Create primary key name
     */
-   relationName(propertyName: string): string {
-      return propertyName;
+   primaryKeyName(tableMetadata: TableMetadata, columnsMetadata: ColumnMetadata[]): string {
+      const columnsNames: string[] = columnsMetadata.map<string>((column) => column.name as string);
+      return "PK_" + StringUtils.sha1(`${tableMetadata.name}_${columnsNames.join('_')}`);//.substr(0, 27);
    }
 
    /**
-    * Gets the table's primary key name from the given table name and column names.
+    * Create foreign key name
     */
-   primaryKeyName(tableName: string, columnNames: string[]): string {
-      // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-      const clonedColumnNames = [...columnNames];
-      clonedColumnNames.sort();
-      const replacedTableName = tableName.replace(".", "_");
-      const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
-      return "PK_" + StringUtils.sha1(key).substr(0, 27);
+   foreignKeyName(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata, foreignKeyOptions: ForeignKeyOptions): string {
+      const key = `${tableMetadata.className}_${columnMetadata.propertyName}${foreignKeyOptions.referencedColumnName}`;
+      return "FK_" + StringUtils.sha1(key).substr(0, 27);
    }
 
    /**
-    * Gets the table's unique constraint name from the given table name and column names.
+    * Create unique constraint name
     */
-   uniqueConstraintName(tableName: string, columnNames: string[]): string {
-      // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-      const clonedColumnNames = [...columnNames];
-      clonedColumnNames.sort();
-      const replacedTableName = tableName.replace(".", "_");
-      const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
-      return "UQ_" + StringUtils.sha1(key).substr(0, 27);
+   uniqueConstraintName(table: TableMetadata, uniqueOptions: UniqueOptions): string {
+      const columnsNames: string[] = uniqueOptions.columns.map<string>((columnPropertyName) => table.columns[columnPropertyName].name as string);
+      return "UQ_" + StringUtils.sha1(`${table.name}_${columnsNames.join("_")}`);//.substr(0, 27);
    }
+
+   /**
+    * Create index name
+    */
+   indexName(table: TableMetadata, indexOptions: IndexOptions): string {
+      const columnsNames: string[] = indexOptions.columns.map<string>((columnPropertyName) => table.columns[columnPropertyName].name as string);
+      return "IDX_" + StringUtils.sha1(`${table.name}_${indexOptions.unique}_${columnsNames.join("_")}`);//.substr(0, 27);
+   }
+
 
    /**
     * Gets the relation constraint (UNIQUE or UNIQUE INDEX) name from the given table name, column names
@@ -79,33 +82,6 @@ export class NamingStrategy {
       const key = `${replacedTableName}_${columnName}`;
       return "DF_" + StringUtils.sha1(key).substr(0, 27);
    }
-
-   /**
-    * Gets the name of the foreign key.
-    */
-   foreignKeyName(tableName: string, columnNames: string[], referencedTablePath?: string, referencedColumnNames?: string[]): string {
-      // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-      const clonedColumnNames = [...columnNames];
-      clonedColumnNames.sort();
-      const replacedTableName = tableName.replace(".", "_");
-      const key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
-      return "FK_" + StringUtils.sha1(key).substr(0, 27);
-   }
-
-   /**
-    * Gets the name of the index - simple and compose index.
-    */
-   indexName(tableName: string, columnNames: string[], where?: string): string {
-      // sort incoming column names to avoid issue when ["id", "name"] and ["name", "id"] arrays
-      const clonedColumnNames = [...columnNames];
-      clonedColumnNames.sort();
-      const replacedTableName = tableName.replace(".", "_");
-      let key = `${replacedTableName}_${clonedColumnNames.join("_")}`;
-      if (where)
-          key += `_${where}`;
-
-      return "IDX_" + StringUtils.sha1(key).substr(0, 26);
-  }
 
    /**
     * Gets the name of the check constraint.

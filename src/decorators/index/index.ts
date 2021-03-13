@@ -1,12 +1,14 @@
-// import { IndexMetadata } from "../../metadata/index/index-metadata";
-// import { IndexOptions } from "../../metadata/index/index-options";
-// import { Metadata } from "../../metadata/metadata";
+import { IndexOptions } from "../../metadata/index/index-options";
+import { DecoratorSchema } from "../decorators-schema";
 
-// export function Index(options?: IndexOptions): ClassDecorator {
-//   return function (target: Function) {
+export function Index(options: Omit<IndexOptions, 'target'>): ClassDecorator {
+  return function (target: Function) {
 
-//     const indexMetadata: IndexMetadata = new IndexMetadata(target, options as any);
-//     Metadata.get('').addIndex(indexMetadata);
+    const index: IndexOptions = new IndexOptions({
+       ...options,
+       target: target,
+    });
+    DecoratorSchema.addIndex(index);
     
-//   };
-// }
+  };
+}

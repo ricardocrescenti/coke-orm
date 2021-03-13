@@ -1,13 +1,21 @@
-import { ColumnMetadata } from "../../metadata/columns/column-metadata";
 import { ColumnOptions } from "../../metadata/columns/column-options";
 import { ForeignKeyOptions } from "../../metadata/foreign-key/foreign-key-options";
-import { Metadata } from "../../metadata/metadata";
+import { DecoratorSchema } from "../decorators-schema";
 
-export function ManyToOne<T>(options?: Omit<ColumnOptions<T, Omit<ForeignKeyOptions, 'relationType' | 'onUpdate' | 'onDelete'>>, 'createName'>) {
-   return function (target: Object, propertyKey: any) {
+export function ManyToOne<T>(options?: Omit<ColumnOptions<T, Omit<ForeignKeyOptions, 'target' | 'relationType' | 'onUpdate' | 'onDelete'>>, 'target' | 'propertyName' | 'propertyType' | 'operation'>) {
+	return function (target: Object, propertyKey: any) {
 
-      const columnMetadata: ColumnMetadata = new ColumnMetadata(target, propertyKey, null, options as any);
-      Metadata.addColumn(columnMetadata);
-      
-   };
+		const column: ColumnOptions = new ColumnOptions({
+			...options as any,
+			target: target, 
+			propertyName: propertyKey, 
+			operation: null,
+			relation: {
+				...options?.relation,
+				relationType: 'ManyToOne'
+			}
+		});
+		DecoratorSchema.addColumn(column);
+		
+	};
 }

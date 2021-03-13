@@ -1,16 +1,17 @@
-import { Metadata } from "../../metadata/metadata";
 import { WarehouseModel } from "./models/warehouse.model";
-import { ProductModel } from "./models/product.model";
+//import { ProductModel } from "./models/product.model";
 import { CokeORM } from "../../coke-orm";
 import { DatabaseDriver } from "../../common/enum/driver-type";
 import { Connection } from "../../connection/connection";
+import { DecoratorSchema } from "../../decorators/decorators-schema";
+import { ProductModel } from "./models/product.model";
 
 export async function test() {
 
    console.log('1 - Creating Models');
 
-   const warehouse = new WarehouseModel();
-   const product = new ProductModel();
+   //const warehouse = new WarehouseModel();
+   //const product = new ProductModel();
 
    console.log('2 - Metadata');
 
@@ -33,12 +34,14 @@ export async function test() {
       password: 'supadm',
       database: 'devmaster',
       tables: [
-         WarehouseModel
+         WarehouseModel,
+         ProductModel
       ],
       synchronize: true
    });
 
-   console.log('4 - Connected', JSON.stringify(Metadata.getTables()));
+   console.log('4 - Connected', JSON.stringify(DecoratorSchema.getTables()));
+   console.log('5 - Connected', connection);
 
 }
 

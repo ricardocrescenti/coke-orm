@@ -1,13 +1,18 @@
-import { ColumnMetadata } from "../../metadata/columns/column-metadata";
 import { ColumnOptions } from "../../metadata/columns/column-options";
-import { Metadata } from "../../metadata/metadata";
 import { ColumnOperation } from "../../metadata/columns/column-operation";
+import { DecoratorSchema } from "../decorators-schema";
 
-export function UpdatedAtColumn(options?: Omit<ColumnOptions<any>, "relation" | "primary" | 'createName'>): PropertyDecorator {
+export function UpdatedAtColumn(options?: Omit<ColumnOptions<any>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'primary' | 'operation'>): PropertyDecorator {
   return function (target: any, propertyKey: any) {   
 
-    const columnMetadata: ColumnMetadata = new ColumnMetadata(target, propertyKey, ColumnOperation.UpdatedAt, options as any);
-    Metadata.addColumn(columnMetadata);
+		const column: ColumnOptions = new ColumnOptions({
+			...options,
+			target: target, 
+			propertyName: propertyKey, 
+			operation: ColumnOperation.UpdatedAt
+		});
+		DecoratorSchema.addColumn(column);
+
     
   };
 }

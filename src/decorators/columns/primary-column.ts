@@ -1,17 +1,17 @@
-import { ColumnMetadata } from "../../metadata/columns/column-metadata";
 import { ColumnOptions } from "../../metadata/columns/column-options";
-import { Metadata } from "../../metadata/metadata";
+import { DecoratorSchema } from "../decorators-schema";
 
-export function PrimaryColumn(options?: Omit<ColumnOptions<any>, "relation" | "primary" | 'createName'>): PropertyDecorator {
-  return function (target: any, propertyKey: any) {
+export function PrimaryColumn(options?: Omit<ColumnOptions<any>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'primary' | 'operation'>): PropertyDecorator {
+	return function (target: any, propertyKey: any) {
 
-    if (!options) {
-      options = {}
-    }
-    (options as any).primary = true;
-
-    const columnMetadata: ColumnMetadata = new ColumnMetadata(target, propertyKey, null, options as any);
-    Metadata.addColumn(columnMetadata);
-    
-  };
+		const column: ColumnOptions = new ColumnOptions({
+			...options,
+			target: target, 
+			propertyName: propertyKey, 
+			primary: true,
+			operation: null
+		});
+		DecoratorSchema.addColumn(column);
+		
+	};
 }

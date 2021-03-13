@@ -1,25 +1,23 @@
-import { Driver } from "../driver";
-import { ConnectionOptions } from "../../connection/connection-options";
-import { SimpleMap } from "../../common/interfaces/map";
-import { DefaultColumnOptions } from "../../metadata/columns/default-column-options";
-import { ColumnOptions } from "../../metadata/columns/column-options";
-import { InvalidColumnOption } from "../../errors/invalid-column-options";
-import { QueryExecutor } from "../../query-executor/query-executor";
-import { Connection } from "../../connection/connection";
-import { TableSchema } from "../../schema/table-schema";
-import { ColumnSchema } from "../../schema/column-schema";
-import { Metadata } from "../../metadata/metadata";
-import { PrimaryKeySchema } from "../../schema/primary-key-schema";
-import { ForeignKeySchema } from "../../schema/foreign-key-schema";
-import { IndexSchema } from "../../schema/index-schema";
-import { UniqueSchema } from "../../schema/unique-schema";
-import { QueryBuilderDriver } from "../query-builder-driver";
+import { Driver } from "../../driver";
+import { ConnectionOptions } from "../../../connection/connection-options";
+import { SimpleMap } from "../../../common/interfaces/map";
+import { DefaultColumnOptions } from "../../options/default-column-options";
+import { ColumnOptions } from "../../../metadata/columns/column-options";
+import { QueryExecutor } from "../../../query-executor/query-executor";
+import { Connection } from "../../../connection/connection";
+import { TableSchema } from "../../../schema/table-schema";
+import { ColumnSchema } from "../../../schema/column-schema";
+import { PrimaryKeySchema } from "../../../schema/primary-key-schema";
+import { ForeignKeySchema } from "../../../schema/foreign-key-schema";
+import { IndexSchema } from "../../../schema/index-schema";
+import { UniqueSchema } from "../../../schema/unique-schema";
+import { QueryBuilderDriver } from "../../query-builder-driver";
 import { PostgresQueryBuilderDriver } from "./postgres-query-builder-driver";
-import { BasicQueryBuilder } from "../../query-builder/basic-query-builder";
-import { ForeignKeyMetadata } from "../../metadata/foreign-key/foreign-key-metadata";
-import { UniqueMetadata } from "../../metadata/unique/unique-metadata";
-import { IndexMetadata } from "../../metadata/index/index-metadata";
-import { UniqueOptions } from "../../metadata/unique/unique-options";
+import { BasicQueryBuilder } from "../../../query-builder/basic-query-builder";
+import { ForeignKeyMetadata } from "../../../metadata/foreign-key/foreign-key-metadata";
+import { UniqueMetadata } from "../../../metadata/unique/unique-metadata";
+import { IndexMetadata } from "../../../metadata/index/index-metadata";
+import { InvalidColumnOption } from "../../../errors/invalid-column-options";
 
 export class PostgresDriver extends Driver {
 
@@ -214,7 +212,7 @@ export class PostgresDriver extends Driver {
 
       console.time('generate SQLs migrations');
       
-      for (const tableMetadata of Metadata.getTables(connection.options.tables)) {
+      for (const tableMetadata of Object.values(connection.tables)) {
 
          const tableSchema: TableSchema = tablesSchema[tableMetadata.name as string];
          if (!tableSchema) {
@@ -242,7 +240,7 @@ export class PostgresDriver extends Driver {
 
                   if (columnMetadata.type != columnSchema.type ||
                      columnMetadata.length != columnSchema.length || 
-                     columnMetadata.scale != columnSchema.scale || 
+                     columnMetadata.precision != columnSchema.scale || 
                      columnMetadata.nullable != columnSchema.nullable ||
                      columnMetadata.default != columnSchema.default) {
 
@@ -297,7 +295,7 @@ export class PostgresDriver extends Driver {
             const uniques: UniqueMetadata[] = (tableMetadata.uniques ?? []);
             for (let i = 0; i < uniques.length; i++) {
                const uniqueMetadata: UniqueMetadata = uniques[i];
-               const uniqueSchema: UniqueSchema = tableSchema.uniques[uniqueMetadata.getName()];
+               const uniqueSchema: UniqueSchema = tableSchema.uniques[uniqueMetadata.name as string];
                
                if (!uniqueSchema || deletedUniques.indexOf(uniqueSchema.name) >= 0) {
                   sqlMigrationsCreateUniques.push(connection.queryBuilder.createUnique().fromMetadata(tableMetadata, uniqueMetadata));
@@ -492,44 +490,22 @@ export class PostgresDriver extends Driver {
    protected getColumnsTypeWithLength(): string[] {
       return [
          "character varying",
-         "varchar",
          "character",
-         "char",
          "bit",
-         "varbit",
-         "bit varying"
-      ];
-   }
-   
-   protected getColumnsTypeWithPrecision(): string[] {
-      return [
-         "numeric",
-         "decimal",
+         "bit varying",
          "interval",
+         "numeric",
          "time without time zone",
          "time with time zone",
          "timestamp without time zone",
          "timestamp with time zone"
       ];
    }
-
-   protected getColumnsTypeWithScale(): string[] {
+   
+   protected getColumnsTypeWithPrecision(): string[] {
       return [
-         "numeric",
-         "decimal"
+         "numeric"
       ];
-   }
-
-   protected getDefaultColumnTypesOptions(): SimpleMap<DefaultColumnOptions> {
-      return {
-         "character": { length: 1 },
-         "bit": { length: 1 },
-         "interval": { precision: 6 },
-         "time without time zone": { precision: 6 },
-         "time with time zone": { precision: 6 },
-         "timestamp without time zone": { precision: 6 },
-         "timestamp with time zone": { precision: 6 },
-      }
    }
 
    protected getDefaultColumnOptionsByOperation(): SimpleMap<DefaultColumnOptions> {
