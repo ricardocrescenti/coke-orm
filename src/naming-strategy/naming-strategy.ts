@@ -19,7 +19,7 @@ export class NamingStrategy {
       let name = columnOptions.propertyName 
          
       if (columnOptions.relation?.relationType == 'ManyToOne' || columnOptions.relation?.relationType == 'OneToOne') {
-         name += columnOptions.relation.referencedColumnName;
+         name += '_' + columnOptions.relation.referencedColumnName;
       }
 
       return StringUtils.snakeCase(name);
@@ -45,7 +45,7 @@ export class NamingStrategy {
     * Create unique constraint name
     */
    uniqueConstraintName(table: TableMetadata, uniqueOptions: UniqueOptions): string {
-      const columnsNames: string[] = uniqueOptions.columns.map<string>((columnPropertyName) => table.columns[columnPropertyName].name as string);
+      const columnsNames: string[] = uniqueOptions.columns.map<string>((columnPropertyName) => table.getColumn(columnPropertyName).name as string);
       return "UQ_" + StringUtils.sha1(`${table.name}_${columnsNames.join("_")}`);//.substr(0, 27);
    }
 
@@ -53,7 +53,7 @@ export class NamingStrategy {
     * Create index name
     */
    indexName(table: TableMetadata, indexOptions: IndexOptions): string {
-      const columnsNames: string[] = indexOptions.columns.map<string>((columnPropertyName) => table.columns[columnPropertyName].name as string);
+      const columnsNames: string[] = indexOptions.columns.map<string>((columnPropertyName) => table.getColumn(columnPropertyName).name as string);
       return "IDX_" + StringUtils.sha1(`${table.name}_${indexOptions.unique}_${columnsNames.join("_")}`);//.substr(0, 27);
    }
 

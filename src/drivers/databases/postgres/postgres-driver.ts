@@ -2,7 +2,6 @@ import { Driver } from "../../driver";
 import { ConnectionOptions } from "../../../connection/connection-options";
 import { SimpleMap } from "../../../common/interfaces/map";
 import { DefaultColumnOptions } from "../../options/default-column-options";
-import { ColumnOptions } from "../../../metadata/columns/column-options";
 import { QueryExecutor } from "../../../query-executor/query-executor";
 import { Connection } from "../../../connection/connection";
 import { TableSchema } from "../../../schema/table-schema";
@@ -13,11 +12,13 @@ import { IndexSchema } from "../../../schema/index-schema";
 import { UniqueSchema } from "../../../schema/unique-schema";
 import { QueryBuilderDriver } from "../../query-builder-driver";
 import { PostgresQueryBuilderDriver } from "./postgres-query-builder-driver";
-import { BasicQueryBuilder } from "../../../query-builder/basic-query-builder";
 import { ForeignKeyMetadata } from "../../../metadata/foreign-key/foreign-key-metadata";
 import { UniqueMetadata } from "../../../metadata/unique/unique-metadata";
 import { IndexMetadata } from "../../../metadata/index/index-metadata";
 import { InvalidColumnOption } from "../../../errors/invalid-column-options";
+import { ColumnOperation } from "../../../metadata/columns/column-operation";
+import { ColumnMetadata } from "../../../metadata/columns/column-metadata";
+import { TableMetadata } from "../../../metadata/tables/table-metadata";
 
 export class PostgresDriver extends Driver {
 
@@ -121,8 +122,8 @@ export class PostgresDriver extends Driver {
 
             let columns: SimpleMap<ColumnSchema> = new SimpleMap<ColumnSchema>();
             let primaryKey: PrimaryKeySchema | undefined;
-
-            for (const column of table.columns) {
+            
+            for (const column of table.columns ?? []) {
 
                let foreignKeys: SimpleMap<ForeignKeySchema> = new SimpleMap<ForeignKeySchema>();
                let uniques: SimpleMap<UniqueSchema> = new SimpleMap<UniqueSchema>();
@@ -162,7 +163,7 @@ export class PostgresDriver extends Driver {
                   name: column.column_name,
                   position: column.ordinal_position,
                   default: column.column_default,
-                  nullable: column.is_nullable,
+                  nullable: column.is_nullable == 'YES',
                   type: column.data_type,
                   length: column.numeric_precision,
                   scale: column.numeric_scale,
@@ -188,29 +189,33 @@ export class PostgresDriver extends Driver {
       return tables;
    }
 
-   public async generateSQLsMigrations(connection: Connection): Promise<BasicQueryBuilder[]> {
+   public async generateSQLsMigrations(connection: Connection): Promise<string[]> {
 
       const tablesSchema = await this.loadSchema(connection);
 
-      const sqlMigrationsCreateTable: BasicQueryBuilder[] = [];
-      const sqlMigrationsCreateColumns: BasicQueryBuilder[] = [];
-      const sqlMigrationsAlterColumns: BasicQueryBuilder[] = [];
+      const sqlMigrationsCreateTable: string[] = [];
+      const sqlMigrationsCreateColumns: string[] = [];
+      const sqlMigrationsAlterColumns: string[] = [];
 
-      const sqlMigrationsDropForeignKeys: BasicQueryBuilder[] = [];
-      const sqlMigrationsDropUniques: BasicQueryBuilder[] = [];
-      const sqlMigrationsDropIndex: BasicQueryBuilder[] = [];
+      const sqlMigrationsCreatePrimaryKeys: string[] = [];
+      const sqlMigrationsCreateIndexs: string[] = [];
+      const sqlMigrationsCreateUniques: string[] = [];
+      const sqlMigrationsCreateForeignKeys: string[] = [];
 
-      const sqlMigrationsCreateIndex: BasicQueryBuilder[] = [];
-      const sqlMigrationsCreateUniques: BasicQueryBuilder[] = [];
-      const sqlMigrationsCreateForeignKeys: BasicQueryBuilder[] = [];
+      const sqlMigrationsDropForeignKeys: string[] = [];
+      const sqlMigrationsDropUniques: string[] = [];
+      const sqlMigrationsDropIndex: string[] = [];
+      const sqlMigrationsDropPrimaryKeys: string[] = [];
 
-      const sqlMigrationsDropColumns: BasicQueryBuilder[] = [];
+      const sqlMigrationsDropColumns: string[] = [];
 
       const deletedForeignKeys: string[] = [];
       const deletedIndex: string[] = [];
       const deletedUniques: string[] = [];
 
       console.time('generate SQLs migrations');
+
+      //const columnsVarifyHaveUnique: any = {};
       
       for (const tableMetadata of Object.values(connection.tables)) {
 
@@ -218,7 +223,7 @@ export class PostgresDriver extends Driver {
          if (!tableSchema) {
 
             // create new table
-            sqlMigrationsCreateTable.push(connection.queryBuilder.createTable().fromMetadata(tableMetadata));
+            sqlMigrationsCreateTable.push(connection.driver.queryBuilder.createTableFromMetadata(tableMetadata));
 
          } else {
 
@@ -228,24 +233,28 @@ export class PostgresDriver extends Driver {
 
             // check column diferences
             for (const columnName in tableMetadata.columns) {
-               const columnMetadata = tableMetadata.columns[columnName];
-               const columnSchema = tableSchema.columns[columnName];
+               const columnMetadata: ColumnMetadata = tableMetadata.getColumn(columnName);
+               if (columnMetadata.relation && columnMetadata.relation.relationType == 'OneToMany') {
+                  continue;
+               }
+
+               const columnSchema = tableSchema.columns[columnMetadata.name as string];
 
                if (!columnSchema) {
 
                   // create new column
-                  sqlMigrationsCreateColumns.push(connection.queryBuilder.createColumn().fromMetadata(tableMetadata, columnMetadata));
+                  sqlMigrationsCreateColumns.push(connection.driver.queryBuilder.createColumnFromMetadata(tableMetadata, columnMetadata));
                
                } else {
 
-                  if (columnMetadata.type != columnSchema.type ||
-                     columnMetadata.length != columnSchema.length || 
-                     columnMetadata.precision != columnSchema.scale || 
-                     columnMetadata.nullable != columnSchema.nullable ||
-                     columnMetadata.default != columnSchema.default) {
+                  if ((columnMetadata.type != columnSchema.type) ||
+                     (columnMetadata.length != null && columnMetadata.length != columnSchema.length) || 
+                     (columnMetadata.precision != null && columnMetadata.precision != columnSchema.scale) || 
+                     (columnMetadata.nullable != columnSchema.nullable) ||
+                     (columnMetadata.default != columnSchema.default)) {
 
                      // alter column type
-                     sqlMigrationsAlterColumns.push(connection.queryBuilder.alterColumn().fromMatadata(tableMetadata, columnMetadata, columnSchema));
+                     sqlMigrationsAlterColumns.push(connection.driver.queryBuilder.alterColumnFromMatadata(tableMetadata, columnMetadata, columnSchema));
 
                   }
 
@@ -261,65 +270,136 @@ export class PostgresDriver extends Driver {
 
                // delete the foreign keys related to this field
                for (const foreignKeyName in columnSchema.foreignKeys) {
-                  sqlMigrationsDropForeignKeys.push(connection.queryBuilder.deleteForeignKey().fromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]));
+                  sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]));
                   deletedForeignKeys.push(foreignKeyName);
                }
 
                // delete the uniques related to this field
                for (const uniqueName in columnSchema.uniques) {
-                  sqlMigrationsDropUniques.push(connection.queryBuilder.deleteUnique().fromSchema(tableMetadata, tableSchema.uniques[uniqueName]));
+                  sqlMigrationsDropUniques.push(connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]));
                   deletedUniques.push(uniqueName);
                }
 
                // delete the indexs related to this field
                for (const indexName in columnSchema.indexs) {
-                  sqlMigrationsDropIndex.push(connection.queryBuilder.deleteIndex().fromSchema(tableMetadata, tableSchema.indexs[indexName]));
+                  sqlMigrationsDropIndex.push(connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]));
                   deletedIndex.push(indexName);
                }
 
-               sqlMigrationsDropColumns.push(connection.queryBuilder.deleteColumn().fromSchema(tableMetadata, columnSchema));
-            }
-
-            // check indexs
-            const indexs: IndexMetadata[] = (tableMetadata.indexs ?? []);
-            for (let i = 0; i < indexs.length; i++) {
-               const indexMetadata: IndexMetadata = indexs[i];
-               const indexSchema: IndexSchema = tableSchema.indexs[i];
-               
-               if (!indexSchema || deletedForeignKeys.indexOf(indexSchema.name) >= 0) {
-                  sqlMigrationsCreateIndex.push(connection.queryBuilder.createIndex().fromMetadata(tableMetadata, indexMetadata));
-               }
-            }
-
-            // check uniques
-            const uniques: UniqueMetadata[] = (tableMetadata.uniques ?? []);
-            for (let i = 0; i < uniques.length; i++) {
-               const uniqueMetadata: UniqueMetadata = uniques[i];
-               const uniqueSchema: UniqueSchema = tableSchema.uniques[uniqueMetadata.name as string];
-               
-               if (!uniqueSchema || deletedUniques.indexOf(uniqueSchema.name) >= 0) {
-                  sqlMigrationsCreateUniques.push(connection.queryBuilder.createUnique().fromMetadata(tableMetadata, uniqueMetadata));
-               }
-            }
-
-            // check foreign keys
-            const foreignKeys: ForeignKeyMetadata[] = (tableMetadata.foreignKeys ?? []);
-            for (let i = 0; i < foreignKeys.length; i++) {
-               const foreignKeyMetadata: ForeignKeyMetadata = foreignKeys[i];
-               const foreignKeySchema: ForeignKeySchema = tableSchema.foreignKeys[i];
-               
-               if (!foreignKeySchema || deletedForeignKeys.indexOf(foreignKeySchema.name) >= 0) {
-                  sqlMigrationsCreateForeignKeys.push(connection.queryBuilder.createForeignKey().fromMetadata(tableMetadata, foreignKeyMetadata));
-               }
+               sqlMigrationsDropColumns.push(connection.driver.queryBuilder.deleteColumnFromSchema(tableMetadata, columnSchema));
             }
 
          }
 
+
+         // check primary key
+         if (tableMetadata.primaryKey && !tableSchema.primaryKey) {
+            sqlMigrationsCreatePrimaryKeys.push(connection.driver.queryBuilder.createPrimaryKeyFromMetadata(tableMetadata));
+         } else if (!tableMetadata.primaryKey && tableSchema.primaryKey) {
+            sqlMigrationsDropPrimaryKeys.push(connection.driver.queryBuilder.deletePrimaryKeyFromSchema(tableMetadata));
+         } else if (tableMetadata.primaryKey && tableSchema.primaryKey && (tableMetadata.primaryKey.columns.length != tableSchema.primaryKey.columns.length || tableMetadata.primaryKey.columns.every((columnMetadata) => (tableSchema.primaryKey?.columns?.indexOf(columnMetadata.name as string) ?? -1) >= 0))) {
+            sqlMigrationsCreatePrimaryKeys.push(connection.driver.queryBuilder.createPrimaryKeyFromMetadata(tableMetadata));
+            sqlMigrationsDropPrimaryKeys.push(connection.driver.queryBuilder.deletePrimaryKeyFromSchema(tableMetadata));
+         }
+
+         // check indexs
+         const pendingIndexsSchema: string[] = Object.keys(tableSchema.indexs);
+         const indexs: IndexMetadata[] = (tableMetadata.indexs ?? []);
+         for (let i = 0; i < indexs.length; i++) {
+            const indexMetadata: IndexMetadata = indexs[i];
+            const indexSchema: IndexSchema = tableSchema.indexs[i];
+            
+            if (!indexSchema || deletedForeignKeys.indexOf(indexSchema.name) >= 0) {
+               sqlMigrationsCreateIndexs.push(connection.driver.queryBuilder.createIndexFromMetadata(tableMetadata, indexMetadata));
+            }
+
+            if (pendingIndexsSchema.indexOf(indexMetadata.name as string) >= 0) {
+               pendingIndexsSchema.splice(pendingIndexsSchema.indexOf(indexMetadata.name as string), 1);
+            }
+         }
+
+         // delete indexs
+         for (const indexName in pendingIndexsSchema) {
+            sqlMigrationsDropIndex.push(connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]))
+         }
+
+         // check uniques
+         const pendingUniquesSchema: string[] = Object.keys(tableSchema.uniques);
+         const uniques: UniqueMetadata[] = (tableMetadata.uniques ?? []);
+         for (let i = 0; i < uniques.length; i++) {
+            const uniqueMetadata: UniqueMetadata = uniques[i];
+            const uniqueSchema: UniqueSchema = tableSchema.uniques[uniqueMetadata.name as string];
+            
+            if (!uniqueSchema || deletedUniques.indexOf(uniqueSchema.name) >= 0) {
+               sqlMigrationsCreateUniques.push(connection.driver.queryBuilder.createUniqueFromMetadata(tableMetadata, uniqueMetadata));
+            }
+
+            if (pendingUniquesSchema.indexOf(uniqueMetadata.name as string) >= 0) {
+               pendingUniquesSchema.splice(pendingUniquesSchema.indexOf(uniqueMetadata.name as string), 1);
+            }
+         }
+
+         // delete uniques
+         for (const uniqueName in pendingUniquesSchema) {
+            sqlMigrationsDropUniques.push(connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]))
+         }
+
+         // check foreign keys
+         const pendingForeignKeysSchema: string[] = Object.keys(tableSchema.foreignKeys);
+         const foreignKeys: ForeignKeyMetadata[] = (tableMetadata.foreignKeys ?? []);
+         for (let i = 0; i < foreignKeys.length; i++) {
+            const foreignKeyMetadata: ForeignKeyMetadata = foreignKeys[i];
+            const foreignKeySchema: ForeignKeySchema = tableSchema.foreignKeys[i];
+            
+            // columnsVarifyHaveUnique[`${foreignKeyMetadata.referencedTable}_${foreignKeyMetadata.referencedColumnName}`] = {
+            //    table: foreignKeyMetadata.referencedTable,
+            //    column: foreignKeyMetadata.referencedColumnName
+            // };
+
+            if (!foreignKeySchema || deletedForeignKeys.indexOf(foreignKeySchema.name) >= 0) {
+               sqlMigrationsCreateForeignKeys.push(connection.driver.queryBuilder.createForeignKeyFromMetadata(tableMetadata, foreignKeyMetadata));
+            }
+
+            if (pendingForeignKeysSchema.indexOf(foreignKeyMetadata.name as string) >= 0) {
+               pendingForeignKeysSchema.splice(pendingForeignKeysSchema.indexOf(foreignKeyMetadata.name as string), 1);
+            }
+         }
+
+         // delete foreign keys
+         for (const foreignKeyName in pendingUniquesSchema) {
+            sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]))
+         }
+
       }
+
+      // for (const data in columnsVarifyHaveUnique) {
+
+      //    const tableMetadata: TableMetadata = connection.tables[columnsVarifyHaveUnique[data].table];
+      //    const columnMetadata: ColumnMetadata = tableMetadata.columns[columnsVarifyHaveUnique[data].column];
+
+      //    if (tableMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == columnMetadata.name).length == 0) {
+
+      //       const options: UniqueOptions = {
+      //          target: tableMetadata.target,
+      //          columns: [columnMetadata.name as string],
+      //       };
+
+      //       const unique: UniqueMetadata = new UniqueMetadata({
+      //          ...options,
+      //          table: tableMetadata,
+      //          name: connection.options.namingStrategy?.uniqueConstraintName(tableMetadata, options)
+      //       });
+
+      //       tableMetadata.uniques.push(unique);
+      //       sqlMigrationsCreateUniques.push(connection.queryBuilder.createUnique().fromMetadata(tableMetadata, unique));
+
+      //    }
+
+      // }
 
       console.timeLog('generate SQLs migrations');
 
-      const sqlMigrations: BasicQueryBuilder[] = [];
+      const sqlMigrations: string[] = [];
 
       return sqlMigrations.concat(
          sqlMigrationsDropForeignKeys,
@@ -329,7 +409,7 @@ export class PostgresDriver extends Driver {
          sqlMigrationsCreateTable,
          sqlMigrationsCreateColumns,
          sqlMigrationsCreateUniques,
-         sqlMigrationsCreateIndex,
+         sqlMigrationsCreateIndexs,
          sqlMigrationsCreateForeignKeys);
    }
    
@@ -346,7 +426,6 @@ export class PostgresDriver extends Driver {
          "aclitem[]",
          "bigint",
          "bigint[]",
-         "bigserial",
          "bit",
          "bit[]",
          "bit varying",
@@ -357,8 +436,6 @@ export class PostgresDriver extends Driver {
          "box[]",
          "bytea",
          "bytea[]",
-         "char",
-         "char[]",
          "character",
          "character[]",
          "character varying",
@@ -369,7 +446,6 @@ export class PostgresDriver extends Driver {
          "cidr[]",
          "circle",
          "circle[]",
-         "cstring[]",
          "date",
          "date[]",
          "daterange",
@@ -394,8 +470,6 @@ export class PostgresDriver extends Driver {
          "json[]",
          "jsonb",
          "jsonb[]",
-         "jsonpath",
-         "jsonpath[]",
          "line",
          "line[]",
          "lseg",
@@ -421,7 +495,6 @@ export class PostgresDriver extends Driver {
          "pg_dependencies",
          "pg_lsn",
          "pg_lsn[]",
-         "pg_mcv_list",
          "pg_ndistinct",
          "pg_node_tree",
          "point",
@@ -452,10 +525,8 @@ export class PostgresDriver extends Driver {
          "regrole[]",
          "regtype",
          "regtype[]",
-         "serial",
          "smallint",
          "smallint[]",
-         "smallserial",
          "text",
          "text[]",
          "tid",
@@ -483,7 +554,7 @@ export class PostgresDriver extends Driver {
          "xid",
          "xid[]",
          "xml",
-         "xml[]",
+         "xml[]"
      ];
    }
    
@@ -508,31 +579,86 @@ export class PostgresDriver extends Driver {
       ];
    }
 
-   protected getDefaultColumnOptionsByOperation(): SimpleMap<DefaultColumnOptions> {
-      return {
-         'CreatedAt': { type: "timestamp", default: "now()", nullable: false },
-         'UpdatedAt': { type: "timestamp", default: "now()", nullable: false },
-         'DeletedAt': { type: "timestamp" }
-      };
+   protected getAllowedTypesConversion(): Map<string, string[]> {
+      return new Map([
+         ["bigint", ['smallint','integer','regproc','oid','real','double precision','money','numeric','regprocedure','regoper','regoperator','regclass','regtype','regrole','regnamespace','regconfig','regdictionary']],
+         ["bit", ['bit varying']],
+         ["bit varying", ['bit']],
+         ["boolean", ['text','character varying','character']],
+         ["box[]", ['polygon']],
+         ["character", ['text','character varying','name']],
+         ["character[]", []],
+         ["character varying", ['regclass','text','character','name']],
+         ["cidr", ['inet','text','character varying','character']],
+         ["date", ['timestamp without time zone','timestamp with time zone']],
+         ["double precision", ['bigint','smallint','integer','real','numeric']],
+         ["inet", ['cidr','text','character varying','character']],
+         ["integer", ['bigint','smallint','regproc','oid','real','double precision','money','numeric','regprocedure','regoper','regoperator','regclass','regtype','regrole','regnamespace','regconfig','regdictionary']],
+         ["interval", ['reltime','time without time zone']],
+         ["macaddr", ['macaddr8']],
+         ["macaddr8", ['macaddr8']],
+         ["money", ['numeric']],
+         ["name", ['text','character','character varying']],
+         ["numeric", ['bigint','smallint','integer','real','double precision','money']],
+         ["oid", ['bigint','integer','regproc','regprocedure','regoper','regoperator','regclass','regtype','regrole','regnamespace','regconfig','regdictionary']],
+         ["pg_dependencies", ['bytea', 'text']],
+         ["pg_ndistinct", ['bytea', 'text']],
+         ["pg_node_tree", ['text']],
+         ["point", ['box']],
+         ["polygon", ['path']],
+         ["real", ['bigint','smallint','integer','double precision','numeric']],
+         ["regclass", ['oid','bigint','integer']],
+         ["regconfig", ['oid','bigint','integer']],
+         ["regdictionary", ['oid','bigint','integer']],
+         ["regnamespace", ['oid','bigint','integer']],
+         ["regoper", ['oid','bigint','integer','regoperator']],
+         ["regoperator", ['regoper','oid','bigint','integer']],
+         ["regproc", ['oid','bigint','integer','regprocedure']],
+         ["regprocedure", ['regproc','oid','bigint','integer']],
+         ["regrole", ['oid','bigint','integer']],
+         ["regtype", ['oid','bigint','integer']],
+         ["smallint", ['bigint','integer','regproc','oid','real','double precision','numeric','regprocedure','regoper','regoperator','regclass','regtype','regrole','regnamespace','regconfig','regdictionary']],
+         ["text", ['regclass','character','character varying','name']],
+         ["timestamp without time zone", ['abstime','date','time without time zone','timestamp with time zone']],
+         ["timestamp with time zone", ['abstime','date','time without time zone','timestamp without time zone','time with time zone']],
+         ["time without time zone", ['interval','time with time zone']],
+         ["time with time zone", ['time without time zone']],
+         ["xml", ['text','character varying','character']]
+      ]);
    }
 
-   protected getDefaultColumnOptionsByPropertyType(): SimpleMap<DefaultColumnOptions> {
-      return {
-         // boolean types
-         'boolean ': { type: 'boolean' },
+   protected getDefaultColumnOptionsByOperation(): Map<ColumnOperation, DefaultColumnOptions> {
+      return new Map([
+         ['CreatedAt', { 
+            type: "timestamp with time zone", 
+            default: "now()", 
+            nullable: false 
+         }],
+         ['UpdatedAt', { 
+            type: "timestamp with time zone", 
+            default: "now()", 
+            nullable: false 
+         }],
+         ['DeletedAt', { 
+            type: "timestamp with time zone" 
+         }]
+      ]);
+   }
 
-         // number types
-         'bigint': { type: '' },
-         'number': { type: '' },
-
-         // string types
-         'string': { type: 'character varying' }
-      };
+   protected getDefaultColumnOptionsByPropertyType(): Map<string, DefaultColumnOptions> {
+      return new Map([
+         ['Boolean', { type: 'boolean' }],
+         ['BigInt', { type: 'bigint' }],
+         ['Number', { type: 'numeric' }],
+         ['String', { type: 'character varying' }]
+      ]);
    }
    
-   public validateColumnOptions(column: ColumnOptions): void {
-      if (column.name?.length ?? 0 > 63) {
-         throw new InvalidColumnOption(`The maximum size of the ${column.name?.length} field name cannot be longer than 63 characters`);
+   public validateColumnMetadatada(table: TableMetadata, column: ColumnMetadata): void {
+      super.validateColumnMetadatada(table, column);
+      
+      if ((column.name?.length ?? 0) > 63) {
+         throw new InvalidColumnOption(`The column name '${column.name}' cannot be longer than 63 characters.`);
       }
    }
 

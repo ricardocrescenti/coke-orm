@@ -1,9 +1,7 @@
 export class DefaultColumnOptions {
-   public length?: number;
-   public width?: number;
-   public precision?: number;
-   public scale?: number;
    public type?: string;
+   public length?: number;
+   public precision?: number;
    public nullable?: boolean;
    public default?: string;
 }

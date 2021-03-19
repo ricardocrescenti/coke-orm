@@ -3,7 +3,7 @@ import { ColumnOptions } from "../metadata/columns/column-options";
 import { EventOptions } from "../metadata/events/event-options";
 import { TableOptions } from "../metadata/tables/table-options";
 
-export class DecoratorSchema {
+export class DecoratorStore {
    private static tables: TableOptions[] = [];
    private static columns: ColumnOptions[] = [];
    private static events: EventOptions[] = [];
@@ -26,31 +26,34 @@ export class DecoratorSchema {
    }
 
    public static addColumn(column: ColumnOptions): void {
-      DecoratorSchema.columns.push(column);
+      DecoratorStore.columns.push(column);
+   }
+   public static getColumn(targets: Function[], columnProperyName: string): ColumnOptions | undefined {
+      return DecoratorStore.columns.find((column) => targets.indexOf(column.target.constructor) >= 0 && column.propertyName == columnProperyName);
    }
    public static getColumns(targets: Function[]): ColumnOptions[] {
-      return DecoratorSchema.columns.filter((column) => targets.indexOf(column.target.constructor) >= 0);
+      return DecoratorStore.columns.filter((column) => targets.indexOf(column.target.constructor) >= 0);
    }
 
    public static addEvent(event: EventOptions): void {
-      DecoratorSchema.events.push(event);
+      DecoratorStore.events.push(event);
    }
    public static getEvents(targets: Function[]): EventOptions[] {
-      return DecoratorSchema.events.filter((event) => targets.indexOf(event.target.constructor) >= 0);
+      return DecoratorStore.events.filter((event) => targets.indexOf(event.target.constructor) >= 0);
    }
 
    public static addUnique(unique: UniqueOptions): void {
-      DecoratorSchema.uniques.push(unique);
+      DecoratorStore.uniques.push(unique);
    }
    public static getUniques(targets: Function[]): UniqueOptions[] {
-      return DecoratorSchema.uniques.filter((unique) => targets.indexOf(unique.target) >= 0);
+      return DecoratorStore.uniques.filter((unique) => targets.indexOf(unique.target) >= 0);
    }
 
    public static addIndex(index: IndexOptions): void {
-      DecoratorSchema.indexs.push(index);
+      DecoratorStore.indexs.push(index);
    }
    public static getIndexs(targets: Function[]): IndexOptions[] {
-      return DecoratorSchema.indexs.filter((index) => targets.indexOf(index.target) >= 0);
+      return DecoratorStore.indexs.filter((index) => targets.indexOf(index.target) >= 0);
    }
 
 }

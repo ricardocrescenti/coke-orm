@@ -3,7 +3,7 @@ import { WarehouseModel } from "./models/warehouse.model";
 import { CokeORM } from "../../coke-orm";
 import { DatabaseDriver } from "../../common/enum/driver-type";
 import { Connection } from "../../connection/connection";
-import { DecoratorSchema } from "../../decorators/decorators-schema";
+import { DecoratorStore } from "../../decorators/decorators-store";
 import { ProductModel } from "./models/product.model";
 
 export async function test() {
@@ -40,7 +40,7 @@ export async function test() {
       synchronize: true
    });
 
-   console.log('4 - Connected', JSON.stringify(DecoratorSchema.getTables()));
+   console.log('4 - Connected', JSON.stringify(DecoratorStore.getTables()));
    console.log('5 - Connected', connection);
 
 }

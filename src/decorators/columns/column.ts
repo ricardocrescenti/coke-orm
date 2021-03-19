@@ -1,6 +1,6 @@
 import { ColumnOptions } from "../../metadata/columns/column-options";
 import { ForeignKeyOptions } from "../../metadata/foreign-key/foreign-key-options";
-import { DecoratorSchema } from "../decorators-schema";
+import { DecoratorStore } from "../decorators-store";
 
 export function Column(options?: Omit<ColumnOptions<any, ForeignKeyOptions>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'operation'>): PropertyDecorator {
 	return function (target: any, propertyKey: any) {
@@ -8,10 +8,9 @@ export function Column(options?: Omit<ColumnOptions<any, ForeignKeyOptions>, 'ta
 		const column: ColumnOptions = new ColumnOptions({
 			...options,
 			target: target, 
-			propertyName: propertyKey,
-			operation: null
+			propertyName: propertyKey
 		});  
-		DecoratorSchema.addColumn(column);
+		DecoratorStore.addColumn(column);
 		
 	};
 }

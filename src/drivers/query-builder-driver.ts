@@ -32,14 +32,14 @@ export abstract class QueryBuilderDriver {
     * 
     * @param tableMetadata 
     */
-   public abstract createTableFromMatadata(tableMetadata: TableMetadata): string;
+   public abstract createTableFromMetadata(tableMetadata: TableMetadata): string;
    
    /**
     * 
     * @param tableMetadata 
     * @param columnMetadata 
     */
-   public abstract createColumnFromMatadata(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata): string;
+   public abstract createColumnFromMetadata(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata): string;
    
    /**
     * 
@@ -51,24 +51,36 @@ export abstract class QueryBuilderDriver {
    
    /**
     * 
-    * @param tableMetadata 
-    * @param foreignKeyMetadata 
+    * @param tableMetadata
     */
-   public abstract createForeignKeyFromMatadata(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeyMetadata): string;
+   public abstract createPrimaryKeyFromMetadata(tableMetadata: TableMetadata): string;
    
    /**
     * 
     * @param tableMetadata 
     * @param indexMetadata 
     */
-   public abstract createIndexFromMatadata(tableMetadata: TableMetadata, indexMetadata: IndexMetadata): string;
+   public abstract createIndexFromMetadata(tableMetadata: TableMetadata, indexMetadata: IndexMetadata): string;
    
    /**
     * 
     * @param tableMetadata 
     * @param uniqueMetadata 
     */
-   public abstract createUniqueFromMatadata(tableMetadata: TableMetadata, uniqueMetadata: UniqueMetadata): string;
+   public abstract createUniqueFromMetadata(tableMetadata: TableMetadata, uniqueMetadata: UniqueMetadata): string;
+   
+   /**
+    * 
+    * @param tableMetadata 
+    * @param foreignKeyMetadata 
+    */
+   public abstract createForeignKeyFromMetadata(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeyMetadata): string;
+   
+   /**
+    * 
+    * @param tableMetadata 
+    */
+   public abstract deleteTableFromSchema(tableSchema: TableSchema): string;
    
    /**
     * 
@@ -79,10 +91,9 @@ export abstract class QueryBuilderDriver {
    
    /**
     * 
-    * @param tableMetadata 
-    * @param foreignKeyMetadata 
+    * @param tableMetadata
     */
-   public abstract deleteForeignKeyFromSchema(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeySchema): string;
+   public abstract deletePrimaryKeyFromSchema(tableMetadata: TableMetadata): string;
    
    /**
     * 
@@ -94,14 +105,15 @@ export abstract class QueryBuilderDriver {
    /**
     * 
     * @param tableMetadata 
+    * @param uniqueMetadata 
     */
-   public abstract deleteTableFromSchema(tableSchema: TableSchema): string;
+   public abstract deleteUniqueFromSchema(tableMetadata: TableMetadata, uniqueMetadata: UniqueSchema): string;
    
    /**
     * 
     * @param tableMetadata 
-    * @param uniqueMetadata 
+    * @param foreignKeyMetadata 
     */
-   public abstract deleteUniqueFromSchema(tableMetadata: TableMetadata, uniqueMetadata: UniqueSchema): string;
+   public abstract deleteForeignKeyFromSchema(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeySchema): string;
 
 }

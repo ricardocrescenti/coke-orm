@@ -19,7 +19,7 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
    /**
     * Original name of the property in the class referenced to this field.
     */
-   public readonly propertyType: string;
+   public readonly propertyType: Function;
    
    /**
     * Column name in the database.
@@ -86,7 +86,7 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
    /**
     * 
     */
-   public readonly operation: ColumnOperation | null;
+   public readonly operation?: ColumnOperation;
 
    /**
     * 
@@ -96,7 +96,7 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
    constructor(options: Omit<ColumnOptions<T, ForeignKeyOptions>, "propertyType">) {
       this.target = options.target;
       this.propertyName = options.propertyName;
-      this.propertyType = Reflect.getMetadata("design:type", this.target, this.propertyName).name
+      this.propertyType = Reflect.getMetadata("design:type", this.target, this.propertyName)
       this.name = options.name;
       this.type = options.type;
       this.length = options.length;

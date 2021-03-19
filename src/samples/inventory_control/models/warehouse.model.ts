@@ -1,4 +1,4 @@
-import { Column, Table, OneToMany, Unique, Index, AfterInsert } from "../../../decorators";
+import { Column, Table, OneToMany, Unique, Index, AfterInsert, AfterDelete, AfterUpdate, BeforeDelete, BeforeInsert, BeforeUpdate } from "../../../decorators";
 import { PatterModel } from "./pattern.model";
 import { ProductModel } from "./product.model";
 
@@ -20,9 +20,34 @@ export class WarehouseModel extends PatterModel {
       super();
    }
 
+   @BeforeInsert()
+   public beforeInsert() {
+      console.log('ProductModel', 'event', 'BeforeInsert');
+   }
+
+   @BeforeUpdate()
+   public beforeUpdate() {
+      console.log('ProductModel', 'event', 'BeforeUpdate');
+   }
+
+   @BeforeDelete()
+   public beforeDelete() {
+      console.log('ProductModel', 'event', 'BeforeDelete');
+   }
+
    @AfterInsert()
-   aftetInsert() {
-      console.log('after insert');
+   public afterInsert() {
+      console.log('ProductModel', 'event', 'AfterInsert');
+   }
+
+   @AfterUpdate()
+   public afterUpdate() {
+      console.log('ProductModel', 'event', 'AfterUpdate');
+   }
+
+   @AfterDelete()
+   public afterDelete() {
+      console.log('ProductModel', 'event', 'AfterDelete');
    }
 
 }

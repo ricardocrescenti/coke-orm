@@ -1,6 +1,6 @@
 import { ColumnOptions } from "../../metadata/columns/column-options";
 import { ColumnOperation } from "../../metadata/columns/column-operation";
-import { DecoratorSchema } from "../decorators-schema";
+import { DecoratorStore } from "../decorators-store";
 
 export function UpdatedAtColumn(options?: Omit<ColumnOptions<any>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'primary' | 'operation'>): PropertyDecorator {
   return function (target: any, propertyKey: any) {   
@@ -9,9 +9,9 @@ export function UpdatedAtColumn(options?: Omit<ColumnOptions<any>, 'target' | 'p
 			...options,
 			target: target, 
 			propertyName: propertyKey, 
-			operation: ColumnOperation.UpdatedAt
+			operation: 'UpdatedAt'
 		});
-		DecoratorSchema.addColumn(column);
+		DecoratorStore.addColumn(column);
 
     
   };

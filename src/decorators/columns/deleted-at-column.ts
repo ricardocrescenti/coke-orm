@@ -1,7 +1,7 @@
 import { ColumnOptions } from "../../metadata/columns/column-options";
 import { ForeignKeyOptions } from "../../metadata/foreign-key/foreign-key-options";
 import { ColumnOperation } from "../../metadata/columns/column-operation";
-import { DecoratorSchema } from "../decorators-schema";
+import { DecoratorStore } from "../decorators-store";
 
 export function DeletedAtColumn(options?: Omit<ColumnOptions<any, ForeignKeyOptions>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'operation'>): PropertyDecorator {
   return function (target: any, propertyKey: any) {
@@ -10,9 +10,9 @@ export function DeletedAtColumn(options?: Omit<ColumnOptions<any, ForeignKeyOpti
 			...options,
 			target: target, 
 			propertyName: propertyKey, 
-			operation: ColumnOperation.DeletedAt
+			operation: 'DeletedAt'
 		});
-		DecoratorSchema.addColumn(column);
+		DecoratorStore.addColumn(column);
     
   };
 }

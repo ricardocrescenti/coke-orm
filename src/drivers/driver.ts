@@ -4,15 +4,17 @@ import { ColumnOptions } from "../metadata/columns/column-options";
 import { QueryExecutor } from "../query-executor/query-executor";
 import { TableSchema } from "../schema/table-schema";
 import { DefaultColumnOptions } from "./options/default-column-options";
-import { BasicQueryBuilder } from "../query-builder/basic-query-builder";
 import { QueryBuilderDriver } from "./query-builder-driver";
+import { ColumnOperation } from "../metadata/columns/column-operation";
+import { ColumnMetadata, TableMetadata } from "../metadata";
+import { InvalidColumnOption } from "../errors/invalid-column-options";
 
 export abstract class Driver {
 
    /**
     * 
     */
-   public readonly querybuilder: QueryBuilderDriver;
+   public readonly queryBuilder: QueryBuilderDriver;
 
    /**
     * 
@@ -32,18 +34,24 @@ export abstract class Driver {
    /**
     * 
     */
-   public readonly defaultColumnOptionsByOperation: SimpleMap<DefaultColumnOptions>;
+   public readonly allowedTypesConversion: Map<string, string[]>;
 
    /**
     * 
     */
-   public readonly defaultColumnOptionsByPropertyType: SimpleMap<DefaultColumnOptions>;
+   public readonly defaultColumnOptionsByOperation: Map<ColumnOperation, DefaultColumnOptions>;
+
+   /**
+    * 
+    */
+   public readonly defaultColumnOptionsByPropertyType: Map<string, DefaultColumnOptions>;
 
    constructor() {
-      this.querybuilder = this.getQueryBuilder();
+      this.queryBuilder = this.getQueryBuilder();
       this.supportedColumnsTypes = this.getSupportedColumnsType();
       this.columnTypesWithLength = this.getColumnsTypeWithLength();
       this.columnTypesWithPrecision = this.getColumnsTypeWithPrecision();
+      this.allowedTypesConversion = this.getAllowedTypesConversion();
       this.defaultColumnOptionsByOperation = this.getDefaultColumnOptionsByOperation();
       this.defaultColumnOptionsByPropertyType = this.getDefaultColumnOptionsByPropertyType();
    }
@@ -93,7 +101,7 @@ export abstract class Driver {
     * 
     * @param connection 
     */
-   public abstract generateSQLsMigrations(connection: Connection): Promise<BasicQueryBuilder[]>;
+   public abstract generateSQLsMigrations(connection: Connection): Promise<string[]>;
 
    /**
     * 
@@ -113,23 +121,47 @@ export abstract class Driver {
    /**
     * 
     */
-   protected abstract getDefaultColumnOptionsByOperation(): SimpleMap<DefaultColumnOptions>;
+   protected abstract getAllowedTypesConversion(): Map<string, string[]>;
 
    /**
     * 
     */
-   protected abstract getDefaultColumnOptionsByPropertyType(): SimpleMap<DefaultColumnOptions>;
+   protected abstract getDefaultColumnOptionsByOperation(): Map<ColumnOperation, DefaultColumnOptions>;
+
+   /**
+    * 
+    */
+   protected abstract getDefaultColumnOptionsByPropertyType(): Map<string, DefaultColumnOptions>;
    
    /**
     * 
     * @param columnOptions 
     */
-   public getColumnType(columnOptions: ColumnOptions): string {
-      return '';
+   public detectColumnDefaults(columnOptions: ColumnOptions): DefaultColumnOptions | undefined {
+      if (columnOptions.operation) {
+         return this.defaultColumnOptionsByOperation.get(columnOptions.operation);
+      }
+      return this.defaultColumnOptionsByPropertyType.get(columnOptions.propertyType.name);
    }
 
    /**
     * 
     */
-   public abstract validateColumnOptions(column: ColumnOptions): void;
+   public validateColumnMetadatada(table: TableMetadata, column: ColumnMetadata): void {
+
+      if ((!column.relation || column.relation?.relationType != 'OneToMany')) {
+
+         // check if type if informed
+         if (!column.type) {
+            throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table does not have an informed type`);
+         }
+
+         // check if type is valid
+         if (this.supportedColumnsTypes.indexOf(column.type as string) < 0) {
+            throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table does not have an valid type (${column.type})`);
+         }
+         
+      }
+      
+   }
 }

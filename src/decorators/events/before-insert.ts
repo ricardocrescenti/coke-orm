@@ -1,6 +1,6 @@
 import { EventType } from "../../metadata/events/event-type";
 import { EventOptions } from "../../metadata";
-import { DecoratorSchema } from "../decorators-schema";
+import { DecoratorStore } from "../decorators-store";
 
 export function BeforeInsert(): MethodDecorator {
   return function (target: Object, propertyKey: any) {
@@ -10,7 +10,7 @@ export function BeforeInsert(): MethodDecorator {
 			propertyName: propertyKey,
 			type: EventType.BeforeInsert
 		});
-		DecoratorSchema.addEvent(event);
+		DecoratorStore.addEvent(event);
     
   };
 }

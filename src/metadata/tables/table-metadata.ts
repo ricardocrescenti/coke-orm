@@ -7,6 +7,7 @@ import { UniqueMetadata } from "../unique/unique-metadata";
 import { IndexMetadata } from "../index/index-metadata";
 import { PrimaryKeyMetadata } from "../primary-key/primary-key-metadata";
 import { Connection } from "../../connection/connection";
+import { ColumnMetadataNotLocated } from "../../errors/column_metadata_not_located";
 
 export class TableMetadata extends TableOptions {
 
@@ -70,9 +71,17 @@ export class TableMetadata extends TableOptions {
     */
    public readonly AfterDeleteEvents: EventMetadata[] = [];
    
-   constructor(options: Omit<TableMetadata, 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'AfterDeleteEvents'>) {
+   constructor(options: Omit<TableMetadata, 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'AfterDeleteEvents' | 'getColumn'>) {
       super(options);
       this.connection = options.connection;
+   }
+
+   public getColumn(columnName: string) : ColumnMetadata {
+      const column = this.columns[columnName];
+      if (!column) {
+         throw new ColumnMetadataNotLocated(this.className, columnName);
+      }
+      return column;
    }
 
 }

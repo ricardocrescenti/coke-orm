@@ -1,5 +1,5 @@
 import { IndexOptions } from "../../metadata/index/index-options";
-import { DecoratorSchema } from "../decorators-schema";
+import { DecoratorStore } from "../decorators-store";
 
 export function Index(options: Omit<IndexOptions, 'target'>): ClassDecorator {
   return function (target: Function) {
@@ -8,7 +8,7 @@ export function Index(options: Omit<IndexOptions, 'target'>): ClassDecorator {
        ...options,
        target: target,
     });
-    DecoratorSchema.addIndex(index);
+    DecoratorStore.addIndex(index);
     
   };
 }

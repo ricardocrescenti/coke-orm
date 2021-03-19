@@ -1,5 +1,5 @@
 import { ColumnOptions } from "../../metadata/columns/column-options";
-import { DecoratorSchema } from "../decorators-schema";
+import { DecoratorStore } from "../decorators-store";
 
 export function PrimaryColumn(options?: Omit<ColumnOptions<any>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'primary' | 'operation'>): PropertyDecorator {
 	return function (target: any, propertyKey: any) {
@@ -8,10 +8,9 @@ export function PrimaryColumn(options?: Omit<ColumnOptions<any>, 'target' | 'pro
 			...options,
 			target: target, 
 			propertyName: propertyKey, 
-			primary: true,
-			operation: null
+			primary: true
 		});
-		DecoratorSchema.addColumn(column);
+		DecoratorStore.addColumn(column);
 		
 	};
 }

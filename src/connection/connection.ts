@@ -1,15 +1,14 @@
 import { DatabaseDriver } from "../common/enum/driver-type";
 import { SimpleMap } from "../common/interfaces/map";
 import { TransactionProcess } from "../common/types/transaction-process";
-import { DecoratorSchema } from "../decorators/decorators-schema";
+import { DecoratorStore } from "../decorators/decorators-store";
 import { PostgresDriver } from "../drivers/databases/postgres/postgres-driver";
 import { Driver } from "../drivers/driver";
+import { DefaultColumnOptions } from "../drivers/options/default-column-options";
 import { AlreadyConnectedError, ColumnMetadataNotLocated, TableMetadataNotLocated } from "../errors";
-import { ColumnMetadata, EventMetadata, EventType, ForeignKeyMetadata, ForeignKeyOptions, IndexMetadata, TableMetadata, TableOptions, UniqueMetadata } from "../metadata";
+import { ColumnMetadata, ColumnOptions, EventMetadata, EventType, ForeignKeyMetadata, ForeignKeyOptions, IndexMetadata, TableMetadata, TableOptions, UniqueMetadata, UniqueOptions } from "../metadata";
 import { PrimaryKeyMetadata } from "../metadata/primary-key/primary-key-metadata";
 import { NamingStrategy } from "../naming-strategy/naming-strategy";
-import { BasicQueryBuilder } from "../query-builder/basic-query-builder";
-import { QueryBuilder } from "../query-builder/query-builder";
 import { QueryExecutor } from "../query-executor/query-executor";
 import { ConnectionOptions } from "./connection-options";
 
@@ -41,18 +40,12 @@ export class Connection {
    /**
     * 
     */
-   public readonly queryBuilder: QueryBuilder;
-
-   /**
-    * 
-    */
    public readonly activeQueryExecutors: QueryExecutor[] = [];
 
    constructor(options: ConnectionOptions) {
       this.options = new ConnectionOptions(options);
       this.driver = this.getDriver(options.driver);
       this.loadMetadataSchema();
-      this.queryBuilder = new QueryBuilder(this);
    }
 
    /**
@@ -101,7 +94,7 @@ export class Connection {
    private loadMetadataSchema() {
       console.time('loadMetadataSchema');
 
-      const tablesOptions: TableOptions[] = DecoratorSchema.getTables(this.options.tables);
+      const tablesOptions: TableOptions[] = DecoratorStore.getTables(this.options.tables);
       const namingStrategy: NamingStrategy = this.options.namingStrategy as NamingStrategy;
 
       const tableRelations: SimpleMap<SimpleMap<ColumnMetadata>> = new SimpleMap<SimpleMap<ColumnMetadata>>();
@@ -121,18 +114,41 @@ export class Connection {
          const primaryKeysColumns: ColumnMetadata[] = [];
 
          /// load table columns
-         for (const columnOption of DecoratorSchema.getColumns(tableMetadata.inheritances as Function[])) {
+         for (const columnOption of DecoratorStore.getColumns(tableMetadata.inheritances as Function[])) {
    
-            const columnName: string = columnOption.name ?? namingStrategy.columnName(tableMetadata, columnOption);
-            const columnType: string = columnOption.type ?? this.driver.getColumnType(columnOption);
+            const defaultColumnOptions = this.driver.detectColumnDefaults(columnOption);
+
+            let referencedColumnOptions: ColumnOptions | undefined;
+            let referencedDefaultColumnOptions: DefaultColumnOptions | undefined;
+            if (columnOption.relation?.relationType == 'ManyToOne' || columnOption.relation?.relationType == 'OneToOne') {
+               
+               const referencedTableOptions: TableOptions | undefined = tablesOptions.find((table) => table.className == columnOption.relation?.referencedTable)
+               if (!referencedTableOptions) {
+                  throw new Error('');
+               }
+
+               referencedColumnOptions = DecoratorStore.getColumn(referencedTableOptions.inheritances, columnOption.relation.referencedColumnName);
+               if (!referencedColumnOptions) {
+                  throw new Error('');
+               }
+
+               referencedDefaultColumnOptions = this.driver.detectColumnDefaults(referencedColumnOptions);
+            
+            }
 
             /// create table column
             const columnMetadata: ColumnMetadata = new ColumnMetadata({
                ...columnOption,
                table: tableMetadata,
-               name: columnName,
-               type: columnType
+               name: columnOption.name ?? namingStrategy.columnName(tableMetadata, columnOption),
+               type: columnOption.type ?? defaultColumnOptions?.type ?? referencedColumnOptions?.type ?? referencedDefaultColumnOptions?.type,
+               length: columnOption.length ?? defaultColumnOptions?.length ?? referencedColumnOptions?.length ?? referencedDefaultColumnOptions?.length,
+               precision: columnOption.precision ?? defaultColumnOptions?.precision ?? referencedColumnOptions?.precision ?? referencedDefaultColumnOptions?.precision,
+               nullable: columnOption.nullable ?? defaultColumnOptions?.nullable,
+               default: columnOption.default ?? defaultColumnOptions?.default
             });
+            this.driver.validateColumnMetadatada(tableMetadata, columnMetadata);
+
             tableMetadata.columns[columnMetadata.propertyName] = columnMetadata;
 
             /// check if the column is primary key
@@ -163,7 +179,7 @@ export class Connection {
          }
 
          /// load tabela uniques
-         for (const uniqueOptions of DecoratorSchema.getUniques(tableMetadata.inheritances)) {
+         for (const uniqueOptions of DecoratorStore.getUniques(tableMetadata.inheritances)) {
             tableMetadata.uniques.push(new UniqueMetadata({
                ...uniqueOptions,
                table: tableMetadata,
@@ -172,7 +188,7 @@ export class Connection {
          }
 
          /// load table indexs
-         for (const indexOptions of DecoratorSchema.getIndexs(tableMetadata.inheritances)) {
+         for (const indexOptions of DecoratorStore.getIndexs(tableMetadata.inheritances)) {
             tableMetadata.indexs.push(new IndexMetadata({
                ...indexOptions,
                table: tableMetadata,
@@ -181,7 +197,7 @@ export class Connection {
          }
 
          /// load table events
-         for (const eventOptions of DecoratorSchema.getEvents(tableMetadata.inheritances as Function[])) {
+         for (const eventOptions of DecoratorStore.getEvents(tableMetadata.inheritances as Function[])) {
             const eventMetadata: EventMetadata = new EventMetadata({
                ...eventOptions,
                table: tableMetadata,
@@ -214,7 +230,9 @@ export class Connection {
                }
 
                const referencedColumnName: string = sourceColumnMetadata.relation?.referencedColumnName as string;
-               if (!referencedTableMetadata.columns[referencedColumnName]) {
+               const referencedColumnMetadata: ColumnMetadata = referencedTableMetadata.columns[referencedColumnName];
+
+               if (!referencedColumnMetadata) {
                   throw new ColumnMetadataNotLocated(referencedTable, referencedColumnName);
                }
 
@@ -227,6 +245,25 @@ export class Connection {
                      name: namingStrategy.foreignKeyName(sourceTableMetadata, sourceColumnMetadata, sourceColumnMetadata.relation as ForeignKeyOptions)
                   });
                   sourceTableMetadata.foreignKeys.push(foreignKeyMetadata);
+
+                  if (((referencedTableMetadata.primaryKey?.columns?.length ?? 0) != 1 || referencedTableMetadata.primaryKey?.columns[0].name != referencedColumnMetadata.name) &&
+                     referencedTableMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == referencedColumnMetadata.name).length == 0 &&
+                     referencedTableMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == referencedColumnMetadata.name).length == 0) {
+
+                     const options: UniqueOptions = {
+                        target: referencedTableMetadata.target,
+                        columns: [referencedColumnMetadata.name as string],
+                     };
+         
+                     const unique: UniqueMetadata = new UniqueMetadata({
+                        ...options,
+                        table: referencedTableMetadata,
+                        name: this.options.namingStrategy?.uniqueConstraintName(referencedTableMetadata, options)
+                     });
+         
+                     referencedTableMetadata.uniques.push(unique);
+         
+                  }
                   
                }
 
@@ -287,21 +324,21 @@ export class Connection {
     * 
     */
    public async syncronize(): Promise<void> {
-      const queriesBuilder: BasicQueryBuilder[] = await this.driver.generateSQLsMigrations(this);
+      const sqlsMigrations: string[] = await this.driver.generateSQLsMigrations(this);
 
       return this.transaction<void>(async (queryRunner: QueryExecutor) => {
-         for (const queryBuilder of queriesBuilder) {
             
-            if (!queryRunner.inTransaction && this.options.migrations?.migrationsTransactionMode != 'none') {
-               await queryRunner.beginTransaction();
-            }
+         if (!queryRunner.inTransaction && this.options.migrations?.migrationsTransactionMode != 'none') {
+            //await queryRunner.beginTransaction();
+         }
 
-            await queryRunner.query(queryBuilder.sql);
+         for (const sql of sqlsMigrations) {
+            console.log(sql);
+            await queryRunner.query(sql);
+         }
 
-            if (this.options.migrations?.migrationsTransactionMode == 'each') {
-               await queryRunner.commitTransaction();
-            }
-
+         if (this.options.migrations?.migrationsTransactionMode == 'each') {
+            //await queryRunner.commitTransaction();
          }
 
       });

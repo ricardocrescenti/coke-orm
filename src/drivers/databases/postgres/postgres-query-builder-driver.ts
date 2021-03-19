@@ -13,10 +13,14 @@ import { QueryBuilderDriver } from "../../query-builder-driver";
 
 export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 
-   public createTableFromMatadata(tableMetadata: TableMetadata): string {
+   public createTableFromMetadata(tableMetadata: TableMetadata): string {
       const columns: string[] = [];
       for (const columnName in tableMetadata.columns) {
-         const column: ColumnMetadata = tableMetadata.columns[columnName];
+         const column: ColumnMetadata = tableMetadata.getColumn(columnName);
+         if (column.relation && column.relation.relationType == 'OneToMany') {
+            continue;
+         }
+
          const notNull: string = (!column.nullable ? ` NOT NULL` : '');
          const defaultValue: string = (column.default ? ` DEFAULT ${column.default}` : '')
          columns.push(`"${column.name}" ${this.generateColumnTypeSQL(column)}${notNull}${defaultValue}`);
@@ -28,7 +32,7 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
    public generateColumnTypeSQL(column: ColumnOptions): string {
       let type: string = column.type as string;
 
-      if ((this.driver.columnTypesWithLength.indexOf(type) >= 0 || this.driver.columnTypesWithPrecision.indexOf(type) >= 0)) {
+      if ((this.driver.columnTypesWithLength.indexOf(type) >= 0 || this.driver.columnTypesWithPrecision.indexOf(type) >= 0) && (column.length ?? 0) > 0) {
 
          type += '(' + column.length;
          if (this.driver.columnTypesWithPrecision.indexOf(type) >= 0) {
@@ -41,27 +45,39 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
       return type;
    }
    
-   public createColumnFromMatadata(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata): string {
+   public createColumnFromMetadata(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata): string {
       return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" ADD COLUMN "${columnMetadata.name}" ${this.generateColumnTypeSQL(columnMetadata)};`
    }
 
    public alterColumnFromMatadata(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata, columnSchema: ColumnSchema): string {
+
+      if ((columnMetadata.type != columnSchema.type) ||
+         (columnMetadata.length != null && columnMetadata.length != columnSchema.length) || 
+         (columnMetadata.precision != null && columnMetadata.precision != columnSchema.scale) || 
+         (columnMetadata.nullable != columnSchema.nullable) ||
+         (columnMetadata.default != columnSchema.default)) {
+
+      }
       throw new Error("Method not implemented.");
    }
 
-   public createForeignKeyFromMatadata(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeyMetadata): string {
-      const referencedTableMetadata: TableMetadata = foreignKeyMetadata.getReferencedTableMetadata();
-      const referencedColumnMetadata: ColumnMetadata = foreignKeyMetadata.getReferencedColumnMetadata();
-
-      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" ADD CONSTRAINT "${foreignKeyMetadata.name}" FOREIGN KEY ("${foreignKeyMetadata.column.name}") REFERENCES "${referencedTableMetadata.connection.options.schema ?? 'public'}"."${referencedTableMetadata.name}" ("${referencedColumnMetadata.name}") MATCH SIMPLE ON UPDATE ${foreignKeyMetadata.onUpdate} ON DELETE ${foreignKeyMetadata.onDelete};`;
+   public createPrimaryKeyFromMetadata(tableMetadata: TableMetadata): string {
+      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" ADD CONSTRAINT "${tableMetadata.primaryKey?.name}" PRIMARY KEY("${tableMetadata.primaryKey?.columns.join('", "')}");`
    }
 
-   public createIndexFromMatadata(tableMetadata: TableMetadata, indexMetadata: IndexMetadata): string {
+   public createIndexFromMetadata(tableMetadata: TableMetadata, indexMetadata: IndexMetadata): string {
       return `CREATE INDEX "${indexMetadata.name}" ON "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" USING btree ("${indexMetadata.columns.join('" ASC NULLS LAST, "')}" ASC NULLS LAST);`
    }
 
-   public createUniqueFromMatadata(tableMetadata: TableMetadata, uniqueMetadata: UniqueMetadata): string {
+   public createUniqueFromMetadata(tableMetadata: TableMetadata, uniqueMetadata: UniqueMetadata): string {
       return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" ADD CONSTRAINT "${uniqueMetadata.name}" UNIQUE ("${uniqueMetadata.columns.join('", "')}");`
+   }
+
+   public createForeignKeyFromMetadata(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeyMetadata): string {
+      const referencedTableMetadata: TableMetadata = foreignKeyMetadata.getReferencedTableMetadata();
+      const referencedColumnMetadata: ColumnMetadata = foreignKeyMetadata.getReferencedColumnMetadata();
+
+      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" ADD CONSTRAINT "${foreignKeyMetadata.name}" FOREIGN KEY ("${foreignKeyMetadata.column.name}") REFERENCES "${referencedTableMetadata.connection.options.schema ?? 'public'}"."${referencedTableMetadata.name}" ("${referencedColumnMetadata.name}") MATCH SIMPLE ON UPDATE ${foreignKeyMetadata.onUpdate ?? 'NO ACTION'} ON DELETE ${foreignKeyMetadata.onDelete ?? 'NO ACTION'};`;
    }
 
    public deleteTableFromSchema(tableSchema: TableSchema): string {
@@ -72,8 +88,8 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
       return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" DROP COLUMN "${columnMetadata.name}";`
    }
 
-   public deleteForeignKeyFromSchema(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeySchema): string {
-      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" DROP CONSTRAINT "${foreignKeyMetadata.name}";`;
+   public deletePrimaryKeyFromSchema(tableMetadata: TableMetadata): string {
+      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" DROP CONSTRAINT "${tableMetadata.primaryKey?.name}";`
    }
 
    public deleteIndexFromSchema(tableMetadata: TableMetadata, indexMetadata: IndexSchema): string {
@@ -82,6 +98,10 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 
    public deleteUniqueFromSchema(tableMetadata: TableMetadata, uniqueMetadata: UniqueSchema): string {
       return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" DROP CONSTRAINT "${uniqueMetadata.name}";`;
+   }
+
+   public deleteForeignKeyFromSchema(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeySchema): string {
+      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" DROP CONSTRAINT "${foreignKeyMetadata.name}";`;
    }
    
 }

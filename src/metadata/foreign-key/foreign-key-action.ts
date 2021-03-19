@@ -1,1 +1,1 @@
-export type ForeignKeyAction = "RESTRICT" | "CASCADE" | "SET NULL" | "SET DEFAULT";
+export type ForeignKeyAction = 'NO ACTION' | 'RESTRICT' | 'CASCADE' | 'SET NULL' | 'SET DEFAULT';
