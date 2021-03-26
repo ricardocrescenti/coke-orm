@@ -1,4 +1,5 @@
 import { SimpleMap } from "../../common/interfaces/map";
+import { Generate } from "../add-ons/generate";
 import { ForeignKeyMetadata } from "../foreign-key/foreign-key-metadata";
 import { IndexMetadata } from "../index/index-metadata";
 import { TableMetadata } from "../tables/table-metadata";
@@ -33,6 +34,14 @@ export class ColumnMetadata extends ColumnOptions<any> {
       this.foreignKeys = new SimpleMap<ForeignKeyMetadata>();
       this.uniques = new SimpleMap<UniqueMetadata>();
       this.indexs = new SimpleMap<IndexMetadata>();
+
+      if (this.default instanceof Generate) {
+
+         Object.assign(this.default, {
+            value: this.table.connection.driver.queryBuilder.generateColumnDefaultValue(this)
+         })
+
+      }
    }
 
 }

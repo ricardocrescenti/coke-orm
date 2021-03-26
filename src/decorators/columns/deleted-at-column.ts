@@ -10,6 +10,7 @@ export function DeletedAtColumn(options?: Omit<ColumnOptions<any, ForeignKeyOpti
 			...options,
 			target: target, 
 			propertyName: propertyKey, 
+			nullable: options?.nullable ?? true,
 			operation: 'DeletedAt'
 		});
 		DecoratorStore.addColumn(column);

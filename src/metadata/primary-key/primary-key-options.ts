@@ -10,7 +10,7 @@ export class PrimaryKeyOptions {
    /**
     * 
     */
-   public readonly columns: ColumnMetadata[];
+   public readonly columns: string[];
 
    constructor(options: PrimaryKeyOptions) {
       this.name = options.name;

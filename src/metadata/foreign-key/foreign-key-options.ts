@@ -50,12 +50,12 @@ export class ForeignKeyOptions {
     /**
      * Database cascade action on delete.
      */
-    public readonly onDelete: ForeignKeyAction;
+    public readonly onDelete?: ForeignKeyAction;
 
     /**
      * Database cascade action on update.
      */
-    public readonly onUpdate: ForeignKeyAction;
+    public readonly onUpdate?: ForeignKeyAction;
 
     /**
      * Set this relation to be lazy. Note: lazy relations are promises. When you call them they return promise
@@ -79,8 +79,8 @@ export class ForeignKeyOptions {
         this.referencedColumnName = options.referencedColumnName;
         this.cascade = options.cascade;
         this.nullable = options.nullable ?? false;
-        this.onDelete = options.onDelete;
-        this.onUpdate = options.onUpdate;
+        this.onDelete = options.onDelete ?? 'NO ACTION';
+        this.onUpdate = options.onUpdate ?? 'NO ACTION';
         this.lazy = options.lazy ?? false;
         this.eager = options.eager ?? false;
     }

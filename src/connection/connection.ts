@@ -111,13 +111,15 @@ export class Connection {
          this.tables[tableOption.target.name] = tableMetadata;        
 
          /// store primary key columns
-         const primaryKeysColumns: ColumnMetadata[] = [];
+         const primaryKeysColumns: string[] = [];
 
          /// load table columns
          for (const columnOption of DecoratorStore.getColumns(tableMetadata.inheritances as Function[])) {
    
             const defaultColumnOptions = this.driver.detectColumnDefaults(columnOption);
 
+            /// if the column has relation, the data from the referenced column will be obtained to be used in this column of 
+            /// the table, this data will only be used if the types are not reported directly in this column
             let referencedColumnOptions: ColumnOptions | undefined;
             let referencedDefaultColumnOptions: DefaultColumnOptions | undefined;
             if (columnOption.relation?.relationType == 'ManyToOne' || columnOption.relation?.relationType == 'OneToOne') {
@@ -141,9 +143,9 @@ export class Connection {
                ...columnOption,
                table: tableMetadata,
                name: columnOption.name ?? namingStrategy.columnName(tableMetadata, columnOption),
-               type: columnOption.type ?? defaultColumnOptions?.type ?? referencedColumnOptions?.type ?? referencedDefaultColumnOptions?.type,
-               length: columnOption.length ?? defaultColumnOptions?.length ?? referencedColumnOptions?.length ?? referencedDefaultColumnOptions?.length,
-               precision: columnOption.precision ?? defaultColumnOptions?.precision ?? referencedColumnOptions?.precision ?? referencedDefaultColumnOptions?.precision,
+               type: columnOption.type ?? referencedColumnOptions?.type ?? referencedDefaultColumnOptions?.type ?? defaultColumnOptions?.type,
+               length: columnOption.length ?? referencedColumnOptions?.length ?? referencedDefaultColumnOptions?.length ?? defaultColumnOptions?.length,
+               precision: columnOption.precision ?? referencedColumnOptions?.precision ?? referencedDefaultColumnOptions?.precision ?? defaultColumnOptions?.precision,
                nullable: columnOption.nullable ?? defaultColumnOptions?.nullable,
                default: columnOption.default ?? defaultColumnOptions?.default
             });
@@ -153,7 +155,7 @@ export class Connection {
 
             /// check if the column is primary key
             if (columnMetadata.primary) {
-               primaryKeysColumns.push(columnMetadata);
+               primaryKeysColumns.push(columnMetadata.propertyName);
             }
    
             /// check if the column has a relation, to process all foreign keys after loading all tables
@@ -183,7 +185,7 @@ export class Connection {
             tableMetadata.uniques.push(new UniqueMetadata({
                ...uniqueOptions,
                table: tableMetadata,
-               name: namingStrategy.uniqueConstraintName(tableMetadata, uniqueOptions)
+               name: namingStrategy.uniqueName(tableMetadata, uniqueOptions)
             }));
          }
 
@@ -246,7 +248,7 @@ export class Connection {
                   });
                   sourceTableMetadata.foreignKeys.push(foreignKeyMetadata);
 
-                  if (((referencedTableMetadata.primaryKey?.columns?.length ?? 0) != 1 || referencedTableMetadata.primaryKey?.columns[0].name != referencedColumnMetadata.name) &&
+                  if (((referencedTableMetadata.primaryKey?.columns?.length ?? 0) != 1 || referencedTableMetadata.columns[referencedTableMetadata.primaryKey?.columns[0] as string].name != referencedColumnMetadata.name) &&
                      referencedTableMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == referencedColumnMetadata.name).length == 0 &&
                      referencedTableMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == referencedColumnMetadata.name).length == 0) {
 
@@ -258,7 +260,7 @@ export class Connection {
                      const unique: UniqueMetadata = new UniqueMetadata({
                         ...options,
                         table: referencedTableMetadata,
-                        name: this.options.namingStrategy?.uniqueConstraintName(referencedTableMetadata, options)
+                        name: this.options.namingStrategy?.uniqueName(referencedTableMetadata, options)
                      });
          
                      referencedTableMetadata.uniques.push(unique);
@@ -325,21 +327,26 @@ export class Connection {
     */
    public async syncronize(): Promise<void> {
       const sqlsMigrations: string[] = await this.driver.generateSQLsMigrations(this);
-
+      if (sqlsMigrations.length == 0) {
+         return;
+      }
+      
       return this.transaction<void>(async (queryRunner: QueryExecutor) => {
             
-         if (!queryRunner.inTransaction && this.options.migrations?.migrationsTransactionMode != 'none') {
-            //await queryRunner.beginTransaction();
-         }
+         // if (!queryRunner.inTransaction && this.options.migrations?.migrationsTransactionMode != 'none') {
+         //    await queryRunner.beginTransaction();
+         // }
+         await queryRunner.beginTransaction();
 
          for (const sql of sqlsMigrations) {
             console.log(sql);
             await queryRunner.query(sql);
          }
 
-         if (this.options.migrations?.migrationsTransactionMode == 'each') {
-            //await queryRunner.commitTransaction();
-         }
+         // if (this.options.migrations?.migrationsTransactionMode == 'each') {
+         //    await queryRunner.commitTransaction();
+         // }
+         await queryRunner.commitTransaction();
 
       });
    }

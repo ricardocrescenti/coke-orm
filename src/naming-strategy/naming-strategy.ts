@@ -28,8 +28,8 @@ export class NamingStrategy {
    /**
     * Create primary key name
     */
-   primaryKeyName(tableMetadata: TableMetadata, columnsMetadata: ColumnMetadata[]): string {
-      const columnsNames: string[] = columnsMetadata.map<string>((column) => column.name as string);
+   primaryKeyName(tableMetadata: TableMetadata, columnsNames: string[]): string {
+      columnsNames = columnsNames.map<string>((columnName) => tableMetadata.columns[columnName].name as string);
       return "PK_" + StringUtils.sha1(`${tableMetadata.name}_${columnsNames.join('_')}`);//.substr(0, 27);
    }
 
@@ -44,17 +44,24 @@ export class NamingStrategy {
    /**
     * Create unique constraint name
     */
-   uniqueConstraintName(table: TableMetadata, uniqueOptions: UniqueOptions): string {
-      const columnsNames: string[] = uniqueOptions.columns.map<string>((columnPropertyName) => table.getColumn(columnPropertyName).name as string);
-      return "UQ_" + StringUtils.sha1(`${table.name}_${columnsNames.join("_")}`);//.substr(0, 27);
+   uniqueName(tableMetadata: TableMetadata, uniqueOptions: UniqueOptions): string {
+      const columnsNames: string[] = uniqueOptions.columns.map<string>((columnPropertyName) => tableMetadata.getColumn(columnPropertyName).name as string);
+      return "UQ_" + StringUtils.sha1(`${tableMetadata.name}_${columnsNames.join("_")}`);//.substr(0, 27);
    }
 
    /**
     * Create index name
     */
-   indexName(table: TableMetadata, indexOptions: IndexOptions): string {
-      const columnsNames: string[] = indexOptions.columns.map<string>((columnPropertyName) => table.getColumn(columnPropertyName).name as string);
-      return "IDX_" + StringUtils.sha1(`${table.name}_${indexOptions.unique}_${columnsNames.join("_")}`);//.substr(0, 27);
+   indexName(tableMetadata: TableMetadata, indexOptions: IndexOptions): string {
+      const columnsNames: string[] = indexOptions.columns.map<string>((columnPropertyName) => tableMetadata.getColumn(columnPropertyName).name as string);
+      return "IDX_" + StringUtils.sha1(`${tableMetadata.name}_${indexOptions.unique}_${columnsNames.join("_")}`);//.substr(0, 27);
+   }
+
+   /**
+    * Create sequence name
+    */
+   sequenceName(columnMetadata: ColumnMetadata) {
+      return `${columnMetadata.table.name}_${columnMetadata.name}_seq`;
    }
 
 

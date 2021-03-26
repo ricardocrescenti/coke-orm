@@ -26,8 +26,30 @@ export abstract class QueryBuilderDriver {
     * 
     * @param column 
     */
-   public abstract generateColumnTypeSQL(column: ColumnOptions): string;
+   public abstract generateColumnTypeSQL(columnOptions: ColumnOptions): string;
+
+   /**
+    * 
+    * @param columnMetadata 
+    */
+   public abstract generateColumnDefaultValue(columnOptions: ColumnOptions): string;
+
+   /**
+    * 
+    */
+   public abstract createUUIDExtension(): string;
    
+   /**
+    * 
+    */
+   public abstract createSequenceFromMetadata(columnMetadata: ColumnMetadata): string;
+
+   /**
+    * 
+    * @param columnMetadata 
+    */
+   public abstract associateSequenceFromMetadata(columnMetadata: ColumnMetadata): string;
+
    /**
     * 
     * @param tableMetadata 
@@ -39,42 +61,42 @@ export abstract class QueryBuilderDriver {
     * @param tableMetadata 
     * @param columnMetadata 
     */
-   public abstract createColumnFromMetadata(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata): string;
-   
+   public abstract createColumnFromMetadata(columnMetadata: ColumnMetadata): string;
+
    /**
     * 
     * @param tableMetadata 
     * @param columnMetadata 
     * @param columnSchema 
     */
-   public abstract alterColumnFromMatadata(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata, columnSchema: ColumnSchema): string;
+   public abstract alterColumnFromMatadata(columnMetadata: ColumnMetadata, columnSchema: ColumnSchema): string[];
    
    /**
     * 
     * @param tableMetadata
     */
-   public abstract createPrimaryKeyFromMetadata(tableMetadata: TableMetadata): string;
+   public abstract createPrimaryKeyFromMetadata(tableMetadata: TableMetadata, alterTable: boolean): string;
    
    /**
     * 
     * @param tableMetadata 
     * @param indexMetadata 
     */
-   public abstract createIndexFromMetadata(tableMetadata: TableMetadata, indexMetadata: IndexMetadata): string;
+   public abstract createIndexFromMetadata(indexMetadata: IndexMetadata): string;
    
    /**
     * 
     * @param tableMetadata 
     * @param uniqueMetadata 
     */
-   public abstract createUniqueFromMetadata(tableMetadata: TableMetadata, uniqueMetadata: UniqueMetadata): string;
+   public abstract createUniqueFromMetadata(uniqueMetadata: UniqueMetadata, alterTable: boolean): string;
    
    /**
     * 
     * @param tableMetadata 
     * @param foreignKeyMetadata 
     */
-   public abstract createForeignKeyFromMetadata(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeyMetadata): string;
+   public abstract createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata, alterTable: boolean): string;
    
    /**
     * 
@@ -98,22 +120,27 @@ export abstract class QueryBuilderDriver {
    /**
     * 
     * @param tableMetadata 
-    * @param indexMetadata 
+    * @param indexSchema 
     */
-   public abstract deleteIndexFromSchema(tableMetadata: TableMetadata, indexMetadata: IndexSchema): string;
+   public abstract deleteIndexFromSchema(tableMetadata: TableMetadata, indexSchema: IndexSchema): string;
    
    /**
     * 
     * @param tableMetadata 
-    * @param uniqueMetadata 
+    * @param uniqueSchema 
     */
-   public abstract deleteUniqueFromSchema(tableMetadata: TableMetadata, uniqueMetadata: UniqueSchema): string;
+   public abstract deleteUniqueFromSchema(tableMetadata: TableMetadata, uniqueSchema: UniqueSchema): string;
    
    /**
     * 
     * @param tableMetadata 
-    * @param foreignKeyMetadata 
+    * @param foreignKeySchema 
     */
-   public abstract deleteForeignKeyFromSchema(tableMetadata: TableMetadata, foreignKeyMetadata: ForeignKeySchema): string;
+   public abstract deleteForeignKeyFromSchema(tableMetadata: TableMetadata, foreignKeySchema: ForeignKeySchema): string;
+   
+   /**
+    * 
+    */
+   public abstract deleteSequenceFromName(sequenceName: string): string;
 
 }

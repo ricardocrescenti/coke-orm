@@ -9,6 +9,7 @@ export function UpdatedAtColumn(options?: Omit<ColumnOptions<any>, 'target' | 'p
 			...options,
 			target: target, 
 			propertyName: propertyKey, 
+			nullable: options?.nullable ?? false,
 			operation: 'UpdatedAt'
 		});
 		DecoratorStore.addColumn(column);

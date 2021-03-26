@@ -1,11 +1,18 @@
 import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, UpdatedAtColumn } from "../../../decorators";
+import { Generate } from "../../../metadata/add-ons/generate";
 
 export abstract class PatterModel {
 
-   @PrimaryColumn()
+   @PrimaryColumn({ 
+      default: new Generate('sequence') 
+   })
    public id?: bigint;
 
-   @Column()
+   @Column({ 
+      type: 'uuid', 
+      nullable: false,
+      default: new Generate('uuid') 
+   })
    public uuid?: string;
 
    @CreatedAtColumn()

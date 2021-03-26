@@ -95,7 +95,7 @@ export abstract class Driver {
    /**
     * 
     */
-   public abstract loadSchema(connection: Connection): Promise<SimpleMap<TableSchema>>;
+   protected abstract loadSchema(connection: Connection): Promise<SimpleMap<TableSchema>>;
 
    /**
     * 
@@ -163,5 +163,22 @@ export abstract class Driver {
          
       }
       
+   }
+   
+   /**
+    * 
+    */
+   public allowChangeColumnType(sourceType: string, targetType: string) {
+      const allowedTypesConversion = this.allowedTypesConversion.get(sourceType);
+
+      if (!allowedTypesConversion) {
+         return false;
+      }
+
+      if (allowedTypesConversion.indexOf(targetType) < 0) {
+         return false;
+      }
+
+      return true;
    }
 }

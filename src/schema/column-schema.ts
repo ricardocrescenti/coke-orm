@@ -18,6 +18,7 @@ export class ColumnSchema {
    public readonly foreignKeys: SimpleMap<ForeignKeySchema>;
    public readonly uniques: SimpleMap<UniqueSchema>;
    public readonly indexs: SimpleMap<IndexSchema>;
+   public readonly sequences: string[];
 
    constructor(column: ColumnSchema) {
       this.name = column.name;
@@ -28,9 +29,10 @@ export class ColumnSchema {
       this.length = column.length;
       this.scale = column.scale;
       this.primaryKey = column.primaryKey;
-      this.foreignKeys = column.foreignKeys;
-      this.uniques = column.uniques;
-      this.indexs = column.indexs;
+      this.foreignKeys = column.foreignKeys ?? new SimpleMap<ForeignKeySchema>();
+      this.uniques = column.uniques ?? new SimpleMap<UniqueSchema>();
+      this.indexs = column.indexs ?? new SimpleMap<IndexSchema>();
+      this.sequences = column.sequences ?? [];
    }
 
 }

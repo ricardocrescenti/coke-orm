@@ -91,6 +91,11 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
    /**
     * 
     */
+   public readonly roles?: string[];
+
+   /**
+    * 
+    */
    public readonly convertionToSave?: ConvertionValue<ColumnMetadata>;
 
    constructor(options: Omit<ColumnOptions<T, ForeignKeyOptions>, "propertyType">) {
@@ -109,6 +114,7 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
       this.canInsert = options.canInsert ?? true;
       this.canUpdate = options.canUpdate ?? true;
       this.operation = options.operation;
+      this.roles = options.roles;
       this.convertionToSave = options?.convertionToSave;
    }
 }

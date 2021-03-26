@@ -10,6 +10,7 @@ export function CreatedAtColumn(options?: Omit<ColumnOptions<any, ForeignKeyOpti
 			...options,
 			target: target, 
 			propertyName: propertyKey, 
+			nullable: options?.nullable ?? false,
 			operation: 'CreatedAt'
 		});
 		DecoratorStore.addColumn(column);

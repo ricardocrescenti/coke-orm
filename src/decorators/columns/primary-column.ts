@@ -8,7 +8,8 @@ export function PrimaryColumn(options?: Omit<ColumnOptions<any>, 'target' | 'pro
 			...options,
 			target: target, 
 			propertyName: propertyKey, 
-			primary: true
+			primary: options?.nullable ?? true,
+			nullable: false
 		});
 		DecoratorStore.addColumn(column);
 		

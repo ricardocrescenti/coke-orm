@@ -7,13 +7,13 @@ import { WarehouseModel } from "./warehouse.model";
 @Index({ columns: ['reference'] })
 export class ProductModel extends PatterModel {
 
-   @Column()
+   @Column({ nullable: false })
    public reference?: string;
 
-   @Column()
+   @Column({ nullable: false })
    public name?: string;
 
-   @ManyToOne({ relation: { referencedTable: 'WarehouseModel', referencedColumnName: 'id', cascade: false } })
+   @ManyToOne({ nullable: false, relation: { referencedTable: 'WarehouseModel', referencedColumnName: 'id', cascade: false, onUpdate: 'CASCADE', onDelete: 'RESTRICT' } })
    public warehouse?: WarehouseModel;
 
    @BeforeInsert()

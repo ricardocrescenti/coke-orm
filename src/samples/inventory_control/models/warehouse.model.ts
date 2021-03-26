@@ -7,10 +7,10 @@ import { ProductModel } from "./product.model";
 @Index({ columns: ['name'], unique: true })
 export class WarehouseModel extends PatterModel {
 
-   @Column()
+   @Column({ nullable: false })
    public name?: string = 'Sem nome';
 
-   @Column()
+   @Column({ nullable: false, default: false })
    public isDefault?: boolean;
 
    @OneToMany({ relation: { referencedTable: 'ProductModel', referencedColumnName: 'id', cascade: ['insert', 'update'] } })
