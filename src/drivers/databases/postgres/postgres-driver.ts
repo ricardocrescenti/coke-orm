@@ -428,28 +428,30 @@ export class PostgresDriver extends Driver {
             }
 
             // delete columns
-            for (const columnName of pendingColumnsSchema) {
-               const columnSchema = tableSchema.columns[columnName];
+            if (connection.options.migrations?.deleteColumns) {
+               for (const columnName of pendingColumnsSchema) {
+                  const columnSchema = tableSchema.columns[columnName];
 
-               // delete the foreign keys related to this field
-               for (const foreignKeyName in columnSchema.foreignKeys) {
-                  sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]));
-                  deletedForeignKeys.push(foreignKeyName);
+                  // delete the foreign keys related to this field
+                  for (const foreignKeyName in columnSchema.foreignKeys) {
+                     sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]));
+                     deletedForeignKeys.push(foreignKeyName);
+                  }
+
+                  // delete the uniques related to this field
+                  for (const uniqueName in columnSchema.uniques) {
+                     sqlMigrationsDropUniques.push(connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]));
+                     deletedUniques.push(uniqueName);
+                  }
+
+                  // delete the indexs related to this field
+                  for (const indexName in columnSchema.indexs) {
+                     sqlMigrationsDropIndex.push(connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]));
+                     deletedIndex.push(indexName);
+                  }
+
+                  sqlMigrationsDropColumns.push(connection.driver.queryBuilder.deleteColumnFromSchema(tableMetadata, columnSchema));
                }
-
-               // delete the uniques related to this field
-               for (const uniqueName in columnSchema.uniques) {
-                  sqlMigrationsDropUniques.push(connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]));
-                  deletedUniques.push(uniqueName);
-               }
-
-               // delete the indexs related to this field
-               for (const indexName in columnSchema.indexs) {
-                  sqlMigrationsDropIndex.push(connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]));
-                  deletedIndex.push(indexName);
-               }
-
-               sqlMigrationsDropColumns.push(connection.driver.queryBuilder.deleteColumnFromSchema(tableMetadata, columnSchema));
             }
 
             // check primary key

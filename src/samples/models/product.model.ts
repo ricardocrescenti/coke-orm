@@ -1,4 +1,4 @@
-import { AfterDelete, AfterInsert, AfterUpdate, BeforeDelete, BeforeInsert, BeforeUpdate, Column, Index, ManyToOne, Table, Unique } from "../../../decorators";
+import { AfterDelete, AfterInsert, AfterUpdate, BeforeDelete, BeforeInsert, BeforeUpdate, Column, Index, ManyToOne, Table, Unique } from "../../decorators";
 import { PatterModel } from "./pattern.model";
 import { WarehouseModel } from "./warehouse.model";
 

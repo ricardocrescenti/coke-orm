@@ -65,7 +65,7 @@ export class Connection {
 
       try {
 
-         if (this.options.synchronize) {
+         if (this.options.migrations?.synchronize) {
             await this.syncronize();
          }
 

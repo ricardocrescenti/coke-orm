@@ -1,5 +1,5 @@
-import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, UpdatedAtColumn } from "../../../decorators";
-import { Generate } from "../../../metadata/add-ons/generate";
+import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, UpdatedAtColumn } from "../../decorators";
+import { Generate } from "../../metadata/add-ons/generate";
 
 export abstract class PatterModel {
 

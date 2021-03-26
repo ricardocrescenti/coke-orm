@@ -68,11 +68,6 @@ export class ConnectionOptions {
    /**
     * 
     */
-   public readonly synchronize?: boolean
-
-   /**
-    * 
-    */
    public readonly migrations?: MigrationOptions;
 
    /**
@@ -80,6 +75,10 @@ export class ConnectionOptions {
     */
    public readonly namingStrategy?: NamingStrategy;
 
+   /**
+    * 
+    * @param options 
+    */
    constructor(options: ConnectionOptions) {
       this.name = options?.name ?? 'default';
       this.driver = options?.driver;
@@ -92,7 +91,6 @@ export class ConnectionOptions {
       this.timezone = options?.timezone;
       this.pool = new PoolOptions(options?.pool);
       this.tables = options.tables;
-      this.synchronize = options?.synchronize ?? false;
       this.migrations = new MigrationOptions(options?.migrations);
       this.namingStrategy = options.namingStrategy ?? new NamingStrategy();
    }

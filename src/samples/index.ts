@@ -1,9 +1,8 @@
 import { WarehouseModel } from "./models/warehouse.model";
-//import { ProductModel } from "./models/product.model";
-import { CokeORM } from "../../coke-orm";
-import { DatabaseDriver } from "../../common/enum/driver-type";
-import { Connection } from "../../connection/connection";
-import { DecoratorStore } from "../../decorators/decorators-store";
+import { CokeORM } from "../coke-orm";
+import { DatabaseDriver } from "../common/enum/driver-type";
+import { Connection } from "../connection/connection";
+import { DecoratorStore } from "../decorators/decorators-store";
 import { ProductModel } from "./models/product.model";
 
 export async function test() {
@@ -37,7 +36,9 @@ export async function test() {
          WarehouseModel,
          ProductModel
       ],
-      synchronize: true
+      migrations: {
+         synchronize: true
+      }
    });
 
    console.log('4 - Connected', JSON.stringify(DecoratorStore.getTables()));
