@@ -19,7 +19,7 @@ export class NamingStrategy {
       let name = columnOptions.propertyName 
          
       if (columnOptions.relation?.relationType == 'ManyToOne' || columnOptions.relation?.relationType == 'OneToOne') {
-         name += '_' + columnOptions.relation.referencedColumnName;
+         name += '_' + columnOptions.relation.referencedColumn;
       }
 
       return StringUtils.snakeCase(name);
@@ -37,7 +37,7 @@ export class NamingStrategy {
     * Create foreign key name
     */
    foreignKeyName(tableMetadata: TableMetadata, columnMetadata: ColumnMetadata, foreignKeyOptions: ForeignKeyOptions): string {
-      const key = `${tableMetadata.className}_${columnMetadata.propertyName}${foreignKeyOptions.referencedColumnName}`;
+      const key = `${tableMetadata.className}_${columnMetadata.propertyName}${foreignKeyOptions.referencedColumn}`;
       return "FK_" + StringUtils.sha1(key).substr(0, 27);
    }
 

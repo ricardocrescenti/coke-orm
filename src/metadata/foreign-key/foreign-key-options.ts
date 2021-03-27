@@ -31,7 +31,7 @@ export class ForeignKeyOptions {
     /**
      * Name of the class field referenced to this field
      */
-    public readonly referencedColumnName: string
+    public readonly referencedColumn: string
 
     /**
      * Sets cascades options for the given relation.
@@ -40,7 +40,7 @@ export class ForeignKeyOptions {
      *
      * cascade: ["insert", "update", "remove", "soft-remove", "recover"] // include or exclude one of them
      */
-    public readonly cascade: boolean|("insert"|"update"|"remove")[];
+    public readonly cascade?: boolean|("insert"|"update"|"remove")[];
 
     /**
      * Indicates if relation column value can be nullable or not.
@@ -76,7 +76,7 @@ export class ForeignKeyOptions {
         this.name = options.name;
         this.relationType = options.relationType;
         this.referencedTable = options.referencedTable;
-        this.referencedColumnName = options.referencedColumnName;
+        this.referencedColumn = options.referencedColumn;
         this.cascade = options.cascade;
         this.nullable = options.nullable ?? false;
         this.onDelete = options.onDelete ?? 'NO ACTION';

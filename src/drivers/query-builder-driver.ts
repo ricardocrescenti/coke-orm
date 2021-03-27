@@ -96,7 +96,7 @@ export abstract class QueryBuilderDriver {
     * @param tableMetadata 
     * @param foreignKeyMetadata 
     */
-   public abstract createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata, alterTable: boolean): string;
+   public abstract createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata): string;
    
    /**
     * 

@@ -485,38 +485,38 @@ export class PostgresDriver extends Driver {
                sqlMigrationsDropUniques.push(connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]))
             }
 
-            // check foreign keys
-            const pendingForeignKeysSchema: string[] = Object.keys(tableSchema.foreignKeys);
-            const foreignKeys: ForeignKeyMetadata[] = (tableMetadata.foreignKeys ?? []);
-            for (let i = 0; i < foreignKeys.length; i++) {
-               const foreignKeyMetadata: ForeignKeyMetadata = foreignKeys[i];
-               const foreignKeySchema: ForeignKeySchema = tableSchema.foreignKeys[foreignKeyMetadata.name as string];
-   
-               if (!foreignKeySchema || foreignKeyMetadata.onUpdate != foreignKeySchema.onUpdate || foreignKeyMetadata.onDelete != foreignKeySchema.onDelete || deletedForeignKeys.indexOf(foreignKeySchema.name) >= 0) {
-                  if (foreignKeySchema) {
-                     sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, foreignKeySchema));
-                  }
-                  sqlMigrationsCreateForeignKeys.push(connection.driver.queryBuilder.createForeignKeyFromMetadata(foreignKeyMetadata, true));
+         }
+
+         // check foreign keys
+         const pendingForeignKeysSchema: string[] = Object.keys(tableSchema?.foreignKeys ?? []);
+         const foreignKeys: ForeignKeyMetadata[] = (tableMetadata.foreignKeys ?? []);
+         for (let i = 0; i < foreignKeys.length; i++) {
+            const foreignKeyMetadata: ForeignKeyMetadata = foreignKeys[i];
+            const foreignKeySchema: ForeignKeySchema = tableSchema?.foreignKeys[foreignKeyMetadata.name as string];
+
+            if (!foreignKeySchema || foreignKeyMetadata.onUpdate != foreignKeySchema.onUpdate || foreignKeyMetadata.onDelete != foreignKeySchema.onDelete || deletedForeignKeys.indexOf(foreignKeySchema.name) >= 0) {
+               if (foreignKeySchema) {
+                  sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, foreignKeySchema));
                }
-   
-               if (pendingForeignKeysSchema.indexOf(foreignKeyMetadata.name as string) >= 0) {
-                  pendingForeignKeysSchema.splice(pendingForeignKeysSchema.indexOf(foreignKeyMetadata.name as string), 1);
-               }
-            }
-   
-            // delete foreign keys
-            for (const foreignKeyName in pendingForeignKeysSchema) {
-               sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]))
+               sqlMigrationsCreateForeignKeys.push(connection.driver.queryBuilder.createForeignKeyFromMetadata(foreignKeyMetadata));
             }
 
+            if (pendingForeignKeysSchema.indexOf(foreignKeyMetadata.name as string) >= 0) {
+               pendingForeignKeysSchema.splice(pendingForeignKeysSchema.indexOf(foreignKeyMetadata.name as string), 1);
+            }
+         }
+
+         // delete foreign keys
+         for (const foreignKeyName in pendingForeignKeysSchema) {
+            sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]))
          }
 
          // check indexs
-         const pendingIndexsSchema: string[] = Object.keys(tableSchema.indexs);
+         const pendingIndexsSchema: string[] = Object.keys(tableSchema?.indexs ?? []);
          const indexs: IndexMetadata[] = (tableMetadata.indexs ?? []);
          for (let i = 0; i < indexs.length; i++) {
             const indexMetadata: IndexMetadata = indexs[i];
-            const indexSchema: IndexSchema = tableSchema.indexs[indexMetadata.name as string];
+            const indexSchema: IndexSchema = tableSchema?.indexs[indexMetadata.name as string];
             
             if (!indexSchema || deletedIndex.indexOf(indexSchema.name) >= 0) {
                sqlMigrationsCreateIndexs.push(connection.driver.queryBuilder.createIndexFromMetadata(indexMetadata));
@@ -793,6 +793,7 @@ export class PostgresDriver extends Driver {
       return new Map([
          ['Boolean', { type: 'boolean' }],
          ['BigInt', { type: 'bigint' }],
+         ['Date', { type: 'timestamp with time zone' }],
          ['Number', { type: 'numeric' }],
          ['String', { type: 'character varying' }]
       ]);
@@ -802,7 +803,7 @@ export class PostgresDriver extends Driver {
       super.validateColumnMetadatada(table, column);
       
       if ((column.name?.length ?? 0) > 63) {
-         throw new InvalidColumnOption(`The column name '${column.name}' cannot be longer than 63 characters.`);
+         throw new InvalidColumnOption(`The '${column.name}' column of the '${column.table.name}' table cannot be longer than 63 characters.`);
       }
    }
 

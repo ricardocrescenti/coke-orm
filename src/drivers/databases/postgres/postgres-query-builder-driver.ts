@@ -81,10 +81,6 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
          constraints.push(this.createUniqueFromMetadata(unique, false));
       }
 
-      for (const foreignKey of tableMetadata.foreignKeys) {
-         constraints.push(this.createForeignKeyFromMetadata(foreignKey, false));
-      }
-
       return `CREATE TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" (${columns.join(', ')}${constraints.length > 0 ? `, ${constraints.join(', ')}` : ''});`;
    }
    
@@ -127,37 +123,36 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
    }
 
    public createPrimaryKeyFromMetadata(tableMetadata: TableMetadata, alterTable: boolean): string {
-      const constraint: string = `CONSTRAINT "${tableMetadata.primaryKey?.name}" PRIMARY KEY("${(tableMetadata.primaryKey?.columns?.map((column) => tableMetadata.columns[column].name as string) ?? []).join('", "')}"`;
+      const columnsName: string[] = tableMetadata.primaryKey?.columns?.map((column) => tableMetadata.columns[column].name as string) ?? [];
+      const constraint: string = `CONSTRAINT "${tableMetadata.primaryKey?.name}" PRIMARY KEY("${columnsName.join('", "')}")`;
 
       if (alterTable) {
-         return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" ADD ${constraint});`;
+         return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" ADD ${constraint};`;
       }
       return constraint;
    }
 
    public createIndexFromMetadata(indexMetadata: IndexMetadata): string {
-      return `CREATE INDEX "${indexMetadata.name}" ON "${indexMetadata.table.connection.options.schema ?? 'public'}"."${indexMetadata.table.name}" USING btree ("${indexMetadata.columns.join('" ASC NULLS LAST, "')}" ASC NULLS LAST);`
+      const columnsName: string[] = indexMetadata.columns.map(columnPropertyName => indexMetadata.table.columns[columnPropertyName].name as string);
+      return `CREATE INDEX "${indexMetadata.name}" ON "${indexMetadata.table.connection.options.schema ?? 'public'}"."${indexMetadata.table.name}" USING btree ("${columnsName.join('" ASC NULLS LAST, "')}" ASC NULLS LAST);`
    }
 
    public createUniqueFromMetadata(uniqueMetadata: UniqueMetadata, alterTable: boolean): string {
-      const constraint: string = `CONSTRAINT "${uniqueMetadata.name}" UNIQUE ("${uniqueMetadata.columns.join('", "')}"`;
+      const columnsName: string[] = uniqueMetadata.columns.map(columnPropertyName => uniqueMetadata.table.columns[columnPropertyName].name as string);
+      const constraint: string = `CONSTRAINT "${uniqueMetadata.name}" UNIQUE ("${columnsName.join('", "')}")`;
 
       if (alterTable) {
-         return `ALTER TABLE "${uniqueMetadata.table.connection.options.schema ?? 'public'}"."${uniqueMetadata.table.name}" ADD ${constraint});`;
+         return `ALTER TABLE "${uniqueMetadata.table.connection.options.schema ?? 'public'}"."${uniqueMetadata.table.name}" ADD ${constraint};`;
       }
       return constraint;
    }
 
-   public createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata, alterTable: boolean): string {
+   public createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata): string {
       const referencedTableMetadata: TableMetadata = foreignKeyMetadata.getReferencedTableMetadata();
       const referencedColumnMetadata: ColumnMetadata = foreignKeyMetadata.getReferencedColumnMetadata();
 
       const constraint: string = `CONSTRAINT "${foreignKeyMetadata.name}" FOREIGN KEY ("${foreignKeyMetadata.column.name}") REFERENCES "${referencedTableMetadata.connection.options.schema ?? 'public'}"."${referencedTableMetadata.name}" ("${referencedColumnMetadata.name}") MATCH SIMPLE ON UPDATE ${foreignKeyMetadata.onUpdate ?? 'NO ACTION'} ON DELETE ${foreignKeyMetadata.onDelete ?? 'NO ACTION'}`;
-
-      if (alterTable) {
-         return `ALTER TABLE "${foreignKeyMetadata.table.connection.options.schema ?? 'public'}"."${foreignKeyMetadata.table.name}" ADD ${constraint};`;
-      }
-      return constraint;
+      return `ALTER TABLE "${foreignKeyMetadata.table.connection.options.schema ?? 'public'}"."${foreignKeyMetadata.table.name}" ADD ${constraint};`;
    }
 
    public deleteTableFromSchema(tableSchema: TableSchema): string {

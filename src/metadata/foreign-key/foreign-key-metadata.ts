@@ -25,7 +25,7 @@ export class ForeignKeyMetadata extends ForeignKeyOptions {
    }
 
    public getReferencedColumnMetadata(): ColumnMetadata {
-      return this.getReferencedTableMetadata().getColumn(this.referencedColumnName);
+      return this.getReferencedTableMetadata().getColumn(this.referencedColumn);
    }
 
 }

@@ -5,7 +5,7 @@ import { DecoratorStore } from "../decorators/decorators-store";
 import { PostgresDriver } from "../drivers/databases/postgres/postgres-driver";
 import { Driver } from "../drivers/driver";
 import { DefaultColumnOptions } from "../drivers/options/default-column-options";
-import { AlreadyConnectedError, ColumnMetadataNotLocated, TableMetadataNotLocated } from "../errors";
+import { AlreadyConnectedError, ColumnMetadataNotLocated, ReferencedColumnMetadataNotLocated, ReferencedTableMetadataNotLocated, TableMetadataNotLocated } from "../errors";
 import { ColumnMetadata, ColumnOptions, EventMetadata, EventType, ForeignKeyMetadata, ForeignKeyOptions, IndexMetadata, TableMetadata, TableOptions, UniqueMetadata, UniqueOptions } from "../metadata";
 import { PrimaryKeyMetadata } from "../metadata/primary-key/primary-key-metadata";
 import { NamingStrategy } from "../naming-strategy/naming-strategy";
@@ -126,12 +126,12 @@ export class Connection {
                
                const referencedTableOptions: TableOptions | undefined = tablesOptions.find((table) => table.className == columnOption.relation?.referencedTable)
                if (!referencedTableOptions) {
-                  throw new Error('');
+                  throw new ReferencedTableMetadataNotLocated(tableMetadata.className, columnOption.relation.referencedTable);
                }
 
-               referencedColumnOptions = DecoratorStore.getColumn(referencedTableOptions.inheritances, columnOption.relation.referencedColumnName);
+               referencedColumnOptions = DecoratorStore.getColumn(referencedTableOptions.inheritances, columnOption.relation.referencedColumn);
                if (!referencedColumnOptions) {
-                  throw new Error('');
+                  throw new ReferencedColumnMetadataNotLocated(tableMetadata.className, columnOption.relation.referencedTable, columnOption.relation.referencedColumn);
                }
 
                referencedDefaultColumnOptions = this.driver.detectColumnDefaults(referencedColumnOptions);
@@ -231,7 +231,7 @@ export class Connection {
                   throw new TableMetadataNotLocated(referencedTable);
                }
 
-               const referencedColumnName: string = sourceColumnMetadata.relation?.referencedColumnName as string;
+               const referencedColumnName: string = sourceColumnMetadata.relation?.referencedColumn as string;
                const referencedColumnMetadata: ColumnMetadata = referencedTableMetadata.columns[referencedColumnName];
 
                if (!referencedColumnMetadata) {
@@ -248,13 +248,36 @@ export class Connection {
                   });
                   sourceTableMetadata.foreignKeys.push(foreignKeyMetadata);
 
+                  if (sourceColumnMetadata.relation?.relationType == 'OneToOne') {
+
+                     if (((sourceTableMetadata.primaryKey?.columns?.length ?? 0) != 1 || sourceTableMetadata.columns[sourceTableMetadata.primaryKey?.columns[0] as string].name != sourceColumnMetadata.name) &&
+                        sourceTableMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == sourceColumnMetadata.name).length == 0 &&
+                        sourceTableMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == sourceColumnMetadata.name).length == 0) {
+
+                        const options: UniqueOptions = {
+                           target: sourceTableMetadata.target,
+                           columns: [sourceColumnMetadata.propertyName],
+                        };
+            
+                        const unique: UniqueMetadata = new UniqueMetadata({
+                           ...options,
+                           table: sourceTableMetadata,
+                           name: this.options.namingStrategy?.uniqueName(sourceTableMetadata, options)
+                        });
+            
+                        sourceTableMetadata.uniques.push(unique);
+            
+                     }
+                     
+                  }
+
                   if (((referencedTableMetadata.primaryKey?.columns?.length ?? 0) != 1 || referencedTableMetadata.columns[referencedTableMetadata.primaryKey?.columns[0] as string].name != referencedColumnMetadata.name) &&
                      referencedTableMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == referencedColumnMetadata.name).length == 0 &&
                      referencedTableMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == referencedColumnMetadata.name).length == 0) {
 
                      const options: UniqueOptions = {
                         target: referencedTableMetadata.target,
-                        columns: [referencedColumnMetadata.name as string],
+                        columns: [referencedColumnMetadata.propertyName],
                      };
          
                      const unique: UniqueMetadata = new UniqueMetadata({

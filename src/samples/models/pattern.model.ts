@@ -1,7 +1,8 @@
 import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, UpdatedAtColumn } from "../../decorators";
 import { Generate } from "../../metadata/add-ons/generate";
+import { CokenModel } from "../../pattern/coken-model";
 
-export abstract class PatterModel {
+export abstract class PatternModel extends CokenModel {
 
    @PrimaryColumn({ 
       default: new Generate('sequence') 
@@ -23,5 +24,10 @@ export abstract class PatterModel {
 
    @DeletedAtColumn()
    public deletedAt?: Date;
+
+   constructor(object: any = null) {
+      super();
+      this.loadModelValuesByObject(object);
+   }
 
 }
