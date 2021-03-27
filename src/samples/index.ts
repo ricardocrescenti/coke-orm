@@ -17,18 +17,7 @@ import { PriceListModel } from "./models/product/price-list.model";
 
 export async function test() {
 
-   //console.log('1 - Creating Models');
-
-   //const warehouse = new WarehouseModel();
-   //const product = new ProductModel();
-
-   //console.log('2 - Metadata');
-
-   //const tables = Metadata.get().getTables();
-   //console.log('Metadata.tables', JSON.stringify(tables));
-
-   console.log('3 - Conecting');
-   console.time('CokeORM');
+   console.log(new Date().toLocaleString());
 
    const connection: Connection = await CokeORM.connect({
       // driver: DatabaseDriver.Postgres,
@@ -62,12 +51,10 @@ export async function test() {
       }
    });
 
-   console.log('4 - Connected', JSON.stringify(DecoratorStore.getTables()));
-   console.log('5 - Connected', connection);
-   console.timeEnd('CokeORM');
+   console.log(new Date().toLocaleString());
 
 }
 
 test().catch((error) => {
-   console.log('4 - ', error);
+   console.error(error);
 })

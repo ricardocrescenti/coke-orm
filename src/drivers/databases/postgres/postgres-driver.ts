@@ -142,7 +142,6 @@ export class PostgresDriver extends Driver {
             ORDER BY c.table_schema, c.table_name) c on (c.table_schema = t.table_schema and c.table_name = t.table_name)
          
          WHERE t.table_schema = '${connection.options.schema ?? 'public'}'
-         AND t.table_name in ('products','warehouses')
          ORDER BY t.table_name`);
       
       console.timeLog('schema query');
