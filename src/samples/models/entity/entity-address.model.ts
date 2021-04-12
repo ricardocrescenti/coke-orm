@@ -1,5 +1,7 @@
 import { Column, ManyToOne, Table, Unique } from "../../../decorators";
+import { TableMetadata } from "../../../metadata/tables/table-metadata";
 import { QueryExecutor } from "../../../query-executor/query-executor";
+import { TableManager } from "../../../table-manager/table-manager";
 import { PatternModel } from "../pattern.model";
 import { CityModel } from "./city.model";
 import { EntityModel } from "./entity.model";
@@ -65,13 +67,13 @@ export class EntityAddressModel extends PatternModel {
 	// eslint-disable-next-line no-unused-vars
 	//abstract createCityModel(object: any): CityModel;
 
-	public async loadReference(queryExecutor: QueryExecutor) {
-		if ((this.zipCode ?? '').length > 0) {
-			this.city = await this.getCity(queryExecutor);
-			await this.city?.save(queryExecutor);
-		}
+	public async loadReference(tableManager: TableManager<this>) {
+		// if ((this.zipCode ?? '').length > 0) {
+		// 	this.city = await this.getCity(tableManager);
+		// 	await this.city?.save(tableManager);
+		// }
 
-		return super.loadReference(queryExecutor);
+		return super.loadReference(tableManager);
 
 		// return await super.getReference(entityManager, where ?? (Utility.isNotEmpty(this.entity?.id) ? {
 		// 	contact: this.contact,
@@ -86,27 +88,27 @@ export class EntityAddressModel extends PatternModel {
 		// } : null));
 	}
 
-	public async getCity(queryExecutor: QueryExecutor) {
-		if (this.city) {
-			await this.city.loadReference(queryExecutor);
-		}
+	// public async getCity(tableManager: TableManager<this>) {
+	// 	if (this.city) {
+	// 		await this.city.loadReference(tableManager);
+	// 	}
 
-		if ((this.city?.id ?? 0) == 0) {
+	// 	if ((this.city?.id ?? 0) == 0) {
 
-			this.city = new CityModel({
-				code: '123456789',
-				name: 'Guaporé',
-				state: 'RS',
-				country: 'BRA'
-			});
-			await this.city.loadReference(queryExecutor);
+	// 		this.city = new CityModel({
+	// 			code: '123456789',
+	// 			name: 'Guaporé',
+	// 			state: 'RS',
+	// 			country: 'BRA'
+	// 		});
+	// 		await this.city.loadReference(tableManager);
 
-		}
+	// 	}
 
-		if ((this.city?.id ?? 0) > 0) {
-			this.city = new CityModel({ id: this.city?.id });
-		}
+	// 	if ((this.city?.id ?? 0) > 0) {
+	// 		this.city = new CityModel({ id: this.city?.id });
+	// 	}
 
-		return this.city;
-	}
+	// 	return this.city;
+	// }
 }

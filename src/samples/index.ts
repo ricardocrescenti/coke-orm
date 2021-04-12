@@ -17,7 +17,7 @@ import { PriceListModel } from "./models/product/price-list.model";
 
 export async function test() {
 
-   console.log(new Date().toLocaleString());
+   console.log('Connecting', new Date().toLocaleString());
 
    const connection: Connection = await CokeORM.connect({
       // driver: DatabaseDriver.Postgres,
@@ -51,7 +51,74 @@ export async function test() {
       }
    });
 
-   console.log(new Date().toLocaleString());
+   console.log('Connected', new Date().toLocaleString());
+
+   // const cities = await connection.createSelectQuery<CustomerModel>()
+   //    .select({ column: 'id' })
+   //    .from('cities')
+   //    .where([
+   //       {
+   //          id: { _eq: -1 }
+   //       },
+   //       {
+   //          id: { _eq: 0 },
+   //          _or: [
+   //             { id: { _eq: 1 } },
+   //             { id: { _eq: 2 } },
+   //             { id: { _eq: 3 } }
+   //          ]
+   //       },
+   //       {
+   //          _or: [
+   //             { id: { _eq: 4 } },
+   //             { id: { _eq: 5 } },
+   //             { id: { _eq: 6 } }
+   //          ]
+   //       }
+   //    ])
+
+   const entity = await connection.createTableManager(EntityModel).find({
+      // select: [
+      //    'id',
+      //    'name',
+      //    ['addresses', [
+      //       'id', 
+      //       'description', 
+      //       'contact',
+      //       ['city', [
+      //          'id',
+      //          'name'
+      //       ]]
+      //    ]],
+      //    'photo'
+      // ],
+      relations: [
+         'addresses',
+         'addresses.city',
+         'photo'
+      ],
+      // where: {
+      //    name: { _eq: 'Ricardo Crescenti' }
+      // }
+   });
+   console.log('find', entity);
+
+   const guapore: CityModel = new CityModel({
+      code: '4309407',
+      name: 'Guaporé',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await guapore.save(connection);
+   console.log('save', guapore);
+
+   const portoAlegre = await connection.createTableManager(CityModel).save({
+      code: '4309408',
+      name: 'Porto Alegre',
+      state: 'RS',
+      country: 'BRA'
+   });
+   console.log(portoAlegre);
 
 }
 

@@ -1,6 +1,6 @@
 import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, UpdatedAtColumn } from "../../decorators";
 import { Generate } from "../../metadata/add-ons/generate";
-import { CokenModel } from "../../pattern/coken-model";
+import { CokenModel } from "../../table-manager/coken-model";
 
 export abstract class PatternModel extends CokenModel {
 
@@ -27,7 +27,6 @@ export abstract class PatternModel extends CokenModel {
 
    constructor(object: any = null) {
       super();
-      this.loadModelValuesByObject(object);
    }
 
 }

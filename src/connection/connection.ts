@@ -1,15 +1,19 @@
 import { DatabaseDriver } from "../common/enum/driver-type";
 import { SimpleMap } from "../common/interfaces/map";
+import { TableConstructor } from "../common/types/table-type";
 import { TransactionProcess } from "../common/types/transaction-process";
 import { DecoratorStore } from "../decorators/decorators-store";
 import { PostgresDriver } from "../drivers/databases/postgres/postgres-driver";
 import { Driver } from "../drivers/driver";
 import { DefaultColumnOptions } from "../drivers/options/default-column-options";
 import { AlreadyConnectedError, ColumnMetadataNotLocated, ReferencedColumnMetadataNotLocated, ReferencedTableMetadataNotLocated, TableMetadataNotLocated } from "../errors";
+import { TableHasNoPrimaryKey } from "../errors/table-has-no-primary-key";
 import { ColumnMetadata, ColumnOptions, EventMetadata, EventType, ForeignKeyMetadata, ForeignKeyOptions, IndexMetadata, TableMetadata, TableOptions, UniqueMetadata, UniqueOptions } from "../metadata";
 import { PrimaryKeyMetadata } from "../metadata/primary-key/primary-key-metadata";
 import { NamingStrategy } from "../naming-strategy/naming-strategy";
+import { SelectQueryBuilder } from "../query-builder/select-query-builder";
 import { QueryExecutor } from "../query-executor/query-executor";
+import { TableManager } from "../table-manager/table-manager";
 import { ConnectionOptions } from "./connection-options";
 
 export class Connection {
@@ -170,15 +174,17 @@ export class Connection {
          }
 
          /// create table primary key
-         if (primaryKeysColumns.length > 0) {
-            Object.assign(tableMetadata, {
-               primaryKey: new PrimaryKeyMetadata({
-                  table: tableMetadata,
-                  name: namingStrategy.primaryKeyName(tableMetadata, primaryKeysColumns),
-                  columns: primaryKeysColumns
-               })
-            })
+         if (primaryKeysColumns.length == 0) {
+            throw new TableHasNoPrimaryKey(tableMetadata.className);
          }
+
+         Object.assign(tableMetadata, {
+            primaryKey: new PrimaryKeyMetadata({
+               table: tableMetadata,
+               name: namingStrategy.primaryKeyName(tableMetadata, primaryKeysColumns),
+               columns: primaryKeysColumns
+            })
+         })
 
          /// load tabela uniques
          for (const uniqueOptions of DecoratorStore.getUniques(tableMetadata.inheritances)) {
@@ -303,6 +309,34 @@ export class Connection {
     */
    public createQueryExecutor(): Promise<QueryExecutor> {  
       return QueryExecutor.create(this);
+   }
+
+   /**
+    * 
+    * @param table 
+    * @param queryExecutor 
+    */
+   public createTableManager<T>(table: string | TableConstructor<T> | TableMetadata, queryExecutor?: QueryExecutor): TableManager<T> {
+      if (typeof(table) == 'string') {
+         table = this.tables[table as string];
+      } else if (table instanceof Function) {
+         table = this.tables[table.name];
+      }
+
+      if (!table) {
+         throw new Error('Tabela inválida para efetuar a consulta');
+      }
+
+      return new TableManager<T>(this, table, queryExecutor);
+   }
+
+   /**
+    * 
+    * @param queryExecutor 
+    * @returns 
+    */
+   public createSelectQuery<T>(queryExecutor?: QueryExecutor) {
+      return new SelectQueryBuilder<T>(this, queryExecutor);
    }
 
    /**

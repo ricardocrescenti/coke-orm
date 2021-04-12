@@ -88,6 +88,7 @@ export class ConnectionOptions {
       this.password = options?.password;
       this.database = options?.database;
       this.connectionString = options?.connectionString;
+      this.schema = options?.schema;
       this.timezone = options?.timezone;
       this.pool = new PoolOptions(options?.pool);
       this.tables = options.tables;

@@ -64,6 +64,15 @@ export class NamingStrategy {
       return `${columnMetadata.table.name}_${columnMetadata.name}_seq`;
    }
 
+   /**
+    * Gets the name of the alias used for relation joins.
+    */
+    eagerJoinRelationAlias(columnMetadata: ColumnMetadata): string {
+      return `${columnMetadata.propertyName}_${columnMetadata.relation?.referencedTable}`;
+   }
+
+   /** ABAIXO - METODOS NÃO USADOS */
+
 
    /**
     * Gets the relation constraint (UNIQUE or UNIQUE INDEX) name from the given table name, column names
@@ -130,13 +139,6 @@ export class NamingStrategy {
     */
    prefixTableName(prefix: string, tableName: string): string {
       return prefix + tableName;
-   }
-
-   /**
-    * Gets the name of the alias used for relation joins.
-    */
-   eagerJoinRelationAlias(alias: string, propertyPath: string): string {
-      return alias + "_" + propertyPath.replace(".", "_");
    }
 
 }

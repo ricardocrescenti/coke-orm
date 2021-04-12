@@ -76,6 +76,11 @@ export class TableMetadata extends TableOptions {
       this.connection = options.connection;
    }
 
+   /**
+    * 
+    * @param columnName 
+    * @returns 
+    */
    public getColumn(columnName: string) : ColumnMetadata {
       const column = this.columns[columnName];
       if (!column) {

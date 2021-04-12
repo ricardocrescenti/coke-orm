@@ -1,5 +1,7 @@
 import { Column, OneToOne, Table, Unique } from "../../../decorators";
+import { TableMetadata } from "../../../metadata/tables/table-metadata";
 import { QueryExecutor } from "../../../query-executor/query-executor";
+import { TableManager } from "../../../table-manager/table-manager";
 import { PatternModel } from "../pattern.model";
 import { EntityModel } from "./entity.model";
 
@@ -31,11 +33,11 @@ export class SellerModel extends PatternModel {
 	// eslint-disable-next-line no-unused-vars
 	//abstract createEntityModel(object: any): EntityModel;
 
-	public async loadReference(queryExecutor: QueryExecutor) {
-		await super.loadReference(queryExecutor);
+	public async loadReference(tableManager: TableManager<this>) {
+		await super.loadReference(tableManager);
 
 		if (this.entity) {
-			await this.entity.loadReferenceByParent(queryExecutor, this);
+			await this.entity.loadReferenceByParent(tableManager.connection.createTableManager('EntityModel'), this);
 		}
 		
 		return this.id;

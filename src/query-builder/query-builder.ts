@@ -1,32 +1,61 @@
+import { Connection } from "../connection/connection";
+import { TableMetadata } from "../metadata/tables/table-metadata";
 import { QueryExecutor } from "../query-executor/query-executor";
+import { QueryManager } from "./query-manager";
 
-export abstract class QueryBuilder {
+export abstract class QueryBuilder<T> {
 
    /**
     * 
     */
-   public queryExecutor: QueryExecutor;
+   public connection: Connection;
+
+   /**
+    * 
+    */
+   public queryExecutor?: QueryExecutor;
+
+   /**
+    * 
+    */
+   public queryManager: QueryManager<T>;
 
    /**
     * 
     * @param queryExecutor 
     */
-   constructor(queryExecutor: QueryExecutor) {
+   constructor(connection: Connection, queryExecutor?: QueryExecutor) {
+      this.connection = connection;
       this.queryExecutor = queryExecutor;
+      this.queryManager = new QueryManager<T>();
    }
 
    /**
     * 
     */
-   public abstract sql(): string;
+   public abstract getQuery(): string;
+
+   /**
+    * 
+    * @returns 
+    */
+   public getParams(): string[] {
+      return this.queryManager?.getParameters();
+   }
 
    /**
     * 
     * @returns 
     */
    public async execute(): Promise<any> {
-      const sql: string = this.sql();
-      return this.queryExecutor.query(sql);
+      const sql: string = this.getQuery();
+      const params: string[] = this.getParams();
+
+      if (this.queryExecutor) {
+         return this.queryExecutor.query(sql, params);
+      } else {
+         return this.connection.query(sql, params);
+      }
    }
 
 }

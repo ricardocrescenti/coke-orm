@@ -1,0 +1,1 @@
+export type TableConstructor<T = any> = { new (): T };

@@ -1,5 +1,7 @@
 import { Column, OneToMany, OneToOne, Table } from "../../../decorators";
+import { TableMetadata } from "../../../metadata/tables/table-metadata";
 import { QueryExecutor } from "../../../query-executor/query-executor";
+import { TableManager } from "../../../table-manager/table-manager";
 import { FileModel } from "../file/file.model";
 import { PatternModel } from "../pattern.model";
 import { EntityAddressModel } from "./entity-address.model";
@@ -88,7 +90,7 @@ export class EntityModel extends PatternModel {
 	//abstract createFileModel(object: any, path: string): FileModel;
 
 	// eslint-disable-next-line no-unused-vars
-	public async loadReference(queryExecutor: QueryExecutor, requester: any = null): Promise<this> {
+	public async loadReference(tableManager: TableManager<this>, requester: any = null): Promise<this> {
 		// if (Utility.isNotEmpty(requester) && Utility.isEmpty(requester.id)) {
 		// 	return Promise.resolve(this);
 		// }
@@ -98,7 +100,7 @@ export class EntityModel extends PatternModel {
 		return this;
 	}
 
-	public async loadReferenceByParent(queryExecutor: QueryExecutor, parent: PatternModel) {
+	public async loadReferenceByParent(tableManager: TableManager<this>, parent: PatternModel) {
 		// if (Utility.isNotEmpty(parent?.id)) {
 		// 	const [entity] = await entityManager.query(`
 		// 		select e.id, e.uuid
