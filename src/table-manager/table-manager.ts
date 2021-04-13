@@ -228,7 +228,9 @@ export class TableManager<T> {
             const relationTableManager: TableManager<typeof tableManager.tableMetadata.target> = this.connection.createTableManager(columnMetadata.relation.referencedTable, tableManager.queryExecutor);
             const relationQuery: SelectQueryBuilder<typeof tableManager.tableMetadata.target> = relationTableManager.createSelectQuery({
                select: (columnData.length > 1 ? columnData[1] as [string, FindSelect] : []),
-               relations: 
+               relations: (relations ?? [])
+                  .filter(relation => relation.startsWith(`${columnMetadata.name}.`))
+                  .map(relation => relation.substring(relation.indexOf('.') + 1, relation.length))
             });
 
                if (columnMetadata.relation.relationType == 'OneToMany') {
