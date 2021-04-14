@@ -9,4 +9,5 @@ export class FindOptions<T> {
    orderBy?: QueryOrder<T>;
    take?: number;
    limit?: number;
+   roles?: string[];
 }

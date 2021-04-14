@@ -5,7 +5,7 @@ import { CokenModel } from "../../table-manager/coken-model";
 export abstract class PatternModel extends CokenModel {
 
    @PrimaryColumn({ 
-      default: new Generate('sequence') 
+      default: new Generate('sequence')
    })
    public id?: bigint;
 

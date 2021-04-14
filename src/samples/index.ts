@@ -99,7 +99,10 @@ export async function test() {
       ],
       // where: {
       //    name: { _eq: 'Ricardo Crescenti' }
-      // }
+      // },
+      roles: [
+         'admin'
+      ]
    });
    console.log('find', entity);
 
