@@ -53,31 +53,19 @@ export async function test() {
 
    console.log('Connected', new Date().toLocaleString());
 
-   // const cities = await connection.createSelectQuery<CustomerModel>()
-   //    .select({ column: 'id' })
-   //    .from('cities')
-   //    .where([
-   //       {
-   //          id: { _eq: -1 }
-   //       },
-   //       {
-   //          id: { _eq: 0 },
-   //          _or: [
-   //             { id: { _eq: 1 } },
-   //             { id: { _eq: 2 } },
-   //             { id: { _eq: 3 } }
-   //          ]
-   //       },
-   //       {
-   //          _or: [
-   //             { id: { _eq: 4 } },
-   //             { id: { _eq: 5 } },
-   //             { id: { _eq: 6 } }
-   //          ]
-   //       }
-   //    ])
+   const city: CityModel = connection.createTableManager(CityModel).create({
+      code: { _eq: '4309407' },
+      state: { _eq: 'RS' },
+      country: { _eq: 'BRA' }
+   });
+   await city.loadPrimaryKey();
+   
+   city.name = 'Guaporé 2';
+   await city.save();
+   
+   console.log('findOne', city);
 
-   const entity = await connection.createTableManager(EntityModel).find({
+   const entities = await connection.createTableManager(EntityModel).find({
       // select: [
       //    'id',
       //    'name',
@@ -104,7 +92,7 @@ export async function test() {
          'admin'
       ]
    });
-   console.log('find', entity);
+   console.log('find', entities);
 
    const guapore: CityModel = new CityModel({
       code: '4309407',

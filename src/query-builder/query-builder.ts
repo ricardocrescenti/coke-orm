@@ -1,5 +1,4 @@
 import { Connection } from "../connection/connection";
-import { TableMetadata } from "../metadata/tables/table-metadata";
 import { QueryExecutor } from "../query-executor/query-executor";
 import { QueryManager } from "./query-manager";
 

@@ -1,0 +1,1 @@
+export type FindSelect = (string | [string, FindSelect[]]);

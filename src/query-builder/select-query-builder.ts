@@ -2,7 +2,12 @@ import { Connection } from "../connection/connection";
 import { TableMetadata } from "../metadata";
 import { QueryExecutor } from "../query-executor/query-executor";
 import { QueryBuilder } from "./query-builder";
-import { JoinType, QueryColumn, QueryJoin, QueryOrder, QueryTable, QueryWhere } from "./query-manager";
+import { JoinType } from "./types/join-type";
+import { QueryColumn } from "./types/query-column";
+import { QueryJoin } from "./types/query-join";
+import { QueryOrder } from "./types/query-order";
+import { QueryTable } from "./types/query-table";
+import { QueryWhere } from "./types/query-where";
 
 export class SelectQueryBuilder<T> extends QueryBuilder<T> {
 
@@ -52,21 +57,8 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public where(where: string | QueryWhere<T> | QueryWhere<T>[], params?: any): this {
-      if (!where) {
-         return this;
-      }
-
-      if (typeof where == 'string') {
-         where = [ { _raw: where } ];
-      }
-
-      if (!Array.isArray(where)) {
-         where = [where];
-      }
-      
-      this.queryManager.where = where as QueryWhere<T>[];
-
+   public where(where?: string | QueryWhere<T> | QueryWhere<T>[], params?: any): this {
+      this.queryManager.setWhere(where);
       return this;
    }
 
@@ -79,7 +71,7 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public orderBy(order: QueryOrder<T>): this {
+   public orderBy(order?: QueryOrder<T>): this {
       this.queryManager.orderBy = order;
       return this
    }

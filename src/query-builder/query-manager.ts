@@ -1,15 +1,12 @@
 import { SelectQueryBuilder } from "./select-query-builder";
-
-export type QueryWhereOperator<T> = { _eq?: any, _neq?: any, _gt?: any, _gte?: any, _lt?: any, _lte?: any, _in?: any, _nin?: any, _lk?: any, _nlk?: any, _ilk?: any, _inlk?: any, _isnull?: any, _or?: QueryWhere<T> | QueryWhere<T>[] }
-export type QueryColumn<T> = { table?: string, column: string | SelectJsonBuilder<T> | SelectJsonAgg<T>, alias?: string, relation?: QueryJoin<T> }
-export class SelectJsonBuilder<T> { jsonColumns?: QueryColumn<T>[] };
-export class SelectJsonAgg<T> { jsonColumn?: SelectJsonBuilder<T> };
-export type QueryTable<T> = { table: string | SelectQueryBuilder<T>, alias?: string }
-export type JoinType = 'left' | 'inner';
-export type QueryJoin<T> = { type: JoinType, table: string | SelectQueryBuilder<T>, alias: string, condition: string }
-export type QueryValues<T> = { [P in keyof T]?: any; } | { [key: string]: any; }
-export type QueryWhere<T> = { [P in keyof T]?: QueryWhereOperator<T> | QueryWhere<T>; } | { [key: string]: QueryWhereOperator<T>; } | { _or: QueryWhere<T> | QueryWhere<T>[]; } | { _raw: string; }
-export type QueryOrder<T> = { [P in keyof T]?: 'ASC' | 'DESC' } | { [key: string]: 'ASC' | 'DESC' }
+import { QueryColumn } from "./types/query-column";
+import { QueryJoin } from "./types/query-join";
+import { QueryOrder } from "./types/query-order";
+import { QueryTable } from "./types/query-table";
+import { QueryValues } from "./types/query-values";
+import { QueryWhere } from "./types/query-where";
+import { SelectJsonAgg } from "./types/select-json-agg";
+import { SelectJsonBuilder } from "./types/select-json-builder";
 
 export class QueryManager<T> {
 
@@ -68,17 +65,75 @@ export class QueryManager<T> {
    }
    public mountJoinsExpression(): string {
       if (this.hasJoins()) {
-         return (this.joins ?? []).map(join => `${join.type} join (${join.table instanceof SelectQueryBuilder ? join.table.getQuery() : join.table}) "${join.alias}" on (${join.condition})`).join(' ') as string;
+         return (this.joins ?? []).map(join => `${join.type} join (${join.getTableSql()}) "${join.alias}" on (${join.condition})`).join(' ') as string;
       }
       return '';
    }
 
+   public setWhere(where?: string | QueryWhere<T> | QueryWhere<T>[], params?: any) {
+      if (!where) {
+         this.where = undefined;
+         return this;
+      }
+
+      if (typeof where == 'string') {
+         where = [ { _raw: where } ];
+      }
+
+      if (!Array.isArray(where)) {
+         this.where = [where];
+      }
+   }
    public hasWhere(): boolean {
-      return Object.keys(this.where ?? {}).length > 0;
+      return (this.where?.length ?? 0) > 0;
    }
    public mountWhereExpression(): string {
       if (this.hasWhere()) {
-         return '';
+         return this.decodeWhere(this.where as QueryWhere<T>[])
+      }
+      return '';
+   }
+   private decodeWhere(whereConditions: QueryWhere<T>[]): string {
+      if (this.hasWhere()) {
+         
+         const conditions: string[] = [];
+
+         for (const whereCondition of whereConditions) {
+
+            // const teste: QueryWhere<any> = {
+            //    id: { _eq: 1 },
+            //    name: { _in: true },
+            //    _raw: `name like ':name'`,
+            //    _or: [
+            //       {
+            //          _raw: `name like ':name'`
+            //       },
+            //       {
+            //          _raw: `name like ':name'`
+            //       }
+            //    ],
+            // }
+
+            let condition: string = '';
+            for (const key of Object.keys(whereCondition)) {
+               if (key == '_raw') {
+                  condition = ``;
+               } else if (key == '_or') {
+                  condition = ``
+               } else {
+                  condition = ``;
+               }
+            }
+
+            /// { _raw: string; }
+            /// { [P in keyof T]?: QueryWhereOperator<T> | QueryWhere<T>; }
+            /// { _or: QueryWhere<T> | QueryWhere<T>[]; }
+
+            conditions.push(`(${condition})`);
+         }
+
+         return `(${conditions.join(' or ')})`;
+
       }
       return '';
    }
@@ -119,7 +174,7 @@ export class QueryManager<T> {
    }
    public mountLimitExpression(): string {
       if (this.hasLimit()) {
-         return `limit ${this.limit}}`;
+         return `limit ${this.limit}`;
       }
       return '';
    }

@@ -3,7 +3,7 @@ import { PostgresDriver } from "../drivers";
 import { TableMetadata } from "../metadata";
 import { QueryExecutor } from "../query-executor/query-executor";
 import { QueryBuilder } from "./query-builder";
-import { QueryManager, QueryValues } from "./query-manager";
+import { QueryValues } from "./types/query-values";
 
 export class InsertQueryBuilder<T> extends QueryBuilder<T> {
 
@@ -25,7 +25,7 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
       super(connection, queryExecutor);
    }
 
-   public into(tableMetadata: TableMetadata, columns: string[]): this {
+   public into(tableMetadata: TableMetadata): this {
       // this.queryManager.table = {
       //    table: tableMetadata.name,
       //    alias: TableMetadata.className
@@ -39,7 +39,7 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public returning(columns: string[]): this {
+   public returning(columns?: string[]): this {
       this.returningColumns = columns;
       return this;
    }

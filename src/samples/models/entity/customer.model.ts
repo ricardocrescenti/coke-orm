@@ -1,6 +1,5 @@
+import { Connection } from "../../../connection/connection";
 import { Column, ManyToOne, OneToOne, Table, Unique } from "../../../decorators";
-import { TableMetadata } from "../../../metadata/tables/table-metadata";
-import { QueryExecutor } from "../../../query-executor/query-executor";
 import { TableManager } from "../../../table-manager/table-manager";
 import { PatternModel } from "../pattern.model";
 import { PriceListModel } from "../product/price-list.model";
@@ -40,8 +39,8 @@ export class CustomerModel extends PatternModel {
 	// eslint-disable-next-line no-unused-vars
 	//abstract createPriceListModel(object: any): PriceListModel;
 
-	public async loadReference(tableManager: TableManager<this>) {
-		await super.loadReference(tableManager);
+	public async loadPrimaryKey(tableManager?: TableManager<this> | Connection | string) {
+		tableManager = this.getTableManager(tableManager);
 
 		if (this.entity) {
 			await this.entity.loadReferenceByParent(tableManager.connection.createTableManager('EntityModel'), this);

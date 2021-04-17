@@ -1,6 +1,5 @@
+import { Connection } from "../../../connection/connection";
 import { Column, ManyToOne, Table, Unique } from "../../../decorators";
-import { TableMetadata } from "../../../metadata/tables/table-metadata";
-import { QueryExecutor } from "../../../query-executor/query-executor";
 import { TableManager } from "../../../table-manager/table-manager";
 import { PatternModel } from "../pattern.model";
 import { CityModel } from "./city.model";
@@ -67,13 +66,15 @@ export class EntityAddressModel extends PatternModel {
 	// eslint-disable-next-line no-unused-vars
 	//abstract createCityModel(object: any): CityModel;
 
-	public async loadReference(tableManager: TableManager<this>) {
+	public async loadPrimaryKey(tableManager: TableManager<this> | Connection | string) {
+		tableManager = this.getTableManager(tableManager);
+
 		// if ((this.zipCode ?? '').length > 0) {
 		// 	this.city = await this.getCity(tableManager);
 		// 	await this.city?.save(tableManager);
 		// }
 
-		return super.loadReference(tableManager);
+		return super.loadPrimaryKey(tableManager);
 
 		// return await super.getReference(entityManager, where ?? (Utility.isNotEmpty(this.entity?.id) ? {
 		// 	contact: this.contact,

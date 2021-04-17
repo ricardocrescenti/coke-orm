@@ -3,11 +3,15 @@ import { SimpleMap } from "../common/interfaces/map";
 import { Connection } from "../connection/connection";
 import { ColumnMetadata, ForeignKeyMetadata, TableMetadata } from "../metadata";
 import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
-import { FindOptions, FindSelect } from "../query-builder/find-options";
+import { FindOptions } from "../find-options/find-options";
 import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
-import { QueryColumn, QueryJoin, QueryOrder, QueryWhere } from "../query-builder/query-manager";
 import { SelectQueryBuilder } from "../query-builder/select-query-builder";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
+import { QueryWhere } from "../query-builder/types/query-where";
+import { QueryJoin } from "../query-builder/types/query-join";
+import { QueryColumn } from "../query-builder/types/query-column";
+import { QueryOrder } from "../query-builder/types/query-order";
+import { FindSelect } from "../find-options/types/find-select";
 
 export class TableManager<T> {
 
@@ -45,7 +49,7 @@ export class TableManager<T> {
    public create(values?: any): any {
       const object: T = new (this.tableMetadata.target)();
       if (values) {
-         this.populateObject(object, values);
+         this.populate(object, values);
       }
       return object;
    }
@@ -53,7 +57,7 @@ export class TableManager<T> {
    /**
     * 
     */
-   public populateObject(object: any, values: any): void {
+   public populate(object: any, values: any): void {
       
       /// get the properties of the object that contains the values that will
       /// be loaded into the object
@@ -111,26 +115,43 @@ export class TableManager<T> {
 
    /**
     * 
+    * @param findOptions 
+    * @param tableManager 
+    * @returns 
+    */
+   public async findOne(findOptions: FindOptions<T>, tableManager?: TableManager<T>) {
+      const [result]: any = await this.find({
+         ...findOptions,
+         limit: 1,
+         orderBy: (findOptions.orderBy ?? (tableManager ?? this).tableMetadata.primaryKey?.columns)
+      }, tableManager);
+      return result;
+   }
+
+   /**
+    * 
     * @param queryExecutor 
     */
    public async save(object: any, tableManager?: TableManager<T>): Promise<any> {
 
-      const objectExists: boolean = await this.loadReference(object, tableManager);
+      const objectExists: boolean = await this.loadPrimaryKey(object, tableManager);
       if (objectExists) {
          
-         const updateQuery: UpdateQueryBuilder<any> = new UpdateQueryBuilder<any>(this.connection, tableManager?.queryExecutor)
+         const where: QueryWhere<T> | undefined = this.createWhereFromColumns(object, this.tableMetadata.primaryKey?.columns ?? []);
+
+         const updateQuery: UpdateQueryBuilder<T> = this.createUpdateQuery(tableManager)
             .table(this.tableMetadata)
             .set(object)
-            .where()
-            .returning(['campos chave primaria']);
+            .where(where)
+            .returning(this.tableMetadata.primaryKey?.columns);
          return updateQuery.execute();
 
       } else {
 
-         const insertQuery: InsertQueryBuilder<any> = new InsertQueryBuilder<any>(this.connection, tableManager?.queryExecutor)
-            .into(this.tableMetadata, [])
+         const insertQuery: InsertQueryBuilder<T> = this.createInsertQuery(tableManager)
+            .into(this.tableMetadata)
             .values(object)
-            .returning(['campos chave primaria']);
+            .returning(this.tableMetadata.primaryKey?.columns);
          return insertQuery.execute();
 
       }
@@ -142,7 +163,7 @@ export class TableManager<T> {
     */
    public async delete(object: any, tableManager?: TableManager<T>): Promise<void> {
 
-      const objectExists: boolean = await this.loadReference(object, tableManager);
+      const objectExists: boolean = await this.loadPrimaryKey(object, tableManager);
       if (objectExists) {
 
          const deleteQuery: DeleteQueryBuilder<any> = new DeleteQueryBuilder<any>(this.connection, tableManager?.queryExecutor)
@@ -159,28 +180,63 @@ export class TableManager<T> {
     * 
     * @returns 
     */
-   public async loadReference(object: any, tableManager?: TableManager<T>, requester?: any): Promise<boolean> {
+   public async loadPrimaryKey(object: any, tableManager?: TableManager<T>, requester?: any): Promise<boolean> {
+      // TODO: criar um LoadOptions para indicar os campos a serem carregados
 
-      const primaryKeys = (tableManager ?? this).tableMetadata.primaryKey?.columns as string[];
+      /// get the list of properties of the object to be tested
 
-      const where: QueryWhere<T> = this.createWhereFromUnique(object);
-      if (!where) {
+      const objectKeys: string[] = Object.keys(object ?? {});
+
+      /// checks if the object has properties to be tested
+
+      if (objectKeys.length == 0) {
          return false;
       }
 
-      const orderBy: QueryOrder<T> = {};//primaryKeys.map<QueryOrder<T>>(primaryKey => { primaryKey: 'ASC' });
+      /// get the list of primary keys to be loaded
+      
+      const primaryKeys = (tableManager ?? this).tableMetadata.primaryKey?.columns as string[];
 
-      const [result]: any = await this.find({
-         select: primaryKeys,
-         where: where,
-         orderBy: orderBy
-      });
+      /// check that the primary keys are informed in the query object, so that 
+      /// an unnecessary new query is not made
 
-      if (result) {
-         for (const primaryKey in primaryKeys) {
-            object[primaryKey] = result[primaryKey];
-         }
+      if (primaryKeys.every(primaryKey => object[primaryKey] != null)) {
          return true;
+      }
+
+      /// get the unique indexes and unique keys to make the queries
+
+      const indexes: ConcatArray<string[]> = this.tableMetadata.indexs.filter(index => index.unique).map(index => index.columns);
+      const uniques: ConcatArray<string[]> = this.tableMetadata.uniques.map(index => index.columns);
+
+      for (const columns of (new Array<string[]>()).concat(indexes, uniques)) {
+
+         /// create the condition using the first unique index or unique key to 
+         /// query the object
+
+         const where: QueryWhere<T> | undefined = this.createWhereFromColumns(object, columns);
+         if (!where) {
+            continue;
+         }
+
+         /// run the query to verify the object and verify that it exists
+
+         const result: any = await this.findOne({
+            select: primaryKeys,
+            where: where,
+            orderBy: primaryKeys
+         }, tableManager);
+
+         /// If the requested object exists in the database, the primary keys will
+         /// be loaded into the current object
+
+         if (result) {
+            for (const primaryKey in primaryKeys) {
+               object[primaryKey] = result[primaryKey];
+            }
+            return true;
+         }
+
       }
 
       return false;
@@ -189,29 +245,28 @@ export class TableManager<T> {
    /**
     * 
     */
-   public async loadAllReferences(object: any, tableManager?: TableManager<T>): Promise<void> {
-      const queryExecutor = this.queryExecutor ?? tableManager?.queryExecutor ?? this.connection.createQueryExecutor();
+   public async loadPrimaryKeyCascade(object: any, tableManager?: TableManager<T>): Promise<void> {
 
       const parentRelations: ForeignKeyMetadata[] = this.tableMetadata.foreignKeys.filter(foreignKey => foreignKey.relationType != 'OneToMany');
       for (const relation of parentRelations) {
          const parent = object[relation.column.propertyName];
          if (parent) {
 
-            const relationTableManager = this.connection.createTableManager(relation.referencedTable, queryExecutor);
-            await relationTableManager.loadAllReferences(parent, relationTableManager);
+            const relationTableManager = this.connection.createTableManager(relation.referencedTable, tableManager?.queryExecutor);
+            await relationTableManager.loadPrimaryKeyCascade(parent, relationTableManager);
 
          }
       }
 
-      await this.loadReference(object, tableManager);
+      await this.loadPrimaryKey(object, tableManager);
 
       const childRelations: ForeignKeyMetadata[] = this.tableMetadata.foreignKeys.filter(foreignKey => foreignKey.relationType == 'OneToMany');
       for (const relation of childRelations) {
          const children = (object[relation.column.propertyName] ?? []);
          for (const child of children) {
 
-            const childTableManager = this.connection.createTableManager(relation.referencedTable, queryExecutor);
-            await childTableManager.loadAllReferences(child, childTableManager);
+            const childTableManager = this.connection.createTableManager(relation.referencedTable, tableManager?.queryExecutor);
+            await childTableManager.loadPrimaryKeyCascade(child, childTableManager);
 
          }
       }
@@ -223,7 +278,7 @@ export class TableManager<T> {
     * @param tableManager 
     * @returns 
     */
-   private createSelectQuery(findOptions: FindOptions<T>, tableManager?: TableManager<T>): SelectQueryBuilder<T> {
+   public createSelectQuery(findOptions: FindOptions<T>, tableManager?: TableManager<T>): SelectQueryBuilder<T> {
 
       /// Obtain the list of columns to be consulted in the main table (if the 
       /// list of columns is not informed in the find options, all columns that 
@@ -239,17 +294,35 @@ export class TableManager<T> {
       /// the `left join` in the main table
       const queryJoins: QueryJoin<T>[] = this.loadQueryJoins(queryColumns);
 
-      /// 
+      let orderBy: any = findOptions.orderBy;
+      if (Array.isArray(findOptions.orderBy)) {
+
+         orderBy = {};
+         for (const column of findOptions.orderBy) {
+            orderBy[column] = 'ASC';
+         }
+
+      }
+
+      /// create the query to get the data
       const query = this.connection.createSelectQuery<T>(tableManager?.queryExecutor ?? this.queryExecutor)
          .select(queryColumns)
          .from(this.tableMetadata)
          .join(queryJoins)
          .where(findOptions?.where as QueryWhere<T>)
-         .orderBy(findOptions.orderBy as QueryOrder<T>)
+         .orderBy(orderBy as QueryOrder<T>)
          .take(findOptions.take)
          .limit(findOptions.limit)
 
       return query;
+   }
+
+   public createInsertQuery(tableManager?: TableManager<T>): InsertQueryBuilder<T> {
+      return this.connection.createInsertQuery(tableManager?.queryExecutor);
+   }
+
+   public createUpdateQuery(tableManager?: TableManager<T>) : UpdateQueryBuilder<T> {
+      return this.connection.createUpdateQuery(tableManager?.queryExecutor);
    }
 
    /**
@@ -313,12 +386,12 @@ export class TableManager<T> {
                   queryColumns[columnData[0]] = {
                      table: relationAlias,
                      column: columnMetadata.propertyName,
-                     relation: {
+                     relation: new QueryJoin<any>({
                         type: 'left',
                         table: relationQuery,
                         alias: relationAlias,
                         condition: `"${relationAlias}"."${referencedColumn.name}" = "${tableManager.tableMetadata.className}"."${referencedColumn.relation?.referencedColumn}"`
-                     },
+                     }),
                   }
 
                } else {
@@ -328,12 +401,12 @@ export class TableManager<T> {
                   queryColumns[columnData[0]] = {
                      table: relationAlias,
                      column: columnMetadata.propertyName,
-                     relation: {
+                     relation: new QueryJoin<any>({
                         type: 'left',
                         table: relationQuery,
                         alias: relationAlias,
                         condition: `"${relationAlias}"."${columnMetadata.relation.referencedColumn}" = "${tableManager.tableMetadata.className}"."${columnMetadata.name}"`
-                     },
+                     }),
                   }
 
                }
@@ -352,6 +425,15 @@ export class TableManager<T> {
       return Object.values(queryColumns);
    }
 
+   /**
+    * 
+    * @param columnMetadata 
+    * @param columnData 
+    * @param relationTableManager 
+    * @param relations 
+    * @param roles 
+    * @returns 
+    */
    private createSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, relations?: string[], roles?: string[]): SelectQueryBuilder<T> {
       const relationQuery: SelectQueryBuilder<T> = relationTableManager.createSelectQuery({
          select: (columnData.length > 1 ? columnData[1] as [string, FindSelect] : []),
@@ -364,6 +446,15 @@ export class TableManager<T> {
       return relationQuery;
    }
 
+   /**
+    * 
+    * @param columnMetadata 
+    * @param columnData 
+    * @param relationTableManager 
+    * @param relations 
+    * @param roles 
+    * @returns 
+    */
    private createChildSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, relations?: string[], roles?: string[]): SelectQueryBuilder<T> {
       const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, relations, roles);
 
@@ -391,6 +482,15 @@ export class TableManager<T> {
       return relationQuery;
    }
 
+   /**
+    * 
+    * @param columnMetadata 
+    * @param columnData 
+    * @param relationTableManager 
+    * @param relations 
+    * @param roles 
+    * @returns 
+    */
    private createParentSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, relations?: string[], roles?: string[]): SelectQueryBuilder<T> {
       const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, relations, roles);
 
@@ -438,7 +538,28 @@ export class TableManager<T> {
     * @param object 
     * @returns 
     */
-   public createWhereFromUnique(object: any): QueryWhere<T> {
-      return {};
+   private createWhereFromColumns(values: any, columns: string[]): QueryWhere<T> | undefined {
+
+      const valuesKeys: string[] = Object.keys(values);
+
+      if (valuesKeys.length == 0) {
+         return undefined;
+      }
+
+      const where: any = {};
+      for (const column of columns) {
+
+         if (valuesKeys.indexOf(column) < 0) {
+            return undefined;
+         }
+
+         where[column] = (values[column] == null 
+            ? { _isNull: true } 
+            : { _eq: values[column] });
+
+      }
+
+      return where;
+
    }
 }

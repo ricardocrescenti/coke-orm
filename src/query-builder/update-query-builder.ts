@@ -1,6 +1,7 @@
 import { TableMetadata } from "../metadata";
 import { QueryBuilder } from "./query-builder";
-import { QueryValues } from "./query-manager";
+import { QueryValues } from "./types/query-values";
+import { QueryWhere } from "./types/query-where";
 
 export class UpdateQueryBuilder<T> extends QueryBuilder<T> {
    
@@ -14,12 +15,12 @@ export class UpdateQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public where(): this {
-
+   public where(where?: QueryWhere<T> | QueryWhere<T>[], params?: any): this {
+      this.queryManager.setWhere(where);
       return this;
    }
 
-   public returning(columns: string[]): this {
+   public returning(columns?: string[]): this {
       
       return this;
    }
