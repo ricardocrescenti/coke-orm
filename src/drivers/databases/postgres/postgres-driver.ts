@@ -480,7 +480,7 @@ export class PostgresDriver extends Driver {
             }
    
             // delete uniques
-            for (const uniqueName in pendingUniquesSchema) {
+            for (const uniqueName of pendingUniquesSchema) {
                sqlMigrationsDropUniques.push(connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]))
             }
 
@@ -506,7 +506,7 @@ export class PostgresDriver extends Driver {
          }
 
          // delete foreign keys
-         for (const foreignKeyName in pendingForeignKeysSchema) {
+         for (const foreignKeyName of pendingForeignKeysSchema) {
             sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]))
          }
 
