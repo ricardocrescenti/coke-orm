@@ -39,7 +39,7 @@ export abstract class QueryBuilder<T> {
     * @returns 
     */
    public getParams(): string[] {
-      return this.queryManager?.getParameters();
+      return this.queryManager?.parameters;
    }
 
    /**

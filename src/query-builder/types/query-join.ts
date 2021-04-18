@@ -2,10 +2,10 @@ import { JoinType } from "./join-type";
 import { SelectQueryBuilder } from "../select-query-builder";
 
 export class QueryJoin<T> { 
-   public type: JoinType;
-   public table: string | SelectQueryBuilder<T>;
-   public alias: string;
-   public condition: string; 
+   public readonly type: JoinType;
+   public readonly table: string | SelectQueryBuilder<T>;
+   public readonly alias: string;
+   public readonly condition: string; 
 
    constructor(options: Omit<QueryJoin<T>, 'getTableSql'>) {
       this.type = options.type;

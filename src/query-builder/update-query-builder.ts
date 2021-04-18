@@ -26,7 +26,14 @@ export class UpdateQueryBuilder<T> extends QueryBuilder<T> {
    }
 
    public getQuery(): string {
-      throw new Error("Method not implemented.");
+
+      const expressions: string[] = [];
+      this.queryManager.parameters = [];
+
+      
+
+      const sql = expressions.filter(expression => (expression ?? '').length > 0).join(' ');
+      return sql;
    }
 
 }

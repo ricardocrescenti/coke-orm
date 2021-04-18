@@ -57,7 +57,7 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public where(where?: string | QueryWhere<T> | QueryWhere<T>[], params?: any): this {
+   public where(where?: QueryWhere<T> | QueryWhere<T>[]): this {
       this.queryManager.setWhere(where);
       return this;
    }
@@ -89,6 +89,7 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
    public getQuery(): string {
 
       const expressions: string[] = [];
+      this.queryManager.parameters = [];
 
       // TODO: tem que informar a tabela antes de qualquer coisa
 

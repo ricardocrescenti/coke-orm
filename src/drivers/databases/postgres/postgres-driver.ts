@@ -78,7 +78,7 @@ export class PostgresDriver extends Driver {
 
    public async executeQuery(queryExecutor: QueryExecutor, query: string, params?: any[]): Promise<any> {
       return new Promise((resolve, reject) => {
-         queryExecutor.client.query(query, (error: any, result: any) => {
+         queryExecutor.client.query(query, params, (error: any, result: any) => {
              
             if (error) {
                return reject(error);

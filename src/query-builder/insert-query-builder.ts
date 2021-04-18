@@ -45,6 +45,9 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
    }
    
    public getQuery(): string {
+
+      const expressions: string[] = [];
+      this.queryManager.parameters = [];
       
       let query = `INSERT INTO `;
 
@@ -63,7 +66,8 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
          query += `${this.returningColumns} `;
       }
 
-      return query; 
+      const sql = expressions.filter(expression => (expression ?? '').length > 0).join(' ');
+      return sql;
    }
 
 }

@@ -53,17 +53,38 @@ export async function test() {
 
    console.log('Connected', new Date().toLocaleString());
 
+   const cities = await connection.createTableManager(CityModel).find({
+      where: [
+         {
+            name: { equal: 'Guaporé' },
+            AND: [
+               { code: { between: ['4309406', '4309407'] } },
+               { state: { equal: 'RS' } }
+            ]
+         },
+         {
+            name: { equal: 'Serafina' },
+            AND: [
+               { code: { between: ['4309400', '4309402'] } },
+               { state: { equal: 'SC' } }
+            ]
+         }
+      ]
+   });
+   console.log('find', cities);
+
    const city: CityModel = connection.createTableManager(CityModel).create({
-      code: { _eq: '4309407' },
-      state: { _eq: 'RS' },
-      country: { _eq: 'BRA' }
+      name: 'Guaporé',
+      code: '4309407',
+      state: 'RS',
+      country: 'BRA'
    });
    await city.loadPrimaryKey();
+   console.log('loadPrimaryKey', city);
    
    city.name = 'Guaporé 2';
    await city.save();
    
-   console.log('findOne', city);
 
    const entities = await connection.createTableManager(EntityModel).find({
       // select: [

@@ -7,7 +7,7 @@ import { FindOptions } from "../find-options/find-options";
 import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
 import { SelectQueryBuilder } from "../query-builder/select-query-builder";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
-import { QueryWhere } from "../query-builder/types/query-where";
+import { QueryWhere, QueryWhereColumn } from "../query-builder/types/query-where";
 import { QueryJoin } from "../query-builder/types/query-join";
 import { QueryColumn } from "../query-builder/types/query-column";
 import { QueryOrder } from "../query-builder/types/query-order";
@@ -309,7 +309,7 @@ export class TableManager<T> {
          .select(queryColumns)
          .from(this.tableMetadata)
          .join(queryJoins)
-         .where(findOptions?.where as QueryWhere<T>)
+         .where(findOptions?.where)
          .orderBy(orderBy as QueryOrder<T>)
          .take(findOptions.take)
          .limit(findOptions.limit)
@@ -546,7 +546,7 @@ export class TableManager<T> {
          return undefined;
       }
 
-      const where: any = {};
+      const where: QueryWhereColumn<any> = {};
       for (const column of columns) {
 
          if (valuesKeys.indexOf(column) < 0) {
@@ -554,8 +554,8 @@ export class TableManager<T> {
          }
 
          where[column] = (values[column] == null 
-            ? { _isNull: true } 
-            : { _eq: values[column] });
+            ? { isNull: true }
+            : { equal: values[column] });
 
       }
 

@@ -1,18 +1,17 @@
-import { QueryWhere } from './query-where';
-
 export type QueryWhereOperator<T> = { 
-   _eq?: any, 
-   _neq?: any, 
-   _gt?: any, 
-   _gte?: any, 
-   _lt?: any, 
-   _lte?: any, 
-   _in?: any, 
-   _nin?: any, 
-   _lk?: any, 
-   _nlk?: any, 
-   _ilk?: any, 
-   _inlk?: any, 
-   _isnull?: any, 
-   _or?: QueryWhere<T> | QueryWhere<T>[] 
+   equal?: any, /// equal
+   notEqual?: any, /// not equal
+   greaterThan?: any,  /// greater than
+   greaterThanOrEqual?: any, /// greater than or equal
+   lessThan?: any, /// less than
+   lessThanOrEqual?: any, /// less than or equal
+   between?: [any, any]
+   in?: any[], /// in
+   notIn?: any[], /// not in
+   like?: any, /// like
+   notLike?: any, /// not like
+   iLike?: any, /// ilike
+   notILike?: any, /// not ilike
+   isNull?: any, /// is null
+   //AND?: QueryWhere<T> | QueryWhere<T>[] 
 }

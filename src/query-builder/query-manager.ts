@@ -1,14 +1,42 @@
-import { SelectQueryBuilder } from "./select-query-builder";
 import { QueryColumn } from "./types/query-column";
 import { QueryJoin } from "./types/query-join";
 import { QueryOrder } from "./types/query-order";
 import { QueryTable } from "./types/query-table";
 import { QueryValues } from "./types/query-values";
-import { QueryWhere } from "./types/query-where";
+import { QueryWhere, QueryWhereRaw } from "./types/query-where";
 import { SelectJsonAgg } from "./types/select-json-agg";
 import { SelectJsonBuilder } from "./types/select-json-builder";
+import { Equal } from "./operators/equal";
+import { GreaterThan } from "./operators/greater-than";
+import { GreaterThanOrEqual } from "./operators/greater-than-or-equal";
+import { ILike } from "./operators/ilike";
+import { In } from "./operators/in";
+import { LassThan } from "./operators/less-than";
+import { LassThanOrEqual } from "./operators/less-than-or-equal";
+import { Like } from "./operators/like";
+import { NotEqual } from "./operators/not-equal";
+import { NotILike } from "./operators/not-ilike";
+import { NotIn } from "./operators/not-in";
+import { NotLike } from "./operators/not-like";
+import { Operator } from "./operators/operator";
+import { Between } from "./operators/between";
 
 export class QueryManager<T> {
+   private static operatorsConstructor: { [p: string]: Function } = {
+      between: Between,
+      equal: Equal,
+      greaterThan: GreaterThan,
+      greaterThanOrEqual: GreaterThanOrEqual,
+      iLike: ILike,
+      in: In,
+      lessThan: LassThan,
+      lessThanOrEqual: LassThanOrEqual,
+      like: Like,
+      notEqual: NotEqual,
+      notILike: NotILike,
+      notIn: NotIn,
+      notLike: NotLike
+   };
 
    public columns?: QueryColumn<T>[];
    
@@ -27,6 +55,8 @@ export class QueryManager<T> {
    public take?: number;
 
    public limit?: number;
+
+   public parameters: string[] = [];
 
    public hasSelect(): boolean {
       return (this.columns?.length ?? 0) > 0;
@@ -77,65 +107,103 @@ export class QueryManager<T> {
       }
 
       if (typeof where == 'string') {
-         where = [ { _raw: where } ];
+         where = { RAW: where } as QueryWhereRaw;
       }
 
-      if (!Array.isArray(where)) {
-         this.where = [where];
-      }
+      this.where = (Array.isArray(where) ? where : [where]);
    }
    public hasWhere(): boolean {
       return (this.where?.length ?? 0) > 0;
    }
    public mountWhereExpression(): string {
       if (this.hasWhere()) {
-         return this.decodeWhere(this.where as QueryWhere<T>[])
+         return `where ${this.decodeWhereConditions(this.where as QueryWhere<T>[])}`
       }
       return '';
    }
-   private decodeWhere(whereConditions: QueryWhere<T>[]): string {
+   private decodeWhereConditions(whereConditions: QueryWhere<T>[]): string {
       if (this.hasWhere()) {
          
-         const conditions: string[] = [];
-
+         const expressions: string[] = [];
          for (const whereCondition of whereConditions) {
-
-            // const teste: QueryWhere<any> = {
-            //    id: { _eq: 1 },
-            //    name: { _in: true },
-            //    _raw: `name like ':name'`,
-            //    _or: [
-            //       {
-            //          _raw: `name like ':name'`
-            //       },
-            //       {
-            //          _raw: `name like ':name'`
-            //       }
-            //    ],
-            // }
-
-            let condition: string = '';
-            for (const key of Object.keys(whereCondition)) {
-               if (key == '_raw') {
-                  condition = ``;
-               } else if (key == '_or') {
-                  condition = ``
-               } else {
-                  condition = ``;
-               }
-            }
-
-            /// { _raw: string; }
-            /// { [P in keyof T]?: QueryWhereOperator<T> | QueryWhere<T>; }
-            /// { _or: QueryWhere<T> | QueryWhere<T>[]; }
-
-            conditions.push(`(${condition})`);
+            expressions.push(this.decodeWhereCondition(whereCondition));
          }
-
-         return `(${conditions.join(' or ')})`;
+         return `(${expressions.join(' or ')})`;
 
       }
       return '';
+   }
+   private decodeWhereCondition(whereCondition: QueryWhere<any>): string {
+      let expressions: string[] = [];
+
+      /**
+       * Exemplos:
+       * 
+       * ( (id = 1) or (id = 2) or (id = 3) )
+       * [
+       *    { id: { equal: 1 } },
+       *    { id: { equal: 2 } },
+       *    { id: { equal: 3 } }
+       * ]
+       * 
+       * ( (company is not null and (company.entity.name like 'Ricardo' or company.entity.displayName like 'Ricardo')) or (company is null and (user.entity.name like 'Ricardo' or user.entity.displayName like 'Ricardo')) )
+       * [
+       *    {
+       *       company: { isNull: false },
+       *       AND: [
+       *          {
+       *             company.entity.name: { iLike: 'Ricardo' }
+       *          },
+       *          {
+       *             company.entity.displayName: { iLike: 'Ricardo' }
+       *          },
+       *       ]
+       *    },
+       *    {
+       *       company: { isNull: true },
+       *       AND: [
+       *          {
+       *             user.entity.name: { iLike: 'Ricardo' }
+       *          },
+       *          {
+       *             user.entity.displayName: { iLike: 'Ricardo' }
+       *          },
+       *       ]
+       *    },
+       * ]
+       */
+
+      for (const key of Object.keys(whereCondition)) {
+
+         if (key == 'RAW') {
+            const rawCondition = (whereCondition as any)._raw;
+            expressions.push(this.decodeWhereConditions((Array.isArray(rawCondition) ? rawCondition : [rawCondition]) as QueryWhere<any>[]));
+         } else if (key == 'AND') {
+            const andConditions = (whereCondition as any)['AND'];
+            expressions.push(this.decodeWhereConditions((Array.isArray(andConditions) ? andConditions : [andConditions]) as QueryWhere<any>[]));
+         } else {
+            expressions.push(this.decodeWhereOperators(key, (whereCondition as any)[key]));
+         }
+
+      }
+
+      return `(${expressions.join(' and ')})`;
+   }
+   private decodeWhereOperators(column: string, operators: any): string {
+      let expressions: string[] = [];
+
+      for (const key of Object.keys(operators)) {
+         const constructor = QueryManager.operatorsConstructor[key];
+         if (!constructor) {
+            throw new Error('Operador de where inválido');
+         }
+
+         const operator: Operator = new (constructor as any)(column, operators[key]);
+         operator.registerParameters(this);
+         expressions.push(operator.getExpression());
+      }
+      
+      return expressions.join(' and ');
    }
 
    public hasGroupBy(): boolean {
@@ -179,7 +247,7 @@ export class QueryManager<T> {
       return '';
    }
 
-   getParameters(): string[] {
-      return [];
+   public storeParameter(value: any): number {
+      return this.parameters.push(value);
    }
 }
