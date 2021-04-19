@@ -13,5 +13,10 @@ export type QueryWhereOperator<T> = {
    iLike?: any, /// ilike
    notILike?: any, /// not ilike
    isNull?: any, /// is null
-   //AND?: QueryWhere<T> | QueryWhere<T>[] 
+   RAW?: {
+      condition: string,
+      params: {
+         [p: string]: any
+      }
+   } 
 }

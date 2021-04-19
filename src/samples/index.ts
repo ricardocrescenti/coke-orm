@@ -52,6 +52,22 @@ export async function test() {
    });
 
    console.log('Connected', new Date().toLocaleString());
+   
+   // TODO carregar as relações com base na necessidade das condiçoes
+   // TODO parâmetros nos joins
+
+   let city: CityModel = await connection.createTableManager(CityModel).findOne({
+      where: { id: 1 }
+   });
+
+   city = await connection.createTableManager(CityModel).create({
+      name: 'Guaporé',
+      code: '4309407',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.loadPrimaryKey();
+   console.log('loadPrimaryKey', city);
 
    const cities = await connection.createTableManager(CityModel).find({
       where: [
@@ -68,19 +84,18 @@ export async function test() {
                { code: { between: ['4309400', '4309402'] } },
                { state: { equal: 'SC' } }
             ]
+         },
+         {
+            RAW: {
+               condition: 'id = :teste',
+               params: {
+                  teste: 1
+               }
+            }
          }
       ]
    });
    console.log('find', cities);
-
-   const city: CityModel = connection.createTableManager(CityModel).create({
-      name: 'Guaporé',
-      code: '4309407',
-      state: 'RS',
-      country: 'BRA'
-   });
-   await city.loadPrimaryKey();
-   console.log('loadPrimaryKey', city);
    
    city.name = 'Guaporé 2';
    await city.save();

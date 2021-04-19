@@ -20,6 +20,7 @@ import { NotIn } from "./operators/not-in";
 import { NotLike } from "./operators/not-like";
 import { Operator } from "./operators/operator";
 import { Between } from "./operators/between";
+import { Raw } from "./operators/raw";
 
 export class QueryManager<T> {
    private static operatorsConstructor: { [p: string]: Function } = {
@@ -35,7 +36,8 @@ export class QueryManager<T> {
       notEqual: NotEqual,
       notILike: NotILike,
       notIn: NotIn,
-      notLike: NotLike
+      notLike: NotLike,
+      RAW: Raw
    };
 
    public columns?: QueryColumn<T>[];
@@ -100,14 +102,10 @@ export class QueryManager<T> {
       return '';
    }
 
-   public setWhere(where?: string | QueryWhere<T> | QueryWhere<T>[], params?: any) {
+   public setWhere(where?: QueryWhere<T> | QueryWhere<T>[]): void {
       if (!where) {
          this.where = undefined;
-         return this;
-      }
-
-      if (typeof where == 'string') {
-         where = { RAW: where } as QueryWhereRaw;
+         return;
       }
 
       this.where = (Array.isArray(where) ? where : [where]);
@@ -176,8 +174,8 @@ export class QueryManager<T> {
       for (const key of Object.keys(whereCondition)) {
 
          if (key == 'RAW') {
-            const rawCondition = (whereCondition as any)._raw;
-            expressions.push(this.decodeWhereConditions((Array.isArray(rawCondition) ? rawCondition : [rawCondition]) as QueryWhere<any>[]));
+            const rawOperator = (whereCondition as any)[key];
+            expressions.push(this.decodeWhereOperators(rawOperator.condition, { RAW: rawOperator.params }));
          } else if (key == 'AND') {
             const andConditions = (whereCondition as any)['AND'];
             expressions.push(this.decodeWhereConditions((Array.isArray(andConditions) ? andConditions : [andConditions]) as QueryWhere<any>[]));
@@ -191,6 +189,10 @@ export class QueryManager<T> {
    }
    private decodeWhereOperators(column: string, operators: any): string {
       let expressions: string[] = [];
+
+      if (!(operators instanceof Object) || (operators instanceof Date)) {
+         operators = { equal: operators };
+      }
 
       for (const key of Object.keys(operators)) {
          const constructor = QueryManager.operatorsConstructor[key];
