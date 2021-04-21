@@ -40,9 +40,11 @@ export class QueryManager<T> {
       RAW: Raw
    };
 
-   public columns?: QueryColumn<T>[];
+   public schema?: string;
    
    public table?: QueryTable<T>;
+
+   public columns?: QueryColumn<T>[];
 
    public joins?: QueryJoin<T>[];
 
@@ -57,6 +59,8 @@ export class QueryManager<T> {
    public take?: number;
 
    public limit?: number;
+
+   public returning?: string[]
 
    public parameters: string[] = [];
 
@@ -82,12 +86,26 @@ export class QueryManager<T> {
       return `json_build_object(${column.jsonColumns?.map(column => `'${column.alias ?? column.column}', "${column.table ?? this.table?.alias ?? this.table?.table}"."${column.column}"`).join(', ')})`
    }
 
-   public hasFrom(): boolean {
+   public hasTable(): boolean {
       return this.table != undefined;
    }
+   public mountTableExpression(useAlias: boolean = true) {
+      let expresson = '';
+      if (this.hasTable()) {
+
+         expresson += (this.schema ? `"${this.schema}".` : '');
+         expresson += `"${this.table?.table}"`;
+         if (useAlias) {
+            expresson += ` "${this.table?.alias}"`;
+         }
+
+      }
+      return expresson;
+   }
+
    public mountFromExpression(): string {
-      if (this.hasFrom()) {
-         return `from "${this.table?.table}" "${this.table?.alias}"`;
+      if (this.hasTable()) {
+         return `from ${this.mountTableExpression()}`;
       }
       return '';
    }
@@ -245,6 +263,16 @@ export class QueryManager<T> {
    public mountLimitExpression(): string {
       if (this.hasLimit()) {
          return `limit ${this.limit}`;
+      }
+      return '';
+   }
+
+   public hasReturning(): boolean {
+      return (this.columns?.length ?? 0) > 0;
+   }
+   public mountReturningExpression(): string {
+      if (this.hasReturning()) {
+         return `returning ${this.returning?.join(', ')}`
       }
       return '';
    }

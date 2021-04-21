@@ -11,8 +11,10 @@ import { TableHasNoPrimaryKey } from "../errors/table-has-no-primary-key";
 import { ColumnMetadata, ColumnOptions, EventMetadata, EventType, ForeignKeyMetadata, ForeignKeyOptions, IndexMetadata, TableMetadata, TableOptions, UniqueMetadata, UniqueOptions } from "../metadata";
 import { PrimaryKeyMetadata } from "../metadata/primary-key/primary-key-metadata";
 import { NamingStrategy } from "../naming-strategy/naming-strategy";
+import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
 import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
 import { SelectQueryBuilder } from "../query-builder/select-query-builder";
+import { QueryTable } from "../query-builder/types/query-table";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
 import { QueryExecutor } from "../query-executor/query-executor";
 import { TableManager } from "../table-manager/table-manager";
@@ -337,8 +339,8 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public createSelectQuery<T>(queryExecutor?: QueryExecutor): SelectQueryBuilder<T> {
-      return new SelectQueryBuilder<T>(this, queryExecutor);
+   public createSelectQuery<T>(table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor): SelectQueryBuilder<T> {
+      return new SelectQueryBuilder<T>(this, table, queryExecutor);
    }
 
    /**
@@ -346,8 +348,8 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public createInsertQuery<T>(queryExecutor?: QueryExecutor): InsertQueryBuilder<T> {
-      return new InsertQueryBuilder<T>(this, queryExecutor);
+   public createInsertQuery<T>(table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor): InsertQueryBuilder<T> {
+      return new InsertQueryBuilder<T>(this, table, queryExecutor);
    }
 
    /**
@@ -355,8 +357,17 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public createUpdateQuery<T>(queryExecutor?: QueryExecutor): UpdateQueryBuilder<T> {
-      return new UpdateQueryBuilder<T>(this, queryExecutor);
+   public createUpdateQuery<T>(table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor): UpdateQueryBuilder<T> {
+      return new UpdateQueryBuilder<T>(this, table, queryExecutor);
+   }
+
+   /**
+    * 
+    * @param queryExecutor 
+    * @returns 
+    */
+   public createDeleteQuery<T>(table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor): DeleteQueryBuilder<T> {
+      return new DeleteQueryBuilder<T>(this, table, queryExecutor);
    }
 
    /**

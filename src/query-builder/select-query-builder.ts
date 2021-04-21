@@ -11,31 +11,15 @@ import { QueryWhere } from "./types/query-where";
 
 export class SelectQueryBuilder<T> extends QueryBuilder<T> {
 
-   constructor(connection: Connection, queryExecutor?: QueryExecutor) {
-      super(connection, queryExecutor);
+   constructor(connection: Connection, table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor) {
+      super(connection, table, queryExecutor);
    }
 
    public select(columns: QueryColumn<T> | QueryColumn<T>[]): this {
       this.queryManager.columns = (Array.isArray(columns) ? columns : [columns]);
       return this;
    }
-
-   public from(table: string, alias?: string): this;
-   public from(table: TableMetadata, alias?: string): this;
-   public from(table: QueryTable<T>): this;
-   public from(table: string | TableMetadata | QueryTable<T>, alias?: string): this {
-      if (typeof table == 'string') {
-         table = this.connection.tables[table];
-      }
-      if (table instanceof TableMetadata) {
-         table = {
-            table: table.name as string,
-            alias: alias ?? table.className
-         };
-      }
-      this.queryManager.table = table;
-      return this;
-   }
+   
 
    public join(type: JoinType, table: string, alias: string, condition: ''): this;
    public join(join: QueryJoin<T>): this;
@@ -91,8 +75,6 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       const expressions: string[] = [];
       this.queryManager.parameters = [];
 
-      // TODO: tem que informar a tabela antes de qualquer coisa
-
       expressions.push(this.queryManager.mountSelectExpression());
       expressions.push(this.queryManager.mountFromExpression());
       expressions.push(this.queryManager.mountJoinsExpression());
@@ -104,5 +86,6 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
 
       const sql = expressions.filter(expression => (expression ?? '').length > 0).join(' ');
       return sql;
+      
    }
 }

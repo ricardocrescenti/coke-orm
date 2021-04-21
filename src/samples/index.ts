@@ -52,9 +52,6 @@ export async function test() {
    });
 
    console.log('Connected', new Date().toLocaleString());
-   
-   // TODO carregar as relações com base na necessidade das condiçoes
-   // TODO parâmetros nos joins
 
    let city: CityModel = await connection.createTableManager(CityModel).findOne({
       where: { id: 1 }
@@ -97,9 +94,28 @@ export async function test() {
    });
    console.log('find', cities);
    
-   city.name = 'Guaporé 2';
+   city = await connection.createTableManager(CityModel).create({
+      name: 'Guaporé',
+      code: '4309407',
+      state: 'RS',
+      country: 'BRA'
+   });
    await city.save();
-   
+
+   city = await connection.createTableManager(CityModel).create({
+      name: 'Guaporé 2',
+      code: '4309408',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.save();
+
+   city = await connection.createTableManager(CityModel).create({
+      code: '4309408',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.delete();
 
    const entities = await connection.createTableManager(EntityModel).find({
       // select: [

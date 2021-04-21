@@ -97,6 +97,9 @@ export class TableManager<T> {
     * @returns 
     */
    public async find(findOptions: FindOptions<T>, tableManager?: TableManager<T>): Promise<T[]> {
+   
+      // TODO carregar as relações com base na necessidade das condiçoes
+      // TODO parâmetros nos joins
 
       /// create the query
       const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions, tableManager);
@@ -120,7 +123,7 @@ export class TableManager<T> {
     * @returns 
     */
    public async findOne(findOptions: FindOptions<T>, tableManager?: TableManager<T>) {
-      const [result]: any = await this.find({
+      const [result]: any = await this.find({ 
          ...findOptions,
          limit: 1,
          orderBy: (findOptions.orderBy ?? (tableManager ?? this).tableMetadata.primaryKey?.columns)
@@ -140,7 +143,6 @@ export class TableManager<T> {
          const where: QueryWhere<T> | undefined = this.createWhereFromColumns(object, this.tableMetadata.primaryKey?.columns ?? []);
 
          const updateQuery: UpdateQueryBuilder<T> = this.createUpdateQuery(tableManager)
-            .table(this.tableMetadata)
             .set(object)
             .where(where)
             .returning(this.tableMetadata.primaryKey?.columns);
@@ -149,7 +151,6 @@ export class TableManager<T> {
       } else {
 
          const insertQuery: InsertQueryBuilder<T> = this.createInsertQuery(tableManager)
-            .into(this.tableMetadata)
             .values(object)
             .returning(this.tableMetadata.primaryKey?.columns);
          return insertQuery.execute();
@@ -165,10 +166,11 @@ export class TableManager<T> {
 
       const objectExists: boolean = await this.loadPrimaryKey(object, tableManager);
       if (objectExists) {
+         
+         const where: QueryWhere<T> | undefined = this.createWhereFromColumns(object, this.tableMetadata.primaryKey?.columns ?? []);
 
-         const deleteQuery: DeleteQueryBuilder<any> = new DeleteQueryBuilder<any>(this.connection, tableManager?.queryExecutor)
-            .from(this.tableMetadata)
-            .where()
+         const deleteQuery: DeleteQueryBuilder<any> = new DeleteQueryBuilder<any>(this.connection, this.tableMetadata, tableManager?.queryExecutor)
+            .where(where)
             .returning(['campos chave primaria']);
          return deleteQuery.execute();
 
@@ -231,7 +233,7 @@ export class TableManager<T> {
          /// be loaded into the current object
 
          if (result) {
-            for (const primaryKey in primaryKeys) {
+            for (const primaryKey of primaryKeys) {
                object[primaryKey] = result[primaryKey];
             }
             return true;
@@ -305,9 +307,8 @@ export class TableManager<T> {
       }
 
       /// create the query to get the data
-      const query = this.connection.createSelectQuery<T>(tableManager?.queryExecutor ?? this.queryExecutor)
+      const query = this.connection.createSelectQuery<T>(this.tableMetadata, tableManager?.queryExecutor ?? this.queryExecutor)
          .select(queryColumns)
-         .from(this.tableMetadata)
          .join(queryJoins)
          .where(findOptions?.where)
          .orderBy(orderBy as QueryOrder<T>)
@@ -318,11 +319,15 @@ export class TableManager<T> {
    }
 
    public createInsertQuery(tableManager?: TableManager<T>): InsertQueryBuilder<T> {
-      return this.connection.createInsertQuery(tableManager?.queryExecutor);
+      return this.connection.createInsertQuery(this.tableMetadata, tableManager?.queryExecutor);
    }
 
    public createUpdateQuery(tableManager?: TableManager<T>) : UpdateQueryBuilder<T> {
-      return this.connection.createUpdateQuery(tableManager?.queryExecutor);
+      return this.connection.createUpdateQuery(this.tableMetadata, tableManager?.queryExecutor);
+   }
+
+   public createDeleteQuery(tableManager?: TableManager<T>): DeleteQueryBuilder<T> {
+      return this.connection.createDeleteQuery(this.tableMetadata, tableManager?.queryExecutor);
    }
 
    /**
@@ -555,7 +560,7 @@ export class TableManager<T> {
 
          where[column] = (values[column] == null 
             ? { isNull: true }
-            : { equal: values[column] });
+            : values[column]);
 
       }
 
