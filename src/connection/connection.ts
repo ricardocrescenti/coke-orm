@@ -221,7 +221,9 @@ export class Connection {
                case EventType.BeforeUpdate: tableMetadata.beforeUpdateEvents.push(eventMetadata); break;
                case EventType.AfterUpdate: tableMetadata.afterUpdateEvents.push(eventMetadata); break;
                case EventType.BeforeDelete: tableMetadata.beforeDeleteEvents.push(eventMetadata); break;
-               case EventType.AfterDelete: tableMetadata.AfterDeleteEvents.push(eventMetadata); break;
+               case EventType.AfterDelete: tableMetadata.afterDeleteEvents.push(eventMetadata); break;
+               case EventType.BeforeLoadPrimaryKey: tableMetadata.beforeLoadPrimaryKey.push(eventMetadata); break;
+               case EventType.AfterLoadPrimaryKey: tableMetadata.afterLoadPrimaryKey.push(eventMetadata); break;
             }
          }
 

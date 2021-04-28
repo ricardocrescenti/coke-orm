@@ -1,7 +1,8 @@
-import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, UpdatedAtColumn } from "../../decorators";
+import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, Unique, UpdatedAtColumn } from "../../decorators";
 import { Generate } from "../../metadata/add-ons/generate";
 import { CokenModel } from "../../table-manager/coken-model";
 
+@Unique({ columns: ['uuid'] })
 export abstract class PatternModel extends CokenModel {
 
    @PrimaryColumn({ 

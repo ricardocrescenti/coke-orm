@@ -1,5 +1,5 @@
 import { Connection } from "../../../connection/connection";
-import { Column, OneToOne, Table, Unique } from "../../../decorators";
+import { BeforeLoadPrimaryKey, Column, OneToOne, Table, Unique } from "../../../decorators";
 import { TableManager } from "../../../table-manager/table-manager";
 import { PatternModel } from "../pattern.model";
 import { EntityModel } from "./entity.model";
@@ -32,14 +32,16 @@ export class SellerModel extends PatternModel {
 	// eslint-disable-next-line no-unused-vars
 	//abstract createEntityModel(object: any): EntityModel;
 
-	public async loadPrimaryKey(tableManager?: TableManager<this> | Connection | string) {
+	@BeforeLoadPrimaryKey()
+	public async BeforeLoadPrimaryKey(tableManager?: TableManager<this>) {
 		tableManager = this.getTableManager(tableManager);
-
-		await super.loadPrimaryKey(tableManager);
-
+		
 		if (this.entity) {
 			await this.entity.loadReferenceByParent(tableManager.connection.createTableManager('EntityModel'), this);
 		}
+		await super.loadPrimaryKey(tableManager);
+
+		
 		
 		return this.id;
 	}

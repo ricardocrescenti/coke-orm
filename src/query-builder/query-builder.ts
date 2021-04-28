@@ -63,7 +63,7 @@ export abstract class QueryBuilder<T> {
       const object: any = {};
       for (const key of Object.keys(values)) {
          const columnMetadata: ColumnMetadata = tableMetadata.columns[key];
-         if (!columnMetadata) {
+         if (!columnMetadata || (columnMetadata.relation && columnMetadata.relation?.relationType == 'OneToMany')) {
             continue;
          }
          object[columnMetadata.name as string] = (values as any)[key];
@@ -92,6 +92,7 @@ export abstract class QueryBuilder<T> {
    public async execute(): Promise<any> {
       const sql: string = this.getQuery();
       const params: string[] = this.getParams();
+      console.info(sql);
 
       if (this.queryExecutor) {
          return this.queryExecutor.query(sql, params);

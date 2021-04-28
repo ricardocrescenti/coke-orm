@@ -12,6 +12,7 @@ import { QueryJoin } from "../query-builder/types/query-join";
 import { QueryColumn } from "../query-builder/types/query-column";
 import { QueryOrder } from "../query-builder/types/query-order";
 import { FindSelect } from "../find-options/types/find-select";
+import { TableValues } from "./types/table-values";
 
 export class TableManager<T> {
 
@@ -46,7 +47,7 @@ export class TableManager<T> {
     * @param values 
     * @returns 
     */
-   public create(values?: any): any {
+   public create(values?: TableValues<T>): any {
       const object: T = new (this.tableMetadata.target)();
       if (values) {
          this.populate(object, values);
@@ -135,27 +136,71 @@ export class TableManager<T> {
     * 
     * @param queryExecutor 
     */
-   public async save(object: any, tableManager?: TableManager<T>): Promise<any> {
+   public async save(object: TableValues<T>, tableManager?: TableManager<T>): Promise<any> {
 
-      const objectExists: boolean = await this.loadPrimaryKey(object, tableManager);
+      /// create a copy of the object so as not to modify the object passed by 
+      /// parameter
+      const objectToSave = this.create({ ...object });
+
+      const columnsToSave: string[] = Object.keys(objectToSave);
+      const columnsParentRelation: ColumnMetadata[] = Object.values(this.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation && columnMetadata.relation.relationType != 'OneToMany');
+      const columnsChildrenRelation: ColumnMetadata[] = Object.values(this.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation?.relationType == 'OneToMany');
+
+      for (const columnParentRelation of columnsParentRelation) {
+
+         const parentTableManager = this.connection.createTableManager(columnParentRelation.relation?.referencedTable as string);
+         const parentObject = (objectToSave as any)[columnParentRelation.propertyName];
+
+         if (parentObject instanceof Object) { 
+            const savedParentObject = await parentTableManager.save(parentObject);
+            (objectToSave as any)[columnParentRelation.propertyName] = savedParentObject[columnParentRelation.relation?.referencedColumn as string];
+         }
+
+      }
+
+      //for (const )
+      /// ADICIONAR O EVENTO ANTES DE CARREGAR REFERENCIA, QUE DAI NOS OBJETOS QUE TEM
+      /// A ENTITYMODEL COMO PARENT ELES SERÃO CARREGADOS PELO PARENT.
+
+      let savedObject;
+      const objectExists: boolean = await this.loadPrimaryKey(objectToSave, tableManager);
       if (objectExists) {
          
-         const where: QueryWhere<T> | undefined = this.createWhereFromColumns(object, this.tableMetadata.primaryKey?.columns ?? []);
+         const where: QueryWhere<T> | undefined = this.createWhereFromColumns(objectToSave, this.tableMetadata.primaryKey?.columns ?? []);
 
          const updateQuery: UpdateQueryBuilder<T> = this.createUpdateQuery(tableManager)
-            .set(object)
+            .set(objectToSave)
             .where(where)
             .returning(this.tableMetadata.primaryKey?.columns);
-         return updateQuery.execute();
+         savedObject = await updateQuery.execute();
 
       } else {
 
          const insertQuery: InsertQueryBuilder<T> = this.createInsertQuery(tableManager)
-            .values(object)
+            .values(objectToSave)
             .returning(this.tableMetadata.primaryKey?.columns);
-         return insertQuery.execute();
+         savedObject = await insertQuery.execute();
 
       }
+      savedObject = this.create(savedObject.rows[0])
+
+      for (const columnChildRelation of columnsChildrenRelation) {
+
+         const childTableManager = this.connection.createTableManager(columnChildRelation.relation?.referencedTable as string);
+         for (const childIndex in (objectToSave as any)[columnChildRelation.propertyName]) {
+
+
+            const childObject = (objectToSave as any)[columnChildRelation.propertyName][childIndex];
+            childObject[columnChildRelation.relation?.referencedColumn as string] = savedObject[this.tableMetadata.primaryKey?.columns[0] as string];
+
+            const savedChildObject = await childTableManager.save(childObject);
+            (objectToSave as any)[columnChildRelation.propertyName][childIndex] = childTableManager.create(savedChildObject);
+
+         }
+
+      }
+
+      return savedObject;
    }
 
    /**
@@ -558,7 +603,12 @@ export class TableManager<T> {
             return undefined;
          }
 
-         where[column] = (values[column] == null 
+         const columnMetadata: ColumnMetadata = this.tableMetadata.columns[column];
+         if (!columnMetadata) {
+            throw Error('Coluna inválida para criação do Where')
+         }
+
+         where[columnMetadata.name as string] = (values[column] == null 
             ? { isNull: true }
             : values[column]);
 

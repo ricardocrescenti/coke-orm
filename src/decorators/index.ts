@@ -15,13 +15,17 @@ import { PrimaryColumn } from "./columns/primary-column";
 import { Table } from "./tables/table";
 import { Unique } from "./unique/unique";
 import { UpdatedAtColumn } from "./columns/updated-at-column";
+import { AfterLoadPrimaryKey } from "./events/after-load-primary-key";
+import { BeforeLoadPrimaryKey } from "./events/before-load-primary-key";
 
 export {
    AfterDelete,
    AfterInsert,
+   AfterLoadPrimaryKey,
    AfterUpdate,
    BeforeDelete,
    BeforeInsert,
+   BeforeLoadPrimaryKey,
    BeforeUpdate,
    Column,
    CreatedAtColumn,

@@ -43,7 +43,7 @@ export abstract class CokenModel {
     * 
     * @returns 
     */
-   public async loadPrimaryKey(tableManager?: TableManager<this> | Connection | string, requester: any = null): Promise<any> {
+   public async loadPrimaryKey(tableManager?: TableManager<this>, requester: any = null): Promise<any> {
       return this.getTableManager(tableManager).loadPrimaryKey(this);
    }
 

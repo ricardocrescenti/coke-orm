@@ -69,9 +69,19 @@ export class TableMetadata extends TableOptions {
    /**
     * 
     */
-   public readonly AfterDeleteEvents: EventMetadata[] = [];
+   public readonly afterDeleteEvents: EventMetadata[] = [];
    
-   constructor(options: Omit<TableMetadata, 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'AfterDeleteEvents' | 'getColumn'>) {
+   /**
+    * 
+    */
+   public readonly beforeLoadPrimaryKey: EventMetadata[] = [];
+   
+   /**
+    * 
+    */
+   public readonly afterLoadPrimaryKey: EventMetadata[] = [];
+   
+   constructor(options: Omit<TableMetadata, 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'afterDeleteEvents' | 'beforeLoadPrimaryKey' | 'afterLoadPrimaryKey' | 'getColumn'>) {
       super(options);
       this.connection = options.connection;
    }

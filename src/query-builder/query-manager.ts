@@ -268,7 +268,7 @@ export class QueryManager<T> {
    }
 
    public hasReturning(): boolean {
-      return (this.columns?.length ?? 0) > 0;
+      return (this.returning?.length ?? 0) > 0;
    }
    public mountReturningExpression(): string {
       if (this.hasReturning()) {

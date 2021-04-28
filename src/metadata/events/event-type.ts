@@ -5,4 +5,6 @@ export enum EventType {
    AfterUpdate,
    BeforeDelete,
    AfterDelete,
+   BeforeLoadPrimaryKey,
+   AfterLoadPrimaryKey
 }
