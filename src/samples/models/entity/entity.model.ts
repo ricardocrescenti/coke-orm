@@ -1,4 +1,4 @@
-import { Column, OneToMany, OneToOne, Table } from "../../../decorators";
+import { BeforeLoadPrimaryKey, Column, ManyToOne, OneToMany, OneToOne, Table } from "../../../decorators";
 import { TableMetadata } from "../../../metadata/tables/table-metadata";
 import { QueryExecutor } from "../../../query-executor/query-executor";
 import { TableManager } from "../../../table-manager/table-manager";
@@ -41,7 +41,7 @@ export class EntityModel extends PatternModel {
 	@OneToMany({ relation: { referencedTable: 'EntityAddressModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
 	addresses?: Array<EntityAddressModel>;
 
-	@OneToOne({ relation: { referencedTable: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
+	@ManyToOne({ relation: { referencedTable: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
 	photo?: FileModel;
 
 	constructor(object: any = null) {
@@ -80,40 +80,33 @@ export class EntityModel extends PatternModel {
 		// }
 	}
 
-	// eslint-disable-next-line no-unused-vars
-	//abstract createEntityPhoneModel(object: any): EntityPhoneModel;
-	// eslint-disable-next-line no-unused-vars
-	//abstract createEntityDocumentModel(object: any): EntityDocumentModel;
-	// eslint-disable-next-line no-unused-vars
-	//abstract createEntityAddressModel(object: any): EntityAddressModel;
-	// eslint-disable-next-line no-unused-vars
-	//abstract createFileModel(object: any, path: string): FileModel;
+	@BeforeLoadPrimaryKey()
+	public async loadPrimaryKey(tableManager: TableManager<this>, requester: any = null): Promise<this> {
 
-	// eslint-disable-next-line no-unused-vars
-	public async loadReference(tableManager: TableManager<this>, requester: any = null): Promise<this> {
-		// if (Utility.isNotEmpty(requester) && Utility.isEmpty(requester.id)) {
-		// 	return Promise.resolve(this);
-		// }
-		// return super.loadReferences(entityManager, requester);
-		console.log(requester);
-		delete requester.id;
-		return this;
+		if (requester && !requester.id) {
+			return Promise.resolve(this);
+		}
+		return super.loadPrimaryKey(tableManager, requester);
+
 	}
 
-	public async loadReferenceByParent(tableManager: TableManager<this>, parent: PatternModel) {
-		// if (Utility.isNotEmpty(parent?.id)) {
-		// 	const [entity] = await entityManager.query(`
-		// 		select e.id, e.uuid
-		// 		from ${entityManager.getRepository(parent.constructor.name).metadata.givenTableName} p
-		// 			inner join entities e on (e.id = p.entity_id)
-		// 		where p.id = ${parent.id}
-		// 	`);
+	public async loadReferenceByParent(parentTableManager: TableManager<this>, parent: PatternModel) {
+		
+		if (parent?.id) {
+			const [entity] = await parentTableManager.queryExecutor.query(`
+				select e.id, e.uuid
+				from ${parentTableManager.tableMetadata.name} p
+				inner join entities e on (e.id = p.entity_id)
+				where p.id = ${parent.id}
+			`);
 
-		// 	if (Utility.isNotEmpty(entity)) {
-		// 		this.id = entity.id;
-		// 		this.uuid = entity.uuid;
-		// 	}
-		// }
-		// await this.loadReferences(entityManager, null);
+			if (entity) {
+				this.id = entity.id;
+				this.uuid = entity.uuid;
+			}
+		}
+
+		await this.loadPrimaryKey(parentTableManager, null);
+
 	}
 }
