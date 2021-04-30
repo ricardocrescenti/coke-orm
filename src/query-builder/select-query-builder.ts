@@ -11,15 +11,14 @@ import { QueryWhere } from "./types/query-where";
 
 export class SelectQueryBuilder<T> extends QueryBuilder<T> {
 
-   constructor(connection: Connection, table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor) {
-      super(connection, table, queryExecutor);
+   constructor(connection: Connection, table: QueryTable<T> | TableMetadata) {
+      super(connection, table);
    }
 
    public select(columns: QueryColumn<T> | QueryColumn<T>[]): this {
       this.queryManager.columns = (Array.isArray(columns) ? columns : [columns]);
       return this;
-   }
-   
+   }   
 
    public join(type: JoinType, table: string, alias: string, condition: ''): this;
    public join(join: QueryJoin<T>): this;

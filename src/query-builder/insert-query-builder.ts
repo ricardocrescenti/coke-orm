@@ -12,8 +12,8 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
     * 
     * @param queryExecutor 
     */
-   constructor(connection: Connection, table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor) {
-      super(connection, table, queryExecutor);
+   constructor(connection: Connection, table: QueryTable<T> | TableMetadata) {
+      super(connection, table);
    }
 
    public values(values: QueryValues<T>): this {

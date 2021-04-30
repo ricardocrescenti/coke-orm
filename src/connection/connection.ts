@@ -25,6 +25,13 @@ export class Connection {
    /**
     * 
     */
+   public get connection(): Connection {
+      return this;
+   }
+
+   /**
+    * 
+    */
    public readonly options: ConnectionOptions
 
    /**
@@ -44,6 +51,11 @@ export class Connection {
     * 
     */
    public readonly tables: SimpleMap<TableMetadata> = {};
+
+   /**
+    * 
+    */
+   private tableManagers: SimpleMap<TableManager<any>> = {};
 
    /**
     * 
@@ -322,7 +334,8 @@ export class Connection {
     * @param table 
     * @param queryExecutor 
     */
-   public createTableManager<T>(table: string | TableConstructor<T> | TableMetadata, queryExecutor?: QueryExecutor): TableManager<T> {
+   public getTableManager<T>(table: TableMetadata | TableConstructor<T> | string): TableManager<T> {
+
       if (typeof(table) == 'string') {
          table = this.tables[table as string];
       } else if (table instanceof Function) {
@@ -330,10 +343,15 @@ export class Connection {
       }
 
       if (!table) {
-         throw new Error('Tabela inválida para efetuar a consulta');
+         throw new Error(`Não foi possível obter o TableManager`);
+      }
+      
+      if (!this.tableManagers[table.className]) {
+         this.tableManagers[table.className] = new TableManager<typeof table.target>(table);
       }
 
-      return new TableManager<T>(this, table, queryExecutor);
+      return this.tableManagers[table.className];
+      
    }
 
    /**
@@ -341,8 +359,8 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public createSelectQuery<T>(table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor): SelectQueryBuilder<T> {
-      return new SelectQueryBuilder<T>(this, table, queryExecutor);
+   public createSelectQuery<T>(table: QueryTable<T> | TableMetadata): SelectQueryBuilder<T> {
+      return new SelectQueryBuilder<T>(this, table);
    }
 
    /**
@@ -350,8 +368,8 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public createInsertQuery<T>(table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor): InsertQueryBuilder<T> {
-      return new InsertQueryBuilder<T>(this, table, queryExecutor);
+   public createInsertQuery<T>(table: QueryTable<T> | TableMetadata): InsertQueryBuilder<T> {
+      return new InsertQueryBuilder<T>(this, table);
    }
 
    /**
@@ -359,8 +377,8 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public createUpdateQuery<T>(table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor): UpdateQueryBuilder<T> {
-      return new UpdateQueryBuilder<T>(this, table, queryExecutor);
+   public createUpdateQuery<T>(table: QueryTable<T> | TableMetadata): UpdateQueryBuilder<T> {
+      return new UpdateQueryBuilder<T>(this, table);
    }
 
    /**
@@ -368,8 +386,8 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public createDeleteQuery<T>(table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor): DeleteQueryBuilder<T> {
-      return new DeleteQueryBuilder<T>(this, table, queryExecutor);
+   public createDeleteQuery<T>(table: QueryTable<T> | TableMetadata): DeleteQueryBuilder<T> {
+      return new DeleteQueryBuilder<T>(this, table);
    }
 
    /**

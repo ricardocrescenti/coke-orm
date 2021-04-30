@@ -8,6 +8,7 @@ import { IndexMetadata } from "../index/index-metadata";
 import { PrimaryKeyMetadata } from "../primary-key/primary-key-metadata";
 import { Connection } from "../../connection/connection";
 import { ColumnMetadataNotLocated } from "../../errors/column_metadata_not_located";
+import { TableManager } from "../../table-manager/table-manager";
 
 export class TableMetadata extends TableOptions {
 
@@ -81,7 +82,7 @@ export class TableMetadata extends TableOptions {
     */
    public readonly afterLoadPrimaryKey: EventMetadata[] = [];
    
-   constructor(options: Omit<TableMetadata, 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'afterDeleteEvents' | 'beforeLoadPrimaryKey' | 'afterLoadPrimaryKey' | 'getColumn'>) {
+   constructor(options: Omit<TableMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'afterDeleteEvents' | 'beforeLoadPrimaryKey' | 'afterLoadPrimaryKey' | 'getColumn'>) {
       super(options);
       this.connection = options.connection;
    }

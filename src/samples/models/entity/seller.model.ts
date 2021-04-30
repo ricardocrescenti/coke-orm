@@ -1,5 +1,6 @@
 import { Connection } from "../../../connection/connection";
 import { BeforeLoadPrimaryKey, Column, OneToOne, Table, Unique } from "../../../decorators";
+import { QueryExecutor } from "../../../query-executor/query-executor";
 import { TableManager } from "../../../table-manager/table-manager";
 import { PatternModel } from "../pattern.model";
 import { EntityModel } from "./entity.model";
@@ -17,32 +18,12 @@ export class SellerModel extends PatternModel {
 	@Column({ nullable: false, default: 1 }) //, enum: [Status]
 	status?: number;//Status;
 
-	constructor(object = null) {
-		super();
-
-		// if (!Utility.isEmpty(object)) {
-		// 	Object.assign(this, object);
-
-		// 	if (!Utility.isEmpty(object.entity)) {
-		// 		this.entity = this.createEntityModel(object.entity);
-		// 	}
-		// }
-	}
-
-	// eslint-disable-next-line no-unused-vars
-	//abstract createEntityModel(object: any): EntityModel;
-
-	@BeforeLoadPrimaryKey()
-	public async BeforeLoadPrimaryKey(tableManager?: TableManager<this>) {
-		tableManager = this.getTableManager(tableManager);
+	public loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
 		
 		if (this.entity) {
-			await this.entity.loadReferenceByParent(tableManager.connection.createTableManager('EntityModel'), this);
+			return this.entity.loadReferenceByParent(queryExecutor, queryExecutor.getTableManager('EntityModel'), this);
 		}
-		await super.loadPrimaryKey(tableManager);
-
-		
-		
-		return this.id;
+		return super.loadPrimaryKey(queryExecutor);
+	
 	}
 }

@@ -1,3 +1,4 @@
+import { Connection } from "../../../connection/connection";
 import { BeforeLoadPrimaryKey, Column, ManyToOne, OneToMany, OneToOne, Table } from "../../../decorators";
 import { TableMetadata } from "../../../metadata/tables/table-metadata";
 import { QueryExecutor } from "../../../query-executor/query-executor";
@@ -80,20 +81,19 @@ export class EntityModel extends PatternModel {
 		// }
 	}
 
-	@BeforeLoadPrimaryKey()
-	public async loadPrimaryKey(tableManager: TableManager<this>, requester: any = null): Promise<this> {
+	public loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
 
 		if (requester && !requester.id) {
-			return Promise.resolve(this);
+			return Promise.resolve(false);
 		}
-		return super.loadPrimaryKey(tableManager, requester);
+		return super.loadPrimaryKey(queryExecutor, requester);
 
 	}
 
-	public async loadReferenceByParent(parentTableManager: TableManager<this>, parent: PatternModel) {
+	public async loadReferenceByParent(queryExecutor: QueryExecutor | Connection, parentTableManager: TableManager<this>, parent: PatternModel): Promise<boolean> {
 		
 		if (parent?.id) {
-			const [entity] = await parentTableManager.queryExecutor.query(`
+			const [entity] = await queryExecutor.query(`
 				select e.id, e.uuid
 				from ${parentTableManager.tableMetadata.name} p
 				inner join entities e on (e.id = p.entity_id)
@@ -106,7 +106,8 @@ export class EntityModel extends PatternModel {
 			}
 		}
 
-		await this.loadPrimaryKey(parentTableManager, null);
+		return this.loadPrimaryKey(queryExecutor, null);
 
 	}
+
 }

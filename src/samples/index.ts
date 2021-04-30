@@ -52,71 +52,73 @@ export async function test() {
 
    console.log('Connected', new Date().toLocaleString());
 
-   // let city: CityModel = await connection.createTableManager(CityModel).findOne({
-   //    where: { id: 1 }
-   // });
+   let city: CityModel = await connection.getTableManager(CityModel).findOne({
+      where: { id: 1 }
+   });
 
-   // city = await connection.createTableManager(CityModel).create({
-   //    name: 'Guaporé',
-   //    code: '4309407',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
-   // await city.loadPrimaryKey();
-   // console.log('loadPrimaryKey', city);
+   city = await connection.getTableManager(CityModel).create({
+      name: 'Guaporé',
+      code: '4309407',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.loadPrimaryKey(connection);
+   console.log('loadPrimaryKey', city);
 
-   // const cities = await connection.createTableManager(CityModel).find({
-   //    where: [
-   //       {
-   //          name: { equal: 'Guaporé' },
-   //          AND: [
-   //             { code: { between: ['4309406', '4309407'] } },
-   //             { state: { equal: 'RS' } }
-   //          ]
-   //       },
-   //       {
-   //          name: { equal: 'Serafina' },
-   //          AND: [
-   //             { code: { between: ['4309400', '4309402'] } },
-   //             { state: { equal: 'SC' } }
-   //          ]
-   //       },
-   //       {
-   //          RAW: {
-   //             condition: 'id = :teste',
-   //             params: {
-   //                teste: 1
-   //             }
-   //          }
-   //       }
-   //    ]
-   // });
-   // console.log('find', cities);
+   const cities = await connection.getTableManager(CityModel).find({
+      where: [
+         {
+            name: { equal: 'Guaporé' },
+            AND: [
+               { 
+                  code: { between: ['4309406', '4309407'] },
+                  state: { equal: 'RS' }
+               }
+            ]
+         },
+         {
+            name: { equal: 'Serafina' },
+            AND: [
+               { code: { between: ['4309400', '4309402'] } },
+               { state: { equal: 'SC' } }
+            ]
+         },
+         {
+            RAW: {
+               condition: 'id = :teste',
+               params: {
+                  teste: 1
+               }
+            }
+         }
+      ]
+   });
+   console.log('find', cities);
    
-   // city = await connection.createTableManager(CityModel).create({
-   //    name: 'Guaporé',
-   //    code: '4309407',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
-   // await city.save();
+   city = await connection.getTableManager(CityModel).create({
+      name: 'Guaporé',
+      code: '4309407',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.save(connection);
 
-   // city = await connection.createTableManager(CityModel).create({
-   //    name: 'Guaporé 2',
-   //    code: '4309408',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
-   // await city.save();
+   city = await connection.getTableManager(CityModel).create({
+      name: 'Guaporé 2',
+      code: '4309408',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.save(connection);
 
-   // city = await connection.createTableManager(CityModel).create({
-   //    code: '4309408',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
-   // await city.delete();
+   city = await connection.getTableManager(CityModel).create({
+      code: '4309408',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.delete(connection);
 
-   const customerTableManager = connection.createTableManager(SellerModel);
+   const customerTableManager = connection.getTableManager(SellerModel);
    const customer = customerTableManager.create({
       entity: {
          uuid: '4c521a3b-9826-43ea-a60f-0a297674c955',
@@ -157,7 +159,7 @@ export async function test() {
    });
    await customerTableManager.save(customer);
 
-   const entities = await connection.createTableManager(EntityModel).find({
+   const entities = await connection.getTableManager(EntityModel).find({
       // select: [
       //    'id',
       //    'name',

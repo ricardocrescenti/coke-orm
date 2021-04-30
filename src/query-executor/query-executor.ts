@@ -1,4 +1,7 @@
+import { TableConstructor } from "../common/types/table-type";
 import { Connection } from "../connection/connection";
+import { TableMetadata } from "../metadata/tables/table-metadata";
+import { TableManager } from "../table-manager/table-manager";
 
 export class QueryExecutor {
 
@@ -37,6 +40,10 @@ export class QueryExecutor {
 
    private async initializeClient() {
       this._client = await this.connection.driver.getClient();
+   }
+
+   public getTableManager<T>(table: TableMetadata | TableConstructor<T> | string): TableManager<T> {
+      return this.connection.getTableManager<T>(table);
    }
 
    /**

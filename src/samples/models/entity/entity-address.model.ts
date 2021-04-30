@@ -1,5 +1,6 @@
 import { Connection } from "../../../connection/connection";
 import { Column, ManyToOne, Table, Unique } from "../../../decorators";
+import { QueryExecutor } from "../../../query-executor/query-executor";
 import { TableManager } from "../../../table-manager/table-manager";
 import { PatternModel } from "../pattern.model";
 import { CityModel } from "./city.model";
@@ -45,50 +46,6 @@ export class EntityAddressModel extends PatternModel {
 	@Column({ type: 'point', nullable: true })
 	coordinate?: string;
 
-	constructor(object = null) {
-		super(object);
-
-		// if (!Utility.isEmpty(object)) {
-		// 	Object.assign(this, object);
-
-		// 	if (!Utility.isEmpty(object.entity)) {
-		// 		this.entity = this.createEntityModel(object.entity);
-		// 	}
-
-		// 	if (!Utility.isEmpty(object.city)) {
-		// 		this.city = this.createCityModel(object.city);
-		// 	}
-		// }
-	}
-
-	// eslint-disable-next-line no-unused-vars
-	//abstract createEntityModel(object: any): EntityModel;
-	// eslint-disable-next-line no-unused-vars
-	//abstract createCityModel(object: any): CityModel;
-
-	public async loadPrimaryKey(tableManager: TableManager<this> | Connection | string) {
-		tableManager = this.getTableManager(tableManager);
-
-		// if ((this.zipCode ?? '').length > 0) {
-		// 	this.city = await this.getCity(tableManager);
-		// 	await this.city?.save(tableManager);
-		// }
-
-		return super.loadPrimaryKey(tableManager);
-
-		// return await super.getReference(entityManager, where ?? (Utility.isNotEmpty(this.entity?.id) ? {
-		// 	contact: this.contact,
-		// 	street: this.street,
-		// 	number: this.number,
-		// 	neighborhood: this.neighborhood,
-		// 	complement: this.complement,
-		// 	reference: this.reference,
-		// 	city: this.city,
-		// 	zipCode: this.zipCode,
-		// 	entity: this.entity
-		// } : null));
-	}
-
 	// public async getCity(tableManager: TableManager<this>) {
 	// 	if (this.city) {
 	// 		await this.city.loadReference(tableManager);
@@ -112,4 +69,5 @@ export class EntityAddressModel extends PatternModel {
 
 	// 	return this.city;
 	// }
+
 }

@@ -8,8 +8,8 @@ import { QueryWhere } from "./types/query-where";
 
 export class UpdateQueryBuilder<T> extends QueryBuilder<T> {
 
-   constructor(connection: Connection, table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor) {
-      super(connection, table, queryExecutor);
+   constructor(connection: Connection, table: QueryTable<T> | TableMetadata) {
+      super(connection, table);
    }
 
    public set(values: QueryValues<T>): this {

@@ -223,7 +223,7 @@ export class QueryManager<T> {
          expressions.push(operator.getExpression());
       }
       
-      return expressions.join(' and ');
+      return expressions.join(' or ');
    }
 
    public hasGroupBy(): boolean {

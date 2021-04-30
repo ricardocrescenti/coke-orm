@@ -1,5 +1,6 @@
 import { Connection } from "../../../connection/connection";
 import { Column, OneToOne, Table, Unique } from "../../../decorators";
+import { QueryExecutor } from "../../../query-executor/query-executor";
 import { TableManager } from "../../../table-manager/table-manager";
 import { PatternModel } from "../pattern.model";
 import { EntityModel } from "./entity.model";
@@ -14,28 +15,13 @@ export class CollaboratorModel extends PatternModel {
 	@Column({ nullable: false, default: 1 }) //, enum: [Status]
 	status?: number; //Status;
 
-	constructor(object: any = null) {
-		super(object);
-
-		// if (!Utility.isEmpty(object)) {
-		// 	Object.assign(this, object);
-
-		// 	if (!Utility.isEmpty(object.entity)) {
-		// 		this.entity = this.createEntityModel(object.entity);
-		// 	}
-		// }
-	}
-
-	// eslint-disable-next-line no-unused-vars
-	//abstract createEntityModel(object: any): EntityModel;
-
-	public async loadPrimaryKey(tableManager?: TableManager<this> | Connection | string) {
-		tableManager = this.getTableManager(tableManager);
-
-		if (this.entity) {
-			await this.entity.loadReferenceByParent(tableManager.connection.createTableManager('EntityModel'), this);
-		}
+	public loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
 		
-		return this.id;
+		if (this.entity) {
+			return this.entity.loadReferenceByParent(queryExecutor, queryExecutor.getTableManager('EntityModel'), this);
+		}
+		return super.loadPrimaryKey(queryExecutor);
+	
 	}
+
 }

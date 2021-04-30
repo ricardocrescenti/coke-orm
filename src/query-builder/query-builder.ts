@@ -17,20 +17,14 @@ export abstract class QueryBuilder<T> {
    /**
     * 
     */
-   public queryExecutor?: QueryExecutor;
-
-   /**
-    * 
-    */
    public queryManager: QueryManager<T>;
 
    /**
     * 
     * @param queryExecutor 
     */
-   constructor(connection: Connection, table: QueryTable<T> | TableMetadata, queryExecutor?: QueryExecutor) {
+   constructor(connection: Connection, table: QueryTable<T> | TableMetadata) {
       this.connection = connection;
-      this.queryExecutor = queryExecutor;
       this.queryManager = new QueryManager<T>();
 
       if (this.connection.driver instanceof PostgresDriver) {
@@ -89,13 +83,13 @@ export abstract class QueryBuilder<T> {
     * 
     * @returns 
     */
-   public async execute(): Promise<any> {
+   public async execute(queryExecutor?: QueryExecutor | Connection): Promise<any> {
       const sql: string = this.getQuery();
       const params: string[] = this.getParams();
       console.info(sql);
 
-      if (this.queryExecutor) {
-         return this.queryExecutor.query(sql, params);
+      if (queryExecutor) {
+         return queryExecutor.query(sql, params);
       } else {
          return this.connection.query(sql, params);
       }

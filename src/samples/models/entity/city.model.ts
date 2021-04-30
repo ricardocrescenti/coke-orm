@@ -18,11 +18,4 @@ export class CityModel extends PatternModel {
 	@Column({ nullable: true })
 	country?: string;
 
-	constructor(object: any = null) {
-		super(object);
-
-		// if (!Utility.isEmpty(object)) {
-		// 	Object.assign(this, object);
-		// }
-	}
 }

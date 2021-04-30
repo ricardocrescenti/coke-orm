@@ -21,18 +21,4 @@ export class EntityPhoneModel extends PatternModel {
 	@Column({ nullable: true })
 	contact?: string;
 
-	constructor(object: any = null) {
-		super(object);
-
-		// if (!Utility.isEmpty(object)) {
-		// 	Object.assign(this, object);
-
-		// 	if (!Utility.isEmpty(object.entity)) {
-		// 		this.entity = this.createEntityModel(object.entity);
-		// 	}
-		// }
-	}
-
-	// eslint-disable-next-line no-unused-vars
-	//abstract createEntityModel(object: any): EntityModel;
 }
