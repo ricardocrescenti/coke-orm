@@ -9,10 +9,10 @@ export class EntityDocumentModel extends PatternModel {
 	@ManyToOne({ relation: { referencedTable: 'EntityModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' } })
 	entity?: EntityModel;
 
-	@Column({ nullable: false })
+	@Column()
 	type?: string;
 
-	@Column({ nullable: false })
+	@Column()
 	document?: string;
 
 }

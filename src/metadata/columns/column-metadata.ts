@@ -1,4 +1,3 @@
-import { SimpleMap } from "../../common/interfaces/map";
 import { Generate } from "../add-ons/generate";
 import { ForeignKeyMetadata } from "../foreign-key/foreign-key-metadata";
 import { IndexMetadata } from "../index/index-metadata";
@@ -6,7 +5,7 @@ import { TableMetadata } from "../tables/table-metadata";
 import { UniqueMetadata } from "../unique/unique-metadata";
 import { ColumnOptions } from "./column-options";
 
-export class ColumnMetadata extends ColumnOptions<any> {
+export class ColumnMetadata extends ColumnOptions<any, ForeignKeyMetadata> {
 
    /**
     * 
@@ -16,24 +15,24 @@ export class ColumnMetadata extends ColumnOptions<any> {
    /**
     * 
     */
-   public readonly foreignKeys: SimpleMap<ForeignKeyMetadata>;
+   public readonly foreignKeys: ForeignKeyMetadata[];
    
    /**
     * 
     */
-   public readonly uniques: SimpleMap<UniqueMetadata>;
+   public readonly uniques: UniqueMetadata[];
    
    /**
     * 
     */
-   public readonly indexs: SimpleMap<IndexMetadata>;
+   public readonly indexs: IndexMetadata[];
 
    constructor(options: Omit<ColumnMetadata, 'foreignKeys' | 'uniques' | 'indexs'>) {
       super(options);
       this.table = options.table;
-      this.foreignKeys = new SimpleMap<ForeignKeyMetadata>();
-      this.uniques = new SimpleMap<UniqueMetadata>();
-      this.indexs = new SimpleMap<IndexMetadata>();
+      this.foreignKeys = [];
+      this.uniques = [];
+      this.indexs = [];
 
       if (this.default instanceof Generate) {
 

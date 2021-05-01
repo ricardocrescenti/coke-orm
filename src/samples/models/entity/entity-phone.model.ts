@@ -12,10 +12,10 @@ export class EntityPhoneModel extends PatternModel {
 	@Column() //{ nullable: true, enum: [PhoneType] }
 	type?: number;//PhoneType;
 
-	@Column({ name: 'phone_number' })
+	@Column()
 	phoneNumber?: string;
 
-	@Column({ name: 'branch_line', nullable: true })
+	@Column({ nullable: true })
 	branchLine?: string;
 
 	@Column({ nullable: true })

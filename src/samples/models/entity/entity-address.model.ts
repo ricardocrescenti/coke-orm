@@ -7,13 +7,13 @@ import { CityModel } from "./city.model";
 import { EntityModel } from "./entity.model";
 
 @Table({ name: 'entities_addresses' })
-@Unique({ columns: ['contact', 'street', 'number', 'neighborhood', 'complement', 'reference', 'city', 'zipCode', 'entity'] })
+@Unique({ columns: ['contact', 'street', 'number', 'neighborhood', 'complement', 'city', 'zipCode', 'entity'] })
 export class EntityAddressModel extends PatternModel {
 
-	@ManyToOne({ name: 'entity_id', relation: { referencedTable: 'EntityModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' } })
+	@ManyToOne({ relation: { referencedTable: 'EntityModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' } })
 	entity?: EntityModel;
 
-	@Column()
+	@Column({ nullable: true })
 	description?: string;
 
 	@Column()
@@ -31,16 +31,16 @@ export class EntityAddressModel extends PatternModel {
 	@Column()
 	complement?: string;
 
-	@Column()
+	@Column({ nullable: true })
 	reference?: string;
 
 	@ManyToOne({ relation: { referencedTable: 'CityModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
 	city?: CityModel;
 
-	@Column({ name: 'zip_code', nullable: true })
+	@Column({ name: 'zip_code' })
 	zipCode?: string;
 
-	@Column({ name: 'is_default', nullable: true })
+	@Column({ name: 'is_default', default: false })
 	isDefault?: boolean;
 
 	@Column({ type: 'point', nullable: true })

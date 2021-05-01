@@ -40,7 +40,7 @@ export class ForeignKeyOptions {
      *
      * cascade: ["insert", "update", "remove", "soft-remove", "recover"] // include or exclude one of them
      */
-    public readonly cascade?: boolean|("insert"|"update"|"remove")[];
+    public readonly cascade?: ('insert'|'update'|'remove')[];
 
     /**
      * Indicates if relation column value can be nullable or not.

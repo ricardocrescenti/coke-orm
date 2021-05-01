@@ -13,10 +13,10 @@ export class CustomerModel extends PatternModel {
 	@OneToOne({ relation: { referencedTable: 'EntityModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
 	entity?: EntityModel;
 
-	@ManyToOne({ relation: { referencedTable: 'PriceListModel', referencedColumn: 'id', onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
+	@ManyToOne({ nullable: true, relation: { referencedTable: 'PriceListModel', referencedColumn: 'id', onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
 	priceList?: PriceListModel;
 
-	@Column({ nullable: false, default: 1 }) //, enum: [Status]
+	@Column({ default: 1 }) //, enum: [Status]
 	status?: number;//Status;
 
 	public loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {

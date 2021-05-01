@@ -18,6 +18,8 @@ export class ForeignKeyMetadata extends ForeignKeyOptions {
       super(options);
       this.table = options.table;
       this.column = options.column;
+      
+      this.column.foreignKeys.push(this);
    }
 
    public getReferencedTableMetadata(): TableMetadata {

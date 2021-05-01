@@ -3,7 +3,7 @@ import { SimpleMap } from "../common/interfaces/map";
 import { Connection } from "../connection/connection";
 import { ColumnMetadata, ForeignKeyMetadata, TableMetadata } from "../metadata";
 import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
-import { FindOptions } from "../find-options/find-options";
+import { FindOptions } from "./find-options";
 import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
 import { SelectQueryBuilder } from "../query-builder/select-query-builder";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
@@ -11,9 +11,12 @@ import { QueryWhere, QueryWhereColumn } from "../query-builder/types/query-where
 import { QueryJoin } from "../query-builder/types/query-join";
 import { QueryColumn } from "../query-builder/types/query-column";
 import { QueryOrder } from "../query-builder/types/query-order";
-import { FindSelect } from "../find-options/types/find-select";
+import { FindSelect } from "./types/find-select";
 import { TableValues } from "./types/table-values";
 import { CokenModel } from "./coken-model";
+import { SaveOptions } from "./save-options";
+import { QueryValues } from "../query-builder/types/query-values";
+import { Generate } from "../metadata/add-ons/generate";
 
 export class TableManager<T> {
 
@@ -95,8 +98,9 @@ export class TableManager<T> {
     */
    public async find(findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
    
-      // TODO carregar as relações com base na necessidade das condiçoes
-      // TODO parâmetros nos joins
+      // TODO - Carregar as relações com base na necessidade das condiçoes.
+      // TODO - Respeitar as ordenações padrões na consulta base e nas filhas, poder passar isso pelo findOptions.
+      // TODO - Ver para criar "rules" a nivel de linha, neste caso o cara pode adiconar um SQL ou uma condição JavaScript, permissões.
 
       /// create the query
       const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions);
@@ -135,9 +139,9 @@ export class TableManager<T> {
     * 
     * @param queryExecutor 
     */
-   public async save(object: TableValues<T>, queryExecutor?: QueryExecutor | Connection): Promise<any> {
+   public async save(object: TableValues<T>, saveOptions?: SaveOptions): Promise<any> {
       const objectToSave: CokenModel = this.create(object);
-      await objectToSave.save(queryExecutor ?? this.connection);
+      await objectToSave.save(saveOptions?.queryExecutor ?? this.connection, saveOptions);
       return objectToSave;
    }
 
@@ -412,7 +416,7 @@ export class TableManager<T> {
     * @param queryColumns 
     * @returns 
     */
-   private loadQueryJoins(queryColumns: QueryColumn<T>[]): QueryJoin<T>[] {
+   public loadQueryJoins(queryColumns: QueryColumn<T>[]): QueryJoin<T>[] {
 
       return queryColumns
          .filter((queryColumn) => queryColumn.relation)
@@ -428,6 +432,57 @@ export class TableManager<T> {
          });
 
    }
+
+   /**
+    * 
+    * @param values 
+    */
+   public getObjectValues(values: QueryValues<T>, useDatabaseNames: boolean, columns?: string[]): any {
+      if (!values) {
+         return;
+      }
+
+      const object: any = {};
+      for (const key of Object.keys(values)) {
+
+         if (columns && columns.indexOf(key) < 0) {
+            continue;
+         }
+
+         const columnMetadata: ColumnMetadata = this.tableMetadata.columns[key];
+         if (!columnMetadata || (columnMetadata.relation && columnMetadata.relation?.relationType == 'OneToMany')) {
+            continue;
+         }
+
+         const value: any = (values as any)[key];
+         const columnName: string = (useDatabaseNames ? columnMetadata.name as string : columnMetadata.propertyName);
+
+         if (value instanceof Object && columnMetadata.relation && columnMetadata.relation.relationType != 'OneToMany') {
+            object[columnName] = value[columnMetadata.relation.referencedColumn];
+         } else {
+            object[columnName] = value;
+         }
+      }
+
+      return object;
+   }
+
+   /**
+    * 
+    * @param values 
+    */
+   // public setDefaultValues(values: QueryValues<T>): void {
+
+   //    const keys: string[] = Object.keys(values);
+   //    for (const columnMetadata of Object.values(this.tableMetadata.columns)) {
+
+   //       if (columnMetadata.default && !(columnMetadata.default instanceof Generate) && keys.indexOf(columnMetadata.propertyName) < 0) {
+   //          (values as any)[columnMetadata.propertyName] = columnMetadata.default;
+   //       }
+
+   //    }
+
+   // }
 
    /**
     * 

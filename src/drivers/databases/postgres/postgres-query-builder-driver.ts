@@ -110,10 +110,10 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 
       if (columnMetadata.default != columnSchema.default) {
 
-         if (columnSchema.default && !columnMetadata.default) {
+         if (columnSchema.default != null && columnMetadata.default == null) {
             sqls.push(`${alterTable} COLUMN ${columnMetadata.name} DROP DEFAULT;`);
          }
-         if (columnMetadata.default) {
+         if (columnMetadata.default != null) {
             sqls.push(`${alterTable} COLUMN ${columnMetadata.name} SET DEFAULT ${columnMetadata.default};`);
          }
 

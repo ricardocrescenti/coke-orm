@@ -149,16 +149,29 @@ export abstract class Driver {
     */
    public validateColumnMetadatada(table: TableMetadata, column: ColumnMetadata): void {
 
-      if ((!column.relation || column.relation?.relationType != 'OneToMany')) {
+      if (column.relation?.relationType == 'OneToMany') {
 
-         // check if type if informed
-         if (!column.type) {
-            throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table does not have an informed type`);
+         if (column.propertyType.prototype != Array.prototype) {
+            throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table with a 'OneToMany' type relation must be an array.`);
          }
 
-         // check if type is valid
-         if (this.supportedColumnsTypes.indexOf(column.type as string) < 0) {
-            throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table does not have an valid type (${column.type})`);
+      } else {
+         
+         if (!column.relation) {
+
+            // check if type if informed
+            if (!column.type) {
+               throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table does not have an informed type`);
+            }
+
+            // check if type is valid
+            if (this.supportedColumnsTypes.indexOf(column.type as string) < 0) {
+               throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table does not have an valid type (${column.type})`);
+            }
+         }
+
+         if ((column.uniques.length > 0 || column.indexs.some(index => index.unique)) && column.nullable) {
+            throw new InvalidColumnOption(`The '${column.propertyName}' property of the '${table.className}' entity has a unique key or unique index and is not mandatory, if one of the columns is null the record may be duplicated`);
          }
          
       }

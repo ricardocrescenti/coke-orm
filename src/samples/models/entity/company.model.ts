@@ -12,7 +12,7 @@ export class CompanyModel extends PatternModel {
 	@OneToOne({ relation: { referencedTable: 'EntityModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
 	entity?: EntityModel;
 
-	@Column({ nullable: false, default: 1 }) //, enum: [Status]
+	@Column({ default: 1 }) //, enum: [Status]
 	status?: number;//Status;
 
 	public loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {

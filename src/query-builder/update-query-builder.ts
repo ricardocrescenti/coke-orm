@@ -13,7 +13,7 @@ export class UpdateQueryBuilder<T> extends QueryBuilder<T> {
    }
 
    public set(values: QueryValues<T>): this {
-      this.queryManager.values = this.createObjectValues(values);
+      this.queryManager.values = values;
       return this;
    }
 

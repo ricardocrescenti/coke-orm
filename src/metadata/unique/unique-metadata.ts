@@ -11,6 +11,10 @@ export class UniqueMetadata extends UniqueOptions {
    constructor(options: UniqueMetadata) {
       super(options);
       this.table = options.table;
+
+      for (const columnPropertyName of this.columns) {
+         this.table.columns[columnPropertyName].uniques.push(this);
+      }
    }
 
    // public getTableMetadata(): TableMetadata {

@@ -9,19 +9,19 @@ import { EntityModel } from "./entity.model";
 @Unique({ columns: ['entity'] })
 export class SellerModel extends PatternModel {
 
-	@OneToOne({ relation: { referencedTable: 'EntityModel', referencedColumn: 'id', onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
+	@OneToOne({ relation: { referencedTable: 'EntityModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
 	entity?: EntityModel;
 
-	@Column({ nullable: true, length: 18, precision: 5, default: 0 })
+	@Column({ length: 18, precision: 5, nullable: true, default: 0 })
 	comission?: number;
 
-	@Column({ nullable: false, default: 1 }) //, enum: [Status]
+	@Column({ default: 1 }) //, enum: [Status]
 	status?: number;//Status;
 
-	public loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
+	public async loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
 		
 		if (this.entity) {
-			return this.entity.loadReferenceByParent(queryExecutor, queryExecutor.getTableManager('EntityModel'), this);
+			await this.entity.loadReferenceByParent(queryExecutor, queryExecutor.getTableManager('EntityModel'), this);
 		}
 		return super.loadPrimaryKey(queryExecutor);
 	

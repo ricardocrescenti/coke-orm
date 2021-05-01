@@ -167,9 +167,9 @@ export class Connection {
                length: columnOption.length ?? referencedColumnOptions?.length ?? referencedDefaultColumnOptions?.length ?? defaultColumnOptions?.length,
                precision: columnOption.precision ?? referencedColumnOptions?.precision ?? referencedDefaultColumnOptions?.precision ?? defaultColumnOptions?.precision,
                nullable: columnOption.nullable ?? defaultColumnOptions?.nullable,
-               default: columnOption.default ?? defaultColumnOptions?.default
+               default: columnOption.default ?? defaultColumnOptions?.default,
+               relation: undefined
             });
-            this.driver.validateColumnMetadatada(tableMetadata, columnMetadata);
 
             tableMetadata.columns[columnMetadata.propertyName] = columnMetadata;
 
@@ -180,13 +180,25 @@ export class Connection {
    
             /// check if the column has a relation, to process all foreign keys after loading all tables
             if (columnOption.relation) {
+
+               const foreignKeyMetadata: ForeignKeyMetadata = new ForeignKeyMetadata({
+                  ...columnOption.relation as any,
+                  table: tableMetadata, 
+                  column: columnMetadata, 
+                  name: namingStrategy.foreignKeyName(tableMetadata, columnMetadata, columnOption.relation as ForeignKeyOptions)
+               });
+               Object.assign(columnMetadata, {
+                  relation: foreignKeyMetadata
+               });
                
                if (!tableRelations[tableMetadata.className]) {
                   tableRelations[tableMetadata.className] = new SimpleMap<ColumnMetadata>();
                }
 
-               tableRelations[tableMetadata.className][columnMetadata.propertyName] = columnMetadata;   
+               tableRelations[tableMetadata.className][columnMetadata.propertyName] = columnMetadata;
+
             }
+            
          }
 
          /// create table primary key
@@ -239,6 +251,11 @@ export class Connection {
             }
          }
 
+         // validar as colunas
+         for (const columnMetadata of Object.values(tableMetadata.columns)) {
+            this.driver.validateColumnMetadatada(tableMetadata, columnMetadata);
+         }
+
       }
 
       /// load foreign keys
@@ -264,13 +281,7 @@ export class Connection {
 
                if (sourceColumnMetadata.relation?.relationType == 'OneToOne' || sourceColumnMetadata.relation?.relationType == 'ManyToOne') {
                   
-                  const foreignKeyMetadata: ForeignKeyMetadata = new ForeignKeyMetadata({
-                     ...sourceColumnMetadata.relation as any,
-                     table: sourceTableMetadata, 
-                     column: sourceColumnMetadata, 
-                     name: namingStrategy.foreignKeyName(sourceTableMetadata, sourceColumnMetadata, sourceColumnMetadata.relation as ForeignKeyOptions)
-                  });
-                  sourceTableMetadata.foreignKeys.push(foreignKeyMetadata);
+                  sourceTableMetadata.foreignKeys.push(sourceColumnMetadata.relation);
 
                   if (sourceColumnMetadata.relation?.relationType == 'OneToOne') {
 
@@ -410,10 +421,13 @@ export class Connection {
     * @param transactionProcess 
     */
    public async transaction<T = any>(transactionProcess: TransactionProcess<T>): Promise<T> {
+
+
       const queryExecutor: QueryExecutor = await this.createQueryExecutor();
 
       try {
 
+         await queryExecutor.beginTransaction();
          return await transactionProcess(queryExecutor);
          
       } catch (error) {
@@ -434,29 +448,33 @@ export class Connection {
     * 
     */
    public async syncronize(): Promise<void> {
+
+      /// obtain the query list with the changes to be made in the database
       const sqlsMigrations: string[] = await this.driver.generateSQLsMigrations(this);
       if (sqlsMigrations.length == 0) {
          return;
       }
       
-      return this.transaction<void>(async (queryRunner: QueryExecutor) => {
-            
-         // if (!queryRunner.inTransaction && this.options.migrations?.migrationsTransactionMode != 'none') {
-         //    await queryRunner.beginTransaction();
-         // }
-         await queryRunner.beginTransaction();
+      /// create a query executor to execute the function in transaction, if the
+      // function throws an error, the transaction will be canceled
+      const queryExecutor: QueryExecutor = await this.connection.createQueryExecutor(); 
+      try {
+
+         await queryExecutor.beginTransaction();
 
          for (const sql of sqlsMigrations) {
-            console.log(sql);
-            await queryRunner.query(sql);
+            console.info(sql);
+            await queryExecutor.query(sql);
          }
 
-         // if (this.options.migrations?.migrationsTransactionMode == 'each') {
-         //    await queryRunner.commitTransaction();
-         // }
-         await queryRunner.commitTransaction();
+         await queryExecutor.commitTransaction();
+      
+      } catch (error) {
 
-      });
+         await queryExecutor.rollbackTransaction();
+         throw error;
+
+      }
    }
 
    /**

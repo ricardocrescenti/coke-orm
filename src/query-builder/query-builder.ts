@@ -42,32 +42,6 @@ export abstract class QueryBuilder<T> {
 
    /**
     * 
-    * @param values 
-    */
-   protected createObjectValues(values?: QueryValues<T>): any {
-      if (!values) {
-         return;
-      }
-
-      const [tableMetadata] = Object.values(this.connection.tables).filter((tableMetadata: TableMetadata) => tableMetadata.name == this.queryManager.table?.table);
-      if (!tableMetadata) {
-         return values;
-      }
-
-      const object: any = {};
-      for (const key of Object.keys(values)) {
-         const columnMetadata: ColumnMetadata = tableMetadata.columns[key];
-         if (!columnMetadata || (columnMetadata.relation && columnMetadata.relation?.relationType == 'OneToMany')) {
-            continue;
-         }
-         object[columnMetadata.name as string] = (values as any)[key];
-      }
-
-      return object;
-   }
-
-   /**
-    * 
     */
    public abstract getQuery(): string;
 

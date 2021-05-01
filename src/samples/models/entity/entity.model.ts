@@ -12,28 +12,28 @@ import { EntityPhoneModel } from "./entity-phone.model";
 @Table({ name: 'entities' })
 export class EntityModel extends PatternModel {
 
-	@Column({ nullable: false })
+	@Column()
 	name?: string;
 
-	@Column()
+	@Column({ nullable: true })
 	displayName?: string;
 
-	@Column()
+	@Column({ nullable: true })
 	email?: string;
 
-	@Column()//, enum: [PersonType]
+	@Column({ nullable: true })//, enum: [PersonType]
 	type?: number;//PersonType;
 
-	@Column({ nullable: false, default: 201 }) //, enum: [TimezoneType]
+	@Column({ default: 201 }) //, enum: [TimezoneType]
 	timezone?: number;//TimezoneType;
 
 	@OneToMany({ relation: { referencedTable: 'EntityPhoneModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
 	phones?: Array<EntityPhoneModel>;
 
-	@Column()
+	@Column({ nullable: true })
 	birthDate?: Date;
 
-	@Column()//, enum: [PersonGender]
+	@Column({ nullable: true })//, enum: [PersonGender]
 	gender?: number;//PersonGender;
 
 	@OneToMany({ relation: { referencedTable: 'EntityDocumentModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
@@ -42,7 +42,7 @@ export class EntityModel extends PatternModel {
 	@OneToMany({ relation: { referencedTable: 'EntityAddressModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
 	addresses?: Array<EntityAddressModel>;
 
-	@ManyToOne({ relation: { referencedTable: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
+	@ManyToOne({ nullable: true, relation: { referencedTable: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
 	photo?: FileModel;
 
 	constructor(object: any = null) {

@@ -11,6 +11,10 @@ export class IndexMetadata extends IndexOptions {
    constructor(options: IndexMetadata) {
       super(options);
       this.table = options.table;
+
+      for (const columnPropertyName of this.columns) {
+         this.table.columns[columnPropertyName].indexs.push(this);
+      }
    }
 
    // public getTableMetadata(): TableMetadata {

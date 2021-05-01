@@ -1,12 +1,12 @@
 import { QueryExecutor } from "..";
-import { CokeORM } from "../coke-orm";
 import { Connection } from "../connection/connection";
-import { ColumnMetadata } from "../metadata";
+import { ColumnMetadata, TableMetadata } from "../metadata";
 import { ForeignKeyMetadata } from "../metadata/foreign-key/foreign-key-metadata";
 import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
 import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
 import { QueryWhere } from "../query-builder/types/query-where";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
+import { SaveOptions } from "./save-options";
 import { TableManager } from "./table-manager";
 
 export abstract class CokenModel {
@@ -19,64 +19,128 @@ export abstract class CokenModel {
     * 
     * @param queryExecutor 
     */
-   public async save(queryExecutor: QueryExecutor | Connection): Promise<void> {
+   public async save(queryExecutor: QueryExecutor | Connection, saveOptions?: Omit<SaveOptions, 'queryExecutor'>): Promise<this> {
+
+      // TODO - criar um saveOptions, aonde o cara poderá adicionar os eventos: beforeSave, afterSave, beforeLoadPrimaryKey, afterLoadPrimaryKey, 
+
+      /// get the table manager to perform the processes below
       const tableManager: TableManager<this> = this.getTableManager(queryExecutor);
 
-      /// create a copy of the object so as not to modify the object passed by parameter
-      const objectToSave: CokenModel = tableManager.create({ ...this });
+      const saveFunction = async (queryExecutor: QueryExecutor): Promise<this> => {
 
-      const columnsToSave: string[] = Object.keys(objectToSave);
-      const columnsParentRelation: ColumnMetadata[] = Object.values(tableManager.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation && columnMetadata.relation.relationType != 'OneToMany');
-      const columnsChildrenRelation: ColumnMetadata[] = Object.values(tableManager.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation?.relationType == 'OneToMany');
+         /// create a copy of the object so as not to modify the object passed by parameter
+         const objectToSave: this = tableManager.create({ ...this });
 
-      for (const columnParentRelation of columnsParentRelation) {
+         /// get the columns of the object being saved to see below the columns 
+         /// that have relations with parent and child tables
+         const columnsToSave: string[] = Object.keys(objectToSave);
+         const columnsParentRelation: ColumnMetadata[] = Object.values(tableManager.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation && columnMetadata.relation.relationType != 'OneToMany');
+         const columnsChildrenRelation: ColumnMetadata[] = Object.values(tableManager.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation?.relationType == 'OneToMany');
 
-         const parentObject: CokenModel = (objectToSave as any)[columnParentRelation.propertyName];
-         if (parentObject instanceof Object) { 
-            await parentObject.save(queryExecutor);
-            (objectToSave as any)[columnParentRelation.propertyName] = (parentObject as any)[columnParentRelation.relation?.referencedColumn as string];
+         /// go through the columns with the parent relation to load their primary
+         /// keys, if the relation is configured to be inserted, changed or removed, 
+         /// these operations will also be performed, otherwise, if the record 
+         /// does not exist, an error will be returned
+         for (const columnParentRelation of columnsParentRelation) {
+
+            if (saveOptions?.relation) {
+               const referencedTableMetadata: TableMetadata = queryExecutor.connection.tables[columnParentRelation.relation?.referencedTable as string];
+               if (Object.values(referencedTableMetadata.columns).some(columnMetadata => columnMetadata.relation?.referencedTable == tableManager.tableMetadata.className && columnMetadata.relation?.referencedColumn == columnParentRelation.propertyName)) {
+                  continue;
+               }
+            }
+
+            const parentObject: CokenModel = (objectToSave as any)[columnParentRelation.propertyName];
+            if (parentObject instanceof Object) {
+
+               const savedParentObject = await parentObject.save(queryExecutor, { 
+                  relation: columnParentRelation.relation 
+               });
+               (objectToSave as any)[columnParentRelation.propertyName] = savedParentObject;//(savedParentObject as any)[columnParentRelation.relation?.referencedColumn as string];
+            
+            }
+
          }
 
+         /// save the current record to the database
+         ///
+         /// if saveOptions has the relation informed, before saving, the cascade
+         /// operations will be checked, to see if the record can be inserted,
+         /// updated or deleted
+         ///
+         /// if the record does not exist, and cannot be inserted, an error will 
+         /// be returned.
+         const objectExists: boolean = await objectToSave.loadPrimaryKey(queryExecutor);
+         if (objectExists) {
+            
+            if (!saveOptions?.relation || (saveOptions.relation.cascade?.indexOf('update') ?? -1) >= 0) {
+
+               const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(objectToSave, tableManager.tableMetadata.primaryKey?.columns ?? []);
+
+               const updateQuery: UpdateQueryBuilder<this> = tableManager.createUpdateQuery()
+                  .set(tableManager.getObjectValues(objectToSave, true))
+                  .where(where)
+                  .returning(tableManager.tableMetadata.primaryKey?.columns);
+               await updateQuery.execute(queryExecutor);
+
+            }
+
+         } else {
+
+            if (!saveOptions?.relation || (saveOptions.relation.cascade?.indexOf('insert') ?? -1) >= 0) {
+
+               //tableManager.setDefaultValues(objectToSave);
+
+               const insertQuery: InsertQueryBuilder<this> = tableManager.createInsertQuery()
+                  .values(tableManager.getObjectValues(objectToSave, true))
+                  .returning(tableManager.tableMetadata.primaryKey?.columns);
+               const insertedObject = await insertQuery.execute(queryExecutor);
+               tableManager.populate(objectToSave, insertedObject.rows[0]);
+
+            } else {
+
+               throw new Error(`O objeto relacionado a coluna ${saveOptions.relation.column} da entidade ${saveOptions.relation.table.className} não existe no banco de dados`);
+
+            }
+
+         }
+
+         /// 
+         for (const columnChildRelation of columnsChildrenRelation) {
+
+            for (const childIndex in (objectToSave as any)[columnChildRelation.propertyName]) {
+
+               /// obter o objeto filho e setar no campo que relaciona ele com o pai, para poder fazer o insert ou update
+               const childObject: CokenModel = (objectToSave as any)[columnChildRelation.propertyName][childIndex];
+               (childObject as any)[columnChildRelation.relation?.referencedColumn as string] = {
+                  id: (objectToSave as any)[tableManager.tableMetadata.primaryKey?.columns[0] as string]
+               };
+
+               /// salva o objeto no banco de dados
+               const savedChildObject = await childObject.save(queryExecutor, { 
+                  relation: columnChildRelation.relation 
+               });
+
+               delete (savedChildObject as any)[columnChildRelation.relation?.referencedColumn as string];
+
+               /// atualiza o objeto no pai
+               (objectToSave as any)[columnChildRelation.propertyName][childIndex] = savedChildObject;
+
+            }
+
+         }
+
+         return objectToSave;
+
       }
-
-      let savedObject;
-      const objectExists: boolean = await objectToSave.loadPrimaryKey(queryExecutor);
-      if (objectExists) {
-         
-         const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(objectToSave, tableManager.tableMetadata.primaryKey?.columns ?? []);
-
-         const updateQuery: UpdateQueryBuilder<this> = tableManager.createUpdateQuery()
-            .set(objectToSave)
-            .where(where)
-            .returning(tableManager.tableMetadata.primaryKey?.columns);
-         savedObject = await updateQuery.execute(queryExecutor);
-
+      
+      if (queryExecutor instanceof QueryExecutor) {
+         return await saveFunction(queryExecutor);
       } else {
-
-         const insertQuery: InsertQueryBuilder<this> = tableManager.createInsertQuery()
-            .values(objectToSave)
-            .returning(tableManager.tableMetadata.primaryKey?.columns);
-         savedObject = await insertQuery.execute(queryExecutor);
-
-      }
-      savedObject = tableManager.create(savedObject.rows[0])
-
-      for (const columnChildRelation of columnsChildrenRelation) {
-
-         for (const childIndex in (objectToSave as any)[columnChildRelation.propertyName]) {
-
-            /// obter o objeto filho e setar no campo que relaciona ele com o pai, para poder fazer o insert ou update
-            const childObject: CokenModel = (objectToSave as any)[columnChildRelation.propertyName][childIndex];
-            (childObject as any)[columnChildRelation.relation?.referencedColumn as string] = savedObject[tableManager.tableMetadata.primaryKey?.columns[0] as string];
-
-            /// salva o objeto no banco de dados
-            await childObject.save(queryExecutor);
-
-            /// atualiza o objeto no pai
-            (objectToSave as any)[columnChildRelation.propertyName][childIndex] = childObject;
-
-         }
-
+         return await queryExecutor.transaction(saveFunction).then(savedObject => {
+            tableManager.populate(this, savedObject);
+            return savedObject;
+         });
       }
 
    }
@@ -86,6 +150,8 @@ export abstract class CokenModel {
     * @param queryExecutor 
     */
    public async delete(queryExecutor: QueryExecutor | Connection): Promise<void> {
+      
+      /// get the table manager to perform the processes below
       const tableManager: TableManager<this> = this.getTableManager(queryExecutor);
       
       const objectToDelete: CokenModel = tableManager.create(this);
@@ -107,6 +173,8 @@ export abstract class CokenModel {
     * @returns 
     */
    public async loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
+      
+      /// get the table manager to perform the processes below
       const tableManager: TableManager<this> = this.getTableManager(queryExecutor);
 
       /// get the list of properties of the object to be tested
@@ -114,39 +182,25 @@ export abstract class CokenModel {
       const objectKeys: string[] = Object.keys(this);
 
       /// checks if the object has properties to be tested
-
       if (objectKeys.length == 0) {
          return false;
       }
 
-      /// get the list of primary keys to be loaded
-      
-      const primaryKeys = tableManager.tableMetadata.primaryKey?.columns as string[];
-
-      /// check that the primary keys are informed in the query object, so that 
-      /// an unnecessary new query is not made
-
-      if (primaryKeys.every(primaryKey => (this as any)[primaryKey] != null)) {
-         return true;
-      }
-
-      /// get the unique indexes and unique keys to make the queries
-
+      /// get the primary keys, unique indexes and unique keys to make the queries
+      const primaryKeys: string[] = tableManager.tableMetadata.primaryKey?.columns as string[];
       const indexes: ConcatArray<string[]> = tableManager.tableMetadata.indexs.filter(index => index.unique).map(index => index.columns);
       const uniques: ConcatArray<string[]> = tableManager.tableMetadata.uniques.map(index => index.columns);
 
-      for (const columns of (new Array<string[]>()).concat(indexes, uniques)) {
+      for (const columns of (new Array<string[]>()).concat([primaryKeys], indexes, uniques)) {
 
          /// create the condition using the first unique index or unique key to 
          /// query the object
-
-         const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(this, columns);
+         const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(tableManager.getObjectValues(this, false), columns);
          if (!where) {
             continue;
          }
 
          /// run the query to verify the object and verify that it exists
-
          const result: any = await tableManager.findOne({
             select: primaryKeys,
             where: where,
@@ -155,7 +209,6 @@ export abstract class CokenModel {
 
          /// If the requested object exists in the database, the primary keys will
          /// be loaded into the current object
-
          if (result) {
             for (const primaryKey of primaryKeys) {
                (this as any)[primaryKey] = result[primaryKey];

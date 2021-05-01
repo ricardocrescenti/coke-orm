@@ -107,7 +107,7 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
       this.length = options.length;
       this.precision = options.precision;
       this.default = options.default;
-      this.nullable = options.nullable ?? true;
+      this.nullable = options.nullable ?? false;
       this.primary = options.primary ?? false;
       this.relation = options.relation as any;
       this.canSelect = options.canSelect ?? true;

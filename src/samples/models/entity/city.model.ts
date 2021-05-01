@@ -6,16 +6,16 @@ import { PatternModel } from "../pattern.model";
 @Unique({ columns: ['code', 'state', 'country'] })
 export class CityModel extends PatternModel {
 
-	@Column({ nullable: true })
+	@Column()
 	code?: string;
 
 	@Column()
 	name?: string;
 
-	@Column({ nullable: true })
+	@Column()
 	state?: string;
 
-	@Column({ nullable: true })
+	@Column()
 	country?: string;
 
 }
