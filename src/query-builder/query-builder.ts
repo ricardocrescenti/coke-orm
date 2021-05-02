@@ -58,14 +58,13 @@ export abstract class QueryBuilder<T> {
     * @returns 
     */
    public async execute(queryExecutor?: QueryExecutor | Connection): Promise<any> {
-      const sql: string = this.getQuery();
+      const query: string = this.getQuery();
       const params: string[] = this.getParams();
-      console.info(sql);
 
       if (queryExecutor) {
-         return queryExecutor.query(sql, params);
+         return queryExecutor.query(query, params);
       } else {
-         return this.connection.query(sql, params);
+         return this.connection.query(query, params);
       }
    }
 

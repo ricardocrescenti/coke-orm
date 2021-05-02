@@ -5,6 +5,7 @@ export abstract class Operator {
    public readonly column: string;
    public readonly values: any[];
 
+   protected canRegisterParameters = true;
    protected parameters: number[] = [];
 
    constructor(column: string, values: any | any[]) {
@@ -17,7 +18,9 @@ export abstract class Operator {
    }
 
    public registerParameters(queryManager: QueryManager<any>): void {
-      this.parameters = this.values.map(value => queryManager.storeParameter(value));
+      if (this.canRegisterParameters) {
+         this.parameters = this.values.map(value => queryManager.storeParameter(value));
+      }
    }
 
    public abstract getExpression(): string;

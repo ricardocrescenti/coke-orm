@@ -18,12 +18,4 @@ export class SellerModel extends PatternModel {
 	@Column({ default: 1 }) //, enum: [Status]
 	status?: number;//Status;
 
-	public async loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
-		
-		if (this.entity) {
-			await this.entity.loadReferenceByParent(queryExecutor, queryExecutor.getTableManager('EntityModel'), this);
-		}
-		return super.loadPrimaryKey(queryExecutor);
-	
-	}
 }

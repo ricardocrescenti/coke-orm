@@ -1,6 +1,7 @@
+import { QueryOrder } from "../../query-builder/types/query-order";
 import { MetadataUtils } from "../../utils/metadata-utils";
 
-export class TableOptions {
+export class TableOptions<T = any> {
    
    /**
     * Class referenced to this table.
@@ -24,7 +25,7 @@ export class TableOptions {
    /**
     * Specifies a default order by used for queries from this table when no explicit order by is specified.
     */
-   public readonly orderBy?: any;
+   public readonly orderBy?: QueryOrder<T>;
 
    constructor(options: Omit<TableOptions, 'inheritances'>) {
       this.target = options.target;

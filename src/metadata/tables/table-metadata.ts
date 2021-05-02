@@ -82,7 +82,21 @@ export class TableMetadata extends TableOptions {
     */
    public readonly afterLoadPrimaryKey: EventMetadata[] = [];
    
-   constructor(options: Omit<TableMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'afterDeleteEvents' | 'beforeLoadPrimaryKey' | 'afterLoadPrimaryKey' | 'getColumn'>) {
+   /**
+    * 
+    */
+   private updatedAtColumn?: ColumnMetadata | null;
+
+   /**
+    * 
+    */
+   private deletedAtColumn?: ColumnMetadata | null;
+
+   /**
+    * 
+    * @param options 
+    */
+   constructor(options: Omit<TableMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'afterDeleteEvents' | 'beforeLoadPrimaryKey' | 'afterLoadPrimaryKey' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn'>) {
       super(options);
       this.connection = options.connection;
    }
@@ -98,6 +112,20 @@ export class TableMetadata extends TableOptions {
          throw new ColumnMetadataNotLocated(this.className, columnName);
       }
       return column;
+   }
+
+   public getUpdatedAtColumn(): ColumnMetadata | null {
+      if (this.updatedAtColumn === undefined) {
+         this.updatedAtColumn = Object.values(this.columns).find(columnMetadata => columnMetadata.operation == 'UpdatedAt') ?? null;
+      }
+      return this.updatedAtColumn;
+   }
+
+   public getDeletedAtColumn(): ColumnMetadata | null {
+      if (this.deletedAtColumn === undefined) {
+         this.deletedAtColumn = Object.values(this.columns).find(columnMetadata => columnMetadata.operation == 'DeletedAt') ?? null;
+      }
+      return this.deletedAtColumn;
    }
 
 }

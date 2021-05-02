@@ -23,14 +23,14 @@ export class TableManager<T> {
    /**
     * 
     */
-   public readonly tableMetadata: TableMetadata;
+   public get connection(): Connection {
+      return this.tableMetadata.connection;
+   }
 
    /**
     * 
     */
-   public get connection(): Connection {
-      return this.tableMetadata.connection;
-   }
+   public readonly tableMetadata: TableMetadata;
 
    /**
     * 
@@ -187,15 +187,16 @@ export class TableManager<T> {
       }
 
       /// create the query to get the data
-      const query = this.connection.createSelectQuery<T>(this.tableMetadata)
+      const query: SelectQueryBuilder<T> = this.connection.createSelectQuery<T>(this.tableMetadata)
          .select(queryColumns)
          .join(queryJoins)
+         .virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name)
          .where(findOptions?.where)
-         .orderBy(orderBy as QueryOrder<T>)
+         .orderBy((orderBy ?? this.tableMetadata.orderBy) as QueryOrder<T>)
          .take(findOptions.take)
          .limit(findOptions.limit)
-
       return query;
+   
    }
 
    /**
@@ -204,7 +205,7 @@ export class TableManager<T> {
     * @returns 
     */
    public createInsertQuery(): InsertQueryBuilder<T> {
-      return this.connection.createInsertQuery(this.tableMetadata);
+      return this.connection.createInsertQuery<T>(this.tableMetadata);
    }
 
    /**
@@ -213,7 +214,9 @@ export class TableManager<T> {
     * @returns 
     */
    public createUpdateQuery() : UpdateQueryBuilder<T> {
-      return this.connection.createUpdateQuery(this.tableMetadata);
+      const query: UpdateQueryBuilder<T> = this.connection.createUpdateQuery<T>(this.tableMetadata)
+         .virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name);
+      return query;      
    }
 
    /**
@@ -222,7 +225,9 @@ export class TableManager<T> {
     * @returns 
     */
    public createDeleteQuery(): DeleteQueryBuilder<T> {
-      return this.connection.createDeleteQuery(this.tableMetadata);
+      const query: DeleteQueryBuilder<T> = this.connection.createDeleteQuery<T>(this.tableMetadata)
+         .virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name);
+      return query;
    }
 
    /**
@@ -270,13 +275,6 @@ export class TableManager<T> {
 
             const relationAlias: string = this.connection.options.namingStrategy?.eagerJoinRelationAlias(columnMetadata) as string;
             const relationTableManager: TableManager<any> =  this.connection.getTableManager(columnMetadata.relation.referencedTable);
-            const relationQuery: SelectQueryBuilder<any> = relationTableManager.createSelectQuery({
-               select: (columnData.length > 1 ? columnData[1] as [string, FindSelect] : []),
-               relations: (relations ?? [])
-                  .filter(relation => relation.startsWith(`${columnMetadata.name}.`))
-                  .map(relation => relation.substring(relation.indexOf('.') + 1, relation.length)),
-               roles: roles
-            });
 
                if (columnMetadata.relation.relationType == 'OneToMany') {
 
@@ -422,12 +420,12 @@ export class TableManager<T> {
          .filter((queryColumn) => queryColumn.relation)
          .map((queryColumn) => {
 
-            return {
+            return new QueryJoin<T>({
                type: 'left',
                table: queryColumn.relation?.table,
                alias: queryColumn?.relation?.alias,
                condition: queryColumn?.relation?.condition
-            } as QueryJoin<T>
+            } as any)
 
          });
 
@@ -466,23 +464,6 @@ export class TableManager<T> {
 
       return object;
    }
-
-   /**
-    * 
-    * @param values 
-    */
-   // public setDefaultValues(values: QueryValues<T>): void {
-
-   //    const keys: string[] = Object.keys(values);
-   //    for (const columnMetadata of Object.values(this.tableMetadata.columns)) {
-
-   //       if (columnMetadata.default && !(columnMetadata.default instanceof Generate) && keys.indexOf(columnMetadata.propertyName) < 0) {
-   //          (values as any)[columnMetadata.propertyName] = columnMetadata.default;
-   //       }
-
-   //    }
-
-   // }
 
    /**
     * 

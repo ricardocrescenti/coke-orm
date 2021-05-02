@@ -40,6 +40,11 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
+   public virtualDeletionColumn(databaseColumnName?: string): this {
+      this.queryManager.virtualDeletionColumn = databaseColumnName;
+      return this;
+   }
+
    public where(where?: QueryWhere<T> | QueryWhere<T>[]): this {
       this.queryManager.setWhere(where);
       return this;

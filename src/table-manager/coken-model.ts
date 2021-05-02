@@ -21,14 +21,15 @@ export abstract class CokenModel {
     */
    public async save(queryExecutor: QueryExecutor | Connection, saveOptions?: Omit<SaveOptions, 'queryExecutor'>): Promise<this> {
 
-      // TODO - criar um saveOptions, aonde o cara poderá adicionar os eventos: beforeSave, afterSave, beforeLoadPrimaryKey, afterLoadPrimaryKey, 
+      // TODO - criar um saveOptions, aonde o cara poderá adicionar os eventos: beforeSave, afterSave, beforeLoadPrimaryKey, afterLoadPrimaryKey especificos para uma função
 
       /// get the table manager to perform the processes below
       const tableManager: TableManager<this> = this.getTableManager(queryExecutor);
 
       const saveFunction = async (queryExecutor: QueryExecutor): Promise<this> => {
 
-         /// create a copy of the object so as not to modify the object passed by parameter
+         /// create a copy of the object so as not to modify the object passed 
+         /// by parameter
          const objectToSave: this = tableManager.create({ ...this });
 
          /// get the columns of the object being saved to see below the columns 
@@ -54,13 +55,16 @@ export abstract class CokenModel {
             if (parentObject instanceof Object) {
 
                const savedParentObject = await parentObject.save(queryExecutor, { 
-                  relation: columnParentRelation.relation 
+                  relation: columnParentRelation.relation,
+                  requester: objectToSave
                });
                (objectToSave as any)[columnParentRelation.propertyName] = savedParentObject;//(savedParentObject as any)[columnParentRelation.relation?.referencedColumn as string];
             
             }
 
          }
+
+         const columnsToReturn = tableManager.tableMetadata.primaryKey?.columns.map(columnPropertyName => `${tableManager.tableMetadata.columns[columnPropertyName].name} as "${columnPropertyName}"`);
 
          /// save the current record to the database
          ///
@@ -70,30 +74,36 @@ export abstract class CokenModel {
          ///
          /// if the record does not exist, and cannot be inserted, an error will 
          /// be returned.
-         const objectExists: boolean = await objectToSave.loadPrimaryKey(queryExecutor);
+         const objectExists: boolean = await objectToSave.loadPrimaryKey(queryExecutor, saveOptions?.requester);
          if (objectExists) {
             
             if (!saveOptions?.relation || (saveOptions.relation.cascade?.indexOf('update') ?? -1) >= 0) {
 
                const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(objectToSave, tableManager.tableMetadata.primaryKey?.columns ?? []);
 
+               const updatedAtColumn: ColumnMetadata | null = tableManager.tableMetadata.getUpdatedAtColumn();
+               if (updatedAtColumn && columnsToSave.indexOf(updatedAtColumn.propertyName) < 0) {
+                  (objectToSave as any)[updatedAtColumn.propertyName] = 'now()';
+               }
+
                const updateQuery: UpdateQueryBuilder<this> = tableManager.createUpdateQuery()
                   .set(tableManager.getObjectValues(objectToSave, true))
                   .where(where)
-                  .returning(tableManager.tableMetadata.primaryKey?.columns);
+                  .returning(columnsToReturn);
                await updateQuery.execute(queryExecutor);
 
+               if (updatedAtColumn && columnsToSave.indexOf(updatedAtColumn.propertyName) < 0) {
+                  delete (objectToSave as any)[updatedAtColumn.propertyName];
+               }
             }
 
          } else {
 
             if (!saveOptions?.relation || (saveOptions.relation.cascade?.indexOf('insert') ?? -1) >= 0) {
 
-               //tableManager.setDefaultValues(objectToSave);
-
                const insertQuery: InsertQueryBuilder<this> = tableManager.createInsertQuery()
                   .values(tableManager.getObjectValues(objectToSave, true))
-                  .returning(tableManager.tableMetadata.primaryKey?.columns);
+                  .returning(columnsToReturn);
                const insertedObject = await insertQuery.execute(queryExecutor);
                tableManager.populate(objectToSave, insertedObject.rows[0]);
 
@@ -118,7 +128,8 @@ export abstract class CokenModel {
 
                /// salva o objeto no banco de dados
                const savedChildObject = await childObject.save(queryExecutor, { 
-                  relation: columnChildRelation.relation 
+                  relation: columnChildRelation.relation,
+                  requester: objectToSave
                });
 
                delete (savedChildObject as any)[columnChildRelation.relation?.referencedColumn as string];
@@ -149,7 +160,7 @@ export abstract class CokenModel {
     * 
     * @param queryExecutor 
     */
-   public async delete(queryExecutor: QueryExecutor | Connection): Promise<void> {
+   public async delete(queryExecutor: QueryExecutor | Connection): Promise<boolean> {
       
       /// get the table manager to perform the processes below
       const tableManager: TableManager<this> = this.getTableManager(queryExecutor);
@@ -160,11 +171,33 @@ export abstract class CokenModel {
          
          const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(objectToDelete, tableManager.tableMetadata.primaryKey?.columns ?? []);
 
-         const deleteQuery: DeleteQueryBuilder<this> = tableManager.createDeleteQuery()
-            .where(where)
-            .returning(tableManager.tableMetadata.primaryKey?.columns);
-         return deleteQuery.execute(queryExecutor);
+         let deletedResult;
+         if (tableManager.tableMetadata.getDeletedAtColumn()) {
+            
+            const objectValue: any = {};
+            objectValue[tableManager.tableMetadata.getDeletedAtColumn()?.name as string] = 'now()';
 
+            const updateQuery: UpdateQueryBuilder<this> = tableManager.createUpdateQuery()
+               .set(objectValue)
+               .where(where)
+               .returning(tableManager.tableMetadata.primaryKey?.columns);
+            deletedResult = await updateQuery.execute(queryExecutor);
+
+         } else {
+
+            const deleteQuery: DeleteQueryBuilder<this> = tableManager.createDeleteQuery()
+               .where(where)
+               .returning(tableManager.tableMetadata.primaryKey?.columns);
+            deletedResult = await  deleteQuery.execute(queryExecutor);
+
+         }
+
+         return deletedResult.rows.length > 0;
+
+      } else {
+
+         return false;
+      
       }
    }
 

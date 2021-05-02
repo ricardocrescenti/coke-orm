@@ -30,7 +30,7 @@ export class PostgresDriver extends Driver {
     * 
     */
    constructor(connectionOptions: ConnectionOptions) {
-      super();
+      super(connectionOptions);
 
       this.postgres = require("pg");
 

@@ -15,6 +15,11 @@ export class DeleteQueryBuilder<T> extends QueryBuilder<T> {
       super(connection, table);
    }
 
+   public virtualDeletionColumn(databaseColumnName?: string): this {
+      this.queryManager.virtualDeletionColumn = databaseColumnName;
+      return this;
+   }
+
    public where(where?: QueryWhere<T> | QueryWhere<T>[]): this {
       this.queryManager.setWhere(where);
       return this;

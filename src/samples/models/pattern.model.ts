@@ -23,7 +23,7 @@ export abstract class PatternModel extends CokenModel {
    @UpdatedAtColumn()
    public updatedAt?: Date;
 
-   @DeletedAtColumn()
+   @Column({ nullable: true })
    public deletedAt?: Date;
 
    constructor(object: any = null) {

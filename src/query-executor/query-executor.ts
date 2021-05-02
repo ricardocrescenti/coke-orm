@@ -77,6 +77,7 @@ export class QueryExecutor {
     * @returns
     */
    public async query(query: string, params?: any[]): Promise<any> {
+      console.info(query);
       return this.connection.driver.executeQuery(this, query, params);
    }
 

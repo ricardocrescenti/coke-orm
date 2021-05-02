@@ -8,8 +8,14 @@ import { QueryBuilderDriver } from "./query-builder-driver";
 import { ColumnOperation } from "../metadata/columns/column-operation";
 import { ColumnMetadata, TableMetadata } from "../metadata";
 import { InvalidColumnOption } from "../errors/invalid-column-options";
+import { ConnectionOptions } from "../connection/connection-options";
 
 export abstract class Driver {
+
+   /**
+    * 
+    */
+   public readonly connectionOptions: ConnectionOptions;
 
    /**
     * 
@@ -46,7 +52,8 @@ export abstract class Driver {
     */
    public readonly defaultColumnOptionsByPropertyType: Map<string, DefaultColumnOptions>;
 
-   constructor() {
+   constructor(connectionOptions: ConnectionOptions) {
+      this.connectionOptions = connectionOptions;
       this.queryBuilder = this.getQueryBuilder();
       this.supportedColumnsTypes = this.getSupportedColumnsType();
       this.columnTypesWithLength = this.getColumnsTypeWithLength();
@@ -170,7 +177,7 @@ export abstract class Driver {
             }
          }
 
-         if ((column.uniques.length > 0 || column.indexs.some(index => index.unique)) && column.nullable) {
+         if (!this.connectionOptions.additional?.allowNullInUniqueKeyColumn && (column.uniques.length > 0 || column.indexs.some(index => index.unique)) && column.nullable) {
             throw new InvalidColumnOption(`The '${column.propertyName}' property of the '${table.className}' entity has a unique key or unique index and is not mandatory, if one of the columns is null the record may be duplicated`);
          }
          

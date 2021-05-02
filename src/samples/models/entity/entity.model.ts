@@ -81,28 +81,29 @@ export class EntityModel extends PatternModel {
 		// }
 	}
 
-	public loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
+	public async loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
 
-		if (requester && !requester.id) {
-			return Promise.resolve(false);
+		if (requester) {
+			await requester.loadPrimaryKey(queryExecutor, requester);
+			return this.loadReferenceByParent(queryExecutor, null, requester);
 		}
 		return super.loadPrimaryKey(queryExecutor, requester);
 
 	}
 
-	public async loadReferenceByParent(queryExecutor: QueryExecutor | Connection, parentTableManager: TableManager<this>, parent: PatternModel): Promise<boolean> {
+	private async loadReferenceByParent(queryExecutor: QueryExecutor | Connection, teste: any, parent: PatternModel): Promise<boolean> {
 		
 		if (parent?.id) {
-			const [entity] = await queryExecutor.query(`
-				select e.id, e.uuid
-				from ${parentTableManager.tableMetadata.name} p
+			const result = await queryExecutor.query(`
+				select p.id, p.uuid
+				from ${queryExecutor.getTableManager(parent.constructor.name).tableMetadata.name} p
 				inner join entities e on (e.id = p.entity_id)
 				where p.id = ${parent.id}
 			`);
 
-			if (entity) {
-				this.id = entity.id;
-				this.uuid = entity.uuid;
+			if (result.rows.length > 0) {
+				this.id = result.rows[0].id;
+				this.uuid = result.rows[0].uuid;
 			}
 		}
 

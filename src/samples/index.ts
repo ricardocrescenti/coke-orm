@@ -52,7 +52,9 @@ export async function test() {
 
    console.log('Connected', new Date().toLocaleString());
 
-   // let city: CityModel = await connection.getTableManager(CityModel).findOne({
+   let city: CityModel;
+
+   // city = await connection.getTableManager(CityModel).findOne({
    //    where: { id: 1 }
    // });
 
@@ -104,25 +106,27 @@ export async function test() {
    // });
    // await city.save(connection);
 
-   // city = await connection.getTableManager(CityModel).create({
-   //    name: 'Guaporé 2',
-   //    code: '4309408',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
-   // await city.save(connection);
+   city = await connection.getTableManager(CityModel).create({
+      name: 'Guaporé 2',
+      code: '4309408',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.save(connection);
 
-   // city = await connection.getTableManager(CityModel).create({
-   //    code: '4309408',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
-   // await city.delete(connection);
+   city = await connection.getTableManager(CityModel).create({
+      name: 'Guaporé 3',
+      code: '4309408',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.save(connection);
+   await city.delete(connection);
 
    const sellerTableManager = connection.getTableManager(SellerModel);
-   const seller: SellerModel = sellerTableManager.create({
+   let seller: SellerModel = sellerTableManager.create({
+      uuid: '1fecca37-3d8c-4ff7-8df6-cf7b496b6bcb',
       entity: {
-         uuid: '4c521a3b-9826-43ea-a60f-0a297674c955',
          name: 'Ana Luis Crescenti',
          displayName: 'Ana',
          email: 'analuiza.crescenti@gmail.com',
@@ -159,7 +163,46 @@ export async function test() {
       comission: 10,
    });
    await seller.save(connection);
-   //await sellerTableManager.save(seller);
+   seller = sellerTableManager.create({
+      uuid: '1fecca37-3d8c-4ff7-8df6-cf7b496b6bcb',
+      entity: {
+         name: 'Ana Luis Crescenti',
+         displayName: 'Ana',
+         email: 'analuiza.crescenti@gmail.com',
+         addresses: [
+            {
+               contact: 'Ana',
+               street: 'Rua Rodrigues Alves',
+               number: '590',
+               complement: 'Casa',
+               neighborhood: 'Conteição',
+               zipCode: '99200000',
+               city: {
+                  code: '4309407',
+                  state: 'RS',
+                  country: 'BRA'
+               }
+            }
+         ],
+         documents: [
+            {
+               document: '15975325896',
+               type: 1
+            }
+         ],
+         birthDate: '2012-09-24',
+         gender: 2,
+         phones: [
+            {
+               phoneNumber: '54999191676',
+               type: 1
+            }
+         ]
+      },
+      comission: 10,
+   });
+   await seller.save(connection);
+   await sellerTableManager.save(seller);
 
    const entities = await connection.getTableManager(EntityModel).find({
       // select: [

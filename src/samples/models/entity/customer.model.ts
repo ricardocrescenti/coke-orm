@@ -19,13 +19,4 @@ export class CustomerModel extends PatternModel {
 	@Column({ default: 1 }) //, enum: [Status]
 	status?: number;//Status;
 
-	public loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
-		
-		if (this.entity) {
-			return this.entity.loadReferenceByParent(queryExecutor, queryExecutor.getTableManager('EntityModel'), this);
-		}
-		return super.loadPrimaryKey(queryExecutor);
-	
-	}
-
 }

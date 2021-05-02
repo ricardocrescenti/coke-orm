@@ -2,6 +2,7 @@ import { DatabaseDriver } from "../common/enum/driver-type";
 import { NamingStrategy } from "../naming-strategy/naming-strategy";
 import { MigrationOptions } from "./migration-options";
 import { PoolOptions } from "./pool-options";
+import { AdditionalOptions } from "./additional-options";
 
 export class ConnectionOptions {
 
@@ -77,6 +78,11 @@ export class ConnectionOptions {
 
    /**
     * 
+    */
+   public readonly additional?: AdditionalOptions;
+
+   /**
+    * 
     * @param options 
     */
    constructor(options: ConnectionOptions) {
@@ -94,5 +100,7 @@ export class ConnectionOptions {
       this.tables = options.tables;
       this.migrations = new MigrationOptions(options?.migrations);
       this.namingStrategy = options.namingStrategy ?? new NamingStrategy();
+      this.additional = new AdditionalOptions(options.additional);
+
    }
 }

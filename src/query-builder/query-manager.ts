@@ -21,6 +21,7 @@ import { NotLike } from "./operators/not-like";
 import { Operator } from "./operators/operator";
 import { Between } from "./operators/between";
 import { Raw } from "./operators/raw";
+import { IsNull } from "./operators/is-null";
 
 export class QueryManager<T> {
    private static operatorsConstructor: { [p: string]: Function } = {
@@ -37,6 +38,7 @@ export class QueryManager<T> {
       notILike: NotILike,
       notIn: NotIn,
       notLike: NotLike,
+      isNull: IsNull,
       RAW: Raw
    };
 
@@ -49,6 +51,8 @@ export class QueryManager<T> {
    public joins?: QueryJoin<T>[];
 
    public values?: QueryValues<T>;
+
+   public virtualDeletionColumn?: string;
 
    public where?: QueryWhere<T>[];
 
@@ -87,7 +91,7 @@ export class QueryManager<T> {
    }
 
    public hasTable(): boolean {
-      return this.table != undefined;
+      return this.table != null;
    }
    public mountTableExpression(useAlias: boolean = true) {
       let expresson = '';
@@ -128,26 +132,43 @@ export class QueryManager<T> {
 
       this.where = (Array.isArray(where) ? where : [where]);
    }
+   public hasVirtualDeletion(): boolean {
+      return this.virtualDeletionColumn != null;
+   }
    public hasWhere(): boolean {
-      return (this.where?.length ?? 0) > 0;
+      return this.hasVirtualDeletion() || (this.where?.length ?? 0) > 0;
    }
    public mountWhereExpression(): string {
+      let where: any;
+
+      if (this.hasVirtualDeletion()) {
+         where = {};
+         where[this.virtualDeletionColumn as string] = { isNull: true }
+      }
+
       if (this.hasWhere()) {
-         return `where ${this.decodeWhereConditions(this.where as QueryWhere<T>[])}`
+         if (where) {
+            where['AND'] = this.where
+         } else {
+            where = this.where;
+         }
+      }
+
+      if (where) {
+         return `where ${this.decodeWhereConditions(where as QueryWhere<T>[])}`
       }
       return '';
    }
    private decodeWhereConditions(whereConditions: QueryWhere<T>[]): string {
-      if (this.hasWhere()) {
-         
-         const expressions: string[] = [];
-         for (const whereCondition of whereConditions) {
-            expressions.push(this.decodeWhereCondition(whereCondition));
-         }
-         return `(${expressions.join(' or ')})`;
-
+      if (!Array.isArray(whereConditions)) {
+         whereConditions = [whereConditions];
       }
-      return '';
+
+      const expressions: string[] = [];
+      for (const whereCondition of whereConditions) {
+         expressions.push(this.decodeWhereCondition(whereCondition));
+      }
+      return `(${expressions.join(' or ')})`;
    }
    private decodeWhereCondition(whereCondition: QueryWhere<any>): string {
       let expressions: string[] = [];

@@ -1,4 +1,4 @@
-import { TableMetadata } from "..";
+import { ColumnMetadata, TableMetadata } from "..";
 import { UniqueOptions } from "./unique-options";
 
 export class UniqueMetadata extends UniqueOptions {
@@ -11,6 +11,13 @@ export class UniqueMetadata extends UniqueOptions {
    constructor(options: UniqueMetadata) {
       super(options);
       this.table = options.table;
+
+      // if (this.table.connection.options.additional?.addVirtualDeletionColumnToUniquesAndIndexes) {
+      //    const virtualDeletionColumnMetadata: ColumnMetadata | undefined = this.table.getVirtualDeletionColumn();
+      //    if (virtualDeletionColumnMetadata) {
+      //       this.columns.unshift(virtualDeletionColumnMetadata.propertyName);
+      //    }
+      // }
 
       for (const columnPropertyName of this.columns) {
          this.table.columns[columnPropertyName].uniques.push(this);
