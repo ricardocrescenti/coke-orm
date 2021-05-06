@@ -239,7 +239,9 @@ export async function test() {
       ],
       where: {
          entity: {
-            name: 'Ricardo Crescenti'
+            photo: {
+               privateUrl: 'Ricardo Crescenti'
+            }
          }
       },
       roles: [
@@ -251,6 +253,9 @@ export async function test() {
             phones: {
                contact: 'ASC',
                id: 'ASC'
+            },
+            photo: {
+               privateUrl: 'ASC'
             },
             id: 'ASC'
          },

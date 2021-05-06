@@ -99,7 +99,7 @@ export class QueryManager<T> {
       const alias = (column.table ?? this.table?.alias ?? this.table?.table);
       const columnDatebaseName = (column?.relation ? column.column : (columnMetadata?.name ?? column.column));
       
-      return `"${alias}".${(column.jsonObjectName ? `"${column.jsonObjectName}"->>'${columnDatebaseName}'` : `"${columnDatebaseName}"`)}`;
+      return `"${alias}".${((column.jsonObjectsName ?? []).length > 0 ? `${column.jsonObjectsName?.map((jsonObjectsName, index) => (index == 0 ? `"${jsonObjectsName}"` : `'${jsonObjectsName}'`)).join('->')}->>'${columnDatebaseName}'` : `"${columnDatebaseName}"`)}`;
    }
 
    public hasTable(): boolean {
@@ -304,7 +304,7 @@ export class QueryManager<T> {
       }
       return '';
    }
-   private getOrderByColumn(tableMetadata: TableMetadata | undefined, table: QueryTable<T> | undefined, orderBy: QueryOrder<T> | undefined, jsonObjectName?: string): string {
+   private getOrderByColumn(tableMetadata: TableMetadata | undefined, table: QueryTable<T> | undefined, orderBy: QueryOrder<T> | undefined, jsonObjectsName?: string[]): string {
       return Object.keys(orderBy ?? []).map(columnName => {
 
          const relationMetadata: ForeignKeyMetadata | undefined = tableMetadata?.columns[columnName].relation;
@@ -313,14 +313,14 @@ export class QueryManager<T> {
             const referencedTableMetadata = tableMetadata?.connection.tables[relationMetadata.referencedTable];
             return this.getOrderByColumn(referencedTableMetadata, { 
                table: referencedTableMetadata?.name as string,
-               alias: `${relationMetadata.column.propertyName}_${referencedTableMetadata?.className}`
-             }, (orderBy as any)[columnName], relationMetadata.column.propertyName);
+               alias: ((jsonObjectsName ?? []).length == 0 ? `${relationMetadata.column.propertyName}_${referencedTableMetadata?.className}` : table?.alias ?? table?.table) as string
+             }, (orderBy as any)[columnName], (jsonObjectsName ?? [])?.concat([relationMetadata.column.propertyName]));
 
          } else {
             
             const columnDatebaseName = this.getColumnDatabaseName<any>(tableMetadata, {
                table: (table?.alias ?? table?.table) as string,
-               jsonObjectName: jsonObjectName,
+               jsonObjectsName: jsonObjectsName,
                column: columnName
             });
             return `${columnDatebaseName} ${(orderBy as any)[columnName] ?? 'ASC'}`;
