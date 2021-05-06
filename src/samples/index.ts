@@ -204,12 +204,27 @@ export async function test() {
    await seller.save(connection);
    // await sellerTableManager.save(seller);
 
-   // TODO - No FindOptions ter opcão para pegar o total de registros mesmo passando o skep e take
-   // TODO - nas relaçòes com filhos quando salvar, se não mandar um objeto que tinha antes, deletar ele, se o cascade tiver o 'delete'
-   // TODO - toRemove
-   // TODO - Carregar as classes de pastas
-   // TODO - Gerar as migartions em arquivos
-   // TODO - 
+   /**
+    * * Geral
+    * - No TableManager criar método para efetuar count passando um findOptions sem select, relations, orderBy, roles.
+    * - Nas relaçòes com filhos quando salvar, se não mandar um objeto que tinha antes, deletar ele, se tiver cascade['delete']
+    * - Permitir inicializar o CokeORM a partir de um arquivo de convifiguração
+    * - Criar a tabela "migrations" para gerenciar as migrações do banco de dados
+    * - Estudar uma forma de gerar as triggers, procedures e views pelo ORM
+    * 
+    * * Find
+    * - Carregar as relações com base na necessidade das condiçoes.
+    * - Ver para criar "rules" a nivel de linha, neste caso o cara pode adiconar um SQL ou uma condição JavaScript, permissões.
+    * 
+    * * Save
+    * - Criar um saveOptions, aonde o cara poderá adicionar os eventos: beforeSave, afterSave, beforeLoadPrimaryKey, afterLoadPrimaryKey especificos para uma função
+    * 
+    * * Cli
+    * - Comandos: migrations(generate,create)
+    * - Carregar as classes de pastas
+    * - Gerar as migartions em arquivos
+    * - 
+    */
 
    const sellers = await connection.find(SellerModel, {
       select: [
@@ -241,7 +256,10 @@ export async function test() {
          entity: {
             photo: {
                privateUrl: 'Ricardo Crescenti'
-            }
+            },
+            addresses: {
+               isDefault: true
+            } as any
          }
       },
       roles: [

@@ -21,8 +21,6 @@ export abstract class CokenModel {
     */
    public async save(queryExecutor: QueryExecutor | Connection, saveOptions?: Omit<SaveOptions, 'queryExecutor'>): Promise<this> {
 
-      // TODO - criar um saveOptions, aonde o cara poderá adicionar os eventos: beforeSave, afterSave, beforeLoadPrimaryKey, afterLoadPrimaryKey especificos para uma função
-
       /// get the table manager to perform the processes below
       const tableManager: TableManager<this> = this.getTableManager(queryExecutor);
 

@@ -100,10 +100,6 @@ export class TableManager<T> {
     * @returns 
     */
    public async find(findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
-   
-      // TODO - Carregar as relações com base na necessidade das condiçoes.
-      // TODO - Respeitar as ordenações padrões na consulta base e nas filhas, poder passar isso pelo findOptions.
-      // TODO - Ver para criar "rules" a nivel de linha, neste caso o cara pode adiconar um SQL ou uma condição JavaScript, permissões.
 
       /// create the query
       const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions, 0);
