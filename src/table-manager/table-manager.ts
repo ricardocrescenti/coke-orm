@@ -283,7 +283,7 @@ export class TableManager<T> {
                   table: relationAlias,
                   column: columnMetadata.propertyName,
                   relation: new QueryJoin<any>({
-                     type: 'left',
+                     type: ((findOptions.where as any ?? {})[columnMetadata.propertyName] ? 'inner' : 'left'),
                      table: relationQuery,
                      alias: relationAlias,
                      condition: `"${relationAlias}"."${referencedColumn.propertyName}" = "${this.tableMetadata.className}"."${referencedColumn.relation?.referencedColumn}"`
