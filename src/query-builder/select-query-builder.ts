@@ -2,6 +2,7 @@ import { Connection } from "../connection/connection";
 import { TableMetadata } from "../metadata";
 import { QueryExecutor } from "../query-executor/query-executor";
 import { QueryBuilder } from "./query-builder";
+import { QueryManager } from "./query-manager";
 import { JoinType } from "./types/join-type";
 import { QueryColumn } from "./types/query-column";
 import { QueryJoin } from "./types/query-join";
@@ -74,15 +75,15 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public getQuery(): string {
+   public getQuery(queryManager?: QueryManager<any>): string {
 
       const expressions: string[] = [];
       this.queryManager.parameters = [];
 
       expressions.push(this.queryManager.mountSelectExpression());
       expressions.push(this.queryManager.mountFromExpression());
-      expressions.push(this.queryManager.mountJoinsExpression());
-      expressions.push(this.queryManager.mountWhereExpression())
+      expressions.push(this.queryManager.mountJoinsExpression(queryManager ?? this.queryManager));
+      expressions.push(this.queryManager.mountWhereExpression(queryManager ?? this.queryManager))
       expressions.push(this.queryManager.mountGroupByExpression())
       expressions.push(this.queryManager.mountOrderByExpression());
       expressions.push(this.queryManager.mountTakeExpression());

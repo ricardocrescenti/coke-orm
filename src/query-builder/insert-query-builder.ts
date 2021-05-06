@@ -17,7 +17,7 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
    }
 
    public values(values: QueryValues<T>): this {
-      this.queryManager.values = values;
+      this.queryManager.values = this.queryManager.getObjectValues(values);
       return this;
    }
 

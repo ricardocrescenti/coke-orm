@@ -95,7 +95,7 @@ export class EntityModel extends PatternModel {
 		
 		if (parent?.id) {
 			const result = await queryExecutor.query(`
-				select p.id, p.uuid
+				select e.id, e.uuid
 				from ${queryExecutor.getTableManager(parent.constructor.name).tableMetadata.name} p
 				inner join entities e on (e.id = p.entity_id)
 				where p.id = ${parent.id}

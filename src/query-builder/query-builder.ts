@@ -32,6 +32,7 @@ export abstract class QueryBuilder<T> {
       }
 
       if (table instanceof TableMetadata) {
+         this.queryManager.tableMetadata = table;
          table = {
             table: table.name as string,
             alias: table.className

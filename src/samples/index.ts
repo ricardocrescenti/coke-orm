@@ -54,7 +54,7 @@ export async function test() {
 
    let city: CityModel;
 
-   // city = await connection.getTableManager(CityModel).findOne({
+   // city = await connection.findOne(CityModel, {
    //    where: { id: 1 }
    // });
 
@@ -68,7 +68,7 @@ export async function test() {
    // await city.loadPrimaryKey(connection);
    // console.log('loadPrimaryKey', city);
 
-   // const cities = await connection.getTableManager(CityModel).find({
+   // const cities = await connection.find(CityModel, {
    //    where: [
    //       {
    //          name: { equal: 'Guaporé' },
@@ -106,22 +106,22 @@ export async function test() {
    // });
    // await city.save(connection);
 
-   city = await connection.getTableManager(CityModel).create({
-      name: 'Guaporé 2',
-      code: '4309408',
-      state: 'RS',
-      country: 'BRA'
-   });
-   await city.save(connection);
+   // city = await connection.getTableManager(CityModel).create({
+   //    name: 'Guaporé 2',
+   //    code: '4309408',
+   //    state: 'RS',
+   //    country: 'BRA'
+   // });
+   // await city.save(connection);
 
-   city = await connection.getTableManager(CityModel).create({
-      name: 'Guaporé 3',
-      code: '4309408',
-      state: 'RS',
-      country: 'BRA'
-   });
-   await city.save(connection);
-   await city.delete(connection);
+   // city = await connection.getTableManager(CityModel).create({
+   //    name: 'Guaporé 3',
+   //    code: '4309408',
+   //    state: 'RS',
+   //    country: 'BRA'
+   // });
+   // await city.save(connection);
+   // await city.delete(connection);
 
    const sellerTableManager = connection.getTableManager(SellerModel);
    let seller: SellerModel = sellerTableManager.create({
@@ -202,36 +202,62 @@ export async function test() {
       comission: 10,
    });
    await seller.save(connection);
-   await sellerTableManager.save(seller);
+   // await sellerTableManager.save(seller);
 
-   const entities = await connection.getTableManager(EntityModel).find({
-      // select: [
-      //    'id',
-      //    'name',
-      //    ['addresses', [
-      //       'id', 
-      //       'description', 
-      //       'contact',
-      //       ['city', [
-      //          'id',
-      //          'name'
-      //       ]]
-      //    ]],
-      //    'photo'
-      // ],
-      relations: [
-         'addresses',
-         'addresses.city',
-         'photo'
+   // TODO - No FindOptions ter opcão para pegar o total de registros mesmo passando o skep e take
+   // TODO - nas relaçòes com filhos quando salvar, se não mandar um objeto que tinha antes, deletar ele, se o cascade tiver o 'delete'
+   // TODO - toRemove
+   // TODO - Carregar as classes de pastas
+   // TODO - Gerar as migartions em arquivos
+   // TODO - 
+
+   const sellers = await connection.find(SellerModel, {
+      select: [
+         ['entity', [
+            'id',
+            'name',
+            ['phones', [
+               'id', 
+               'type', 
+               'phoneNumber'
+            ]],
+            ['addresses', [
+               'id', 
+               'description', 
+               'contact',
+               'city'
+            ]],
+            'photo'
+         ]]
       ],
-      // where: {
-      //    name: { _eq: 'Ricardo Crescenti' }
-      // },
+      relations: [
+         'entity',
+         'entity.addresses',
+         'entity.addresses.city',
+         'entity.phones',
+         'entity.photo'
+      ],
+      where: {
+         entity: {
+            name: 'Ricardo Crescenti'
+         }
+      },
       roles: [
-         'admin'
-      ]
+         'public'
+      ],
+      orderBy: {
+         entity: {
+            name: 'ASC',
+            phones: {
+               contact: 'ASC',
+               id: 'ASC'
+            },
+            id: 'ASC'
+         },
+         id: 'ASC'
+      }
    });
-   console.log('find', entities);
+   console.log('find', sellers);
 
 }
 

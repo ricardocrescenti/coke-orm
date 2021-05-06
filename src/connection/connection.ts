@@ -1,6 +1,6 @@
 import { DatabaseDriver } from "../common/enum/driver-type";
 import { SimpleMap } from "../common/interfaces/map";
-import { TableConstructor } from "../common/types/table-type";
+import { EntityParameter } from "../common/types/table-type";
 import { TransactionProcess } from "../common/types/transaction-process";
 import { DecoratorStore } from "../decorators/decorators-store";
 import { PostgresDriver } from "../drivers/databases/postgres/postgres-driver";
@@ -17,7 +17,10 @@ import { SelectQueryBuilder } from "../query-builder/select-query-builder";
 import { QueryTable } from "../query-builder/types/query-table";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
 import { QueryExecutor } from "../query-executor/query-executor";
+import { FindOptions } from "../table-manager/find-options";
+import { SaveOptions } from "../table-manager/save-options";
 import { TableManager } from "../table-manager/table-manager";
+import { TableValues } from "../table-manager/types/table-values";
 import { ConnectionOptions } from "./connection-options";
 
 export class Connection {
@@ -111,6 +114,9 @@ export class Connection {
       this._isConnected = false;
    }
 
+   /**
+    * 
+    */
    private loadMetadataSchema() {
       console.time('loadMetadataSchema');
 
@@ -345,7 +351,7 @@ export class Connection {
     * @param table 
     * @param queryExecutor 
     */
-   public getTableManager<T>(table: TableMetadata | TableConstructor<T> | string): TableManager<T> {
+   public getTableManager<T>(table: EntityParameter<T>): TableManager<T> {
 
       if (typeof(table) == 'string') {
          table = this.tables[table as string];
@@ -363,6 +369,50 @@ export class Connection {
 
       return this.tableManagers[table.className];
       
+   }
+
+   /**
+    * 
+    * @param table 
+    * @param findOptions 
+    * @param queryExecutor 
+    * @returns 
+    */
+   public async find<T>(table: EntityParameter<T>, findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
+      return this.getTableManager<T>(table).find(findOptions, queryExecutor);
+   }
+
+   /**
+    * 
+    * @param table 
+    * @param findOptions 
+    * @param queryExecutor 
+    * @returns 
+    */
+   public async findOne<T>(table: EntityParameter<T>, findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T> {
+      return this.getTableManager<T>(table).findOne(findOptions, queryExecutor);
+   }
+
+   /**
+    * 
+    * @param table 
+    * @param object 
+    * @param saveOptions 
+    * @returns 
+    */
+   public async save<T>(table: EntityParameter<T>, object: TableValues<T>, saveOptions?: SaveOptions): Promise<any> {
+      return this.getTableManager<T>(table).save(object, saveOptions);
+   }
+
+   /**
+    * 
+    * @param table 
+    * @param object 
+    * @param queryExecutor 
+    * @returns 
+    */
+   public async delete<T>(table: EntityParameter<T>, object: any, queryExecutor?: QueryExecutor | Connection): Promise<boolean> {
+      return this.getTableManager<T>(table).delete(object, queryExecutor);
    }
 
    /**

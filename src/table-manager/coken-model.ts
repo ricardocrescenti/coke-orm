@@ -87,7 +87,7 @@ export abstract class CokenModel {
                }
 
                const updateQuery: UpdateQueryBuilder<this> = tableManager.createUpdateQuery()
-                  .set(tableManager.getObjectValues(objectToSave, true))
+                  .set(objectToSave)
                   .where(where)
                   .returning(columnsToReturn);
                await updateQuery.execute(queryExecutor);
@@ -102,7 +102,7 @@ export abstract class CokenModel {
             if (!saveOptions?.relation || (saveOptions.relation.cascade?.indexOf('insert') ?? -1) >= 0) {
 
                const insertQuery: InsertQueryBuilder<this> = tableManager.createInsertQuery()
-                  .values(tableManager.getObjectValues(objectToSave, true))
+                  .values(objectToSave)
                   .returning(columnsToReturn);
                const insertedObject = await insertQuery.execute(queryExecutor);
                tableManager.populate(objectToSave, insertedObject.rows[0]);
@@ -228,16 +228,21 @@ export abstract class CokenModel {
 
          /// create the condition using the first unique index or unique key to 
          /// query the object
-         const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(tableManager.getObjectValues(this, false), columns);
+         const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(this, columns);
          if (!where) {
             continue;
+         }
+
+         const orderBy: any = {};
+         for (const columnPropertyName of primaryKeys) {
+            orderBy[columnPropertyName] = 'ASC';
          }
 
          /// run the query to verify the object and verify that it exists
          const result: any = await tableManager.findOne({
             select: primaryKeys,
             where: where,
-            orderBy: primaryKeys
+            orderBy: orderBy
          }, queryExecutor);
 
          /// If the requested object exists in the database, the primary keys will

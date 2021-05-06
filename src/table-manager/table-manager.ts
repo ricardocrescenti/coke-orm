@@ -10,13 +10,12 @@ import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
 import { QueryWhere, QueryWhereColumn } from "../query-builder/types/query-where";
 import { QueryJoin } from "../query-builder/types/query-join";
 import { QueryColumn } from "../query-builder/types/query-column";
-import { QueryOrder } from "../query-builder/types/query-order";
 import { FindSelect } from "./types/find-select";
 import { TableValues } from "./types/table-values";
 import { CokenModel } from "./coken-model";
 import { SaveOptions } from "./save-options";
 import { QueryValues } from "../query-builder/types/query-values";
-import { Generate } from "../metadata/add-ons/generate";
+import { QueryOrder } from "../query-builder/types/query-order";
 
 export class TableManager<T> {
 
@@ -47,6 +46,10 @@ export class TableManager<T> {
     * @returns 
     */
    public create(values?: TableValues<T>): any {
+      if (values == null) {
+         return null;
+      }
+
       const object: T = new (this.tableMetadata.target)();
       if (values) {
          this.populate(object, values);
@@ -123,12 +126,12 @@ export class TableManager<T> {
     * @param tableManager 
     * @returns 
     */
-   public async findOne(findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection) {
+   public async findOne(findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T> {
       
       const [result]: any = await this.find({ 
          ...findOptions,
          limit: 1,
-         orderBy: (findOptions.orderBy ?? this.tableMetadata.primaryKey?.columns)
+         orderBy: (findOptions.orderBy ?? this.tableMetadata.orderBy)
       }, queryExecutor);
       
       return result;
@@ -141,17 +144,16 @@ export class TableManager<T> {
     */
    public async save(object: TableValues<T>, saveOptions?: SaveOptions): Promise<any> {
       const objectToSave: CokenModel = this.create(object);
-      await objectToSave.save(saveOptions?.queryExecutor ?? this.connection, saveOptions);
-      return objectToSave;
+      return objectToSave.save(saveOptions?.queryExecutor ?? this.connection, saveOptions);
    }
 
    /**
     * 
     * @param queryExecutor 
     */
-   public async delete(object: any, queryExecutor?: QueryExecutor | Connection): Promise<void> {
+   public async delete(object: any, queryExecutor?: QueryExecutor | Connection): Promise<boolean> {
       const objectToDelete: CokenModel = this.create(object);
-      await objectToDelete.delete(queryExecutor ?? this.connection);
+      return objectToDelete.delete(queryExecutor ?? this.connection);
    }
 
    /**
@@ -161,6 +163,10 @@ export class TableManager<T> {
     * @returns 
     */
    public createSelectQuery(findOptions: FindOptions<T>): SelectQueryBuilder<T> {
+      
+      findOptions = this.setFindOptionsDefault({
+         ...findOptions
+      });
 
       /// Obtain the list of columns to be consulted in the main table (if the 
       /// list of columns is not informed in the find options, all columns that 
@@ -170,21 +176,11 @@ export class TableManager<T> {
       /// In the related columns, the `SelectQueryBuilder` will also be returned 
       /// to make the` left join` in the table and obtain the JSON of the table 
       /// data.
-      const queryColumns: QueryColumn<T>[] = this.loadQueryColumns(findOptions.select, findOptions.relations, findOptions.roles);
+      const queryColumns: QueryColumn<T>[] = this.loadQueryColumns(findOptions);
 
       /// extract the `SelectQueryBuilder` from the related columns to generate
       /// the `left join` in the main table
       const queryJoins: QueryJoin<T>[] = this.loadQueryJoins(queryColumns);
-
-      let orderBy: any = findOptions.orderBy;
-      if (Array.isArray(findOptions.orderBy)) {
-
-         orderBy = {};
-         for (const column of findOptions.orderBy) {
-            orderBy[column] = 'ASC';
-         }
-
-      }
 
       /// create the query to get the data
       const query: SelectQueryBuilder<T> = this.connection.createSelectQuery<T>(this.tableMetadata)
@@ -192,7 +188,7 @@ export class TableManager<T> {
          .join(queryJoins)
          .virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name)
          .where(findOptions?.where)
-         .orderBy((orderBy ?? this.tableMetadata.orderBy) as QueryOrder<T>)
+         .orderBy(findOptions.orderBy)
          .take(findOptions.take)
          .limit(findOptions.limit)
       return query;
@@ -238,22 +234,22 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private loadQueryColumns<T>(columnsToBeLoaded?: FindSelect[], relations?: string[], roles?: string[]): QueryColumn<T>[] {
+   private loadQueryColumns<T>(findOptions: FindOptions<T>): QueryColumn<T>[] {
 
       /// If there are no columns informed to be loaded, all columns of tables 
       /// that do not have relations will be obtained, or that the relation is 
       /// in the parameter `relations`.
-      if (!columnsToBeLoaded || columnsToBeLoaded.length == 0) 
+      if (!findOptions.select || findOptions.select.length == 0) 
       {
-         columnsToBeLoaded = Object.values(this.tableMetadata.columns)
-            .filter(column => column.canSelect && (!column.relation || ((relations ?? []).indexOf(column.propertyName) >= 0)))
+         findOptions.select = Object.values(this.tableMetadata.columns)
+            .filter(column => column.canSelect && (!column.relation || ((findOptions.relations ?? []).indexOf(column.propertyName) >= 0)))
             .map(column => column.propertyName);
       }
 
       /// initialize the array that will store the query columns
       const queryColumns: SimpleMap<QueryColumn<T>> = new SimpleMap();
 
-      for (const columnStructure of columnsToBeLoaded) {
+      for (const columnStructure of findOptions.select) {
 
          const columnData: [string, FindSelect] = (typeof columnStructure == 'string' ? [columnStructure, []] : columnStructure) as [string, FindSelect];         
          const columnMetadata: ColumnMetadata = this.tableMetadata.columns[columnData[0]];
@@ -266,8 +262,9 @@ export class TableManager<T> {
             throw new Error('Coluna informada em duplicidade no select');
          }
 
-         /// 
-         if ((columnMetadata.roles ?? []).length > 0 && columnMetadata.roles?.some((role => (roles?.indexOf(role) ?? 0) < 0))) {
+         /// If the column has roles restrictions, it will only appear in the 
+         /// query result if the role is informed in the findOptions.roles
+         if ((columnMetadata.roles ?? []).length > 0 && columnMetadata.roles?.some((role => (findOptions.roles?.indexOf(role) ?? 0) < 0))) {
             continue;
          }
 
@@ -276,44 +273,44 @@ export class TableManager<T> {
             const relationAlias: string = this.connection.options.namingStrategy?.eagerJoinRelationAlias(columnMetadata) as string;
             const relationTableManager: TableManager<any> =  this.connection.getTableManager(columnMetadata.relation.referencedTable);
 
-               if (columnMetadata.relation.relationType == 'OneToMany') {
+            if (columnMetadata.relation.relationType == 'OneToMany') {
 
-                  const referencedColumn: ColumnMetadata = relationTableManager.tableMetadata.columns[columnMetadata.relation.referencedColumn];
-                  const relationQuery: SelectQueryBuilder<any> = this.createChildSubquery(columnMetadata, columnData, relationTableManager, relations, roles);
+               const referencedColumn: ColumnMetadata = relationTableManager.tableMetadata.columns[columnMetadata.relation.referencedColumn];
+               const relationQuery: SelectQueryBuilder<any> = this.createChildSubquery(columnMetadata, columnData, relationTableManager, findOptions);
 
-                  queryColumns[columnData[0]] = {
-                     table: relationAlias,
-                     column: columnMetadata.propertyName,
-                     relation: new QueryJoin<any>({
-                        type: 'left',
-                        table: relationQuery,
-                        alias: relationAlias,
-                        condition: `"${relationAlias}"."${referencedColumn.name}" = "${this.tableMetadata.className}"."${referencedColumn.relation?.referencedColumn}"`
-                     }),
-                  }
-
-               } else {
-
-                  const relationQuery: SelectQueryBuilder<any> = this.createParentSubquery(columnMetadata, columnData, relationTableManager, relations, roles);
-
-                  queryColumns[columnData[0]] = {
-                     table: relationAlias,
-                     column: columnMetadata.propertyName,
-                     relation: new QueryJoin<any>({
-                        type: 'left',
-                        table: relationQuery,
-                        alias: relationAlias,
-                        condition: `"${relationAlias}"."${columnMetadata.relation.referencedColumn}" = "${this.tableMetadata.className}"."${columnMetadata.name}"`
-                     }),
-                  }
-
+               queryColumns[columnData[0]] = {
+                  table: relationAlias,
+                  column: columnMetadata.propertyName,
+                  relation: new QueryJoin<any>({
+                     type: 'left',
+                     table: relationQuery,
+                     alias: relationAlias,
+                     condition: `"${relationAlias}"."${referencedColumn.propertyName}" = "${this.tableMetadata.className}"."${referencedColumn.relation?.referencedColumn}"`
+                  }),
                }
+
+            } else {
+
+               const relationQuery: SelectQueryBuilder<any> = this.createParentSubquery(columnMetadata, columnData, relationTableManager, findOptions);
+
+               queryColumns[columnData[0]] = {
+                  table: relationAlias,
+                  column: columnMetadata.propertyName,
+                  relation: new QueryJoin<any>({
+                     type: ((findOptions.where as any ?? {})[columnMetadata.propertyName] ? 'inner' : 'left'),
+                     table: relationQuery,
+                     alias: relationAlias,
+                     condition: `"${relationAlias}"."${columnMetadata.relation.referencedColumn}" = "${this.tableMetadata.className}"."${columnMetadata.name}"`
+                  }),
+               }
+
+            }
 
          } else {
 
             queryColumns[columnData[0]] = {
                table: this.tableMetadata.className,
-               column: columnMetadata.name as string,
+               column: columnMetadata.propertyName,
                alias: columnMetadata.propertyName
             }
 
@@ -332,13 +329,22 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private createSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, relations?: string[], roles?: string[]): SelectQueryBuilder<T> {
+   private createSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>): SelectQueryBuilder<T> {
+      
+      const subqueryRelations = (findOptions.relations ?? [])
+         .filter(relation => relation.startsWith(`${columnMetadata.propertyName}.`))
+         .map(relation => relation.substring(relation.indexOf('.') + 1, relation.length));
+
+      const subqueryWhere: any = (findOptions.where as any ?? {})[columnMetadata.propertyName];
+
+      const subqueryOrderBy: any = (findOptions.orderBy as any ?? {})[columnMetadata.propertyName];
+      
       const relationQuery: SelectQueryBuilder<T> = relationTableManager.createSelectQuery({
          select: (columnData.length > 1 ? columnData[1] as [string, FindSelect] : []),
-         relations: (relations ?? [])
-            .filter(relation => relation.startsWith(`${columnMetadata.name}.`))
-            .map(relation => relation.substring(relation.indexOf('.') + 1, relation.length)),
-         roles: roles
+         relations: subqueryRelations,
+         where: subqueryWhere,
+         orderBy: subqueryOrderBy,
+         roles: findOptions.roles
       });
 
       return relationQuery;
@@ -353,20 +359,21 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private createChildSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, relations?: string[], roles?: string[]): SelectQueryBuilder<T> {
-      const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, relations, roles);
+   private createChildSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>): SelectQueryBuilder<T> {
+      const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions);
 
       relationQuery.select([
          {
             table: relationTableManager.tableMetadata.className,
-            column: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].name as string,
-            alias: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].name as string
+            column: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string,
+            alias: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string
          },
          {
             column: {
                jsonColumn: {
                   jsonColumns: relationQuery.queryManager.columns as QueryColumn<any>[],
-               }
+               },
+               orderBy: relationQuery.queryManager.orderBy
             },
             alias: columnMetadata.propertyName
          }
@@ -374,8 +381,11 @@ export class TableManager<T> {
 
       relationQuery.groupBy({
          table: relationTableManager.tableMetadata.className,
-         column: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].name as string
+         column: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName
       });
+
+      /// remove o order by pois ele foi adicionado dentro do SelectJsonAgg
+      relationQuery.orderBy();
 
       return relationQuery;
    }
@@ -389,8 +399,8 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private createParentSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, relations?: string[], roles?: string[]): SelectQueryBuilder<T> {
-      const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, relations, roles);
+   private createParentSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>): SelectQueryBuilder<T> {
+      const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions);
 
       relationQuery.select([
          {
@@ -414,14 +424,14 @@ export class TableManager<T> {
     * @param queryColumns 
     * @returns 
     */
-   public loadQueryJoins(queryColumns: QueryColumn<T>[]): QueryJoin<T>[] {
+   private loadQueryJoins(queryColumns: QueryColumn<T>[]): QueryJoin<T>[] {
 
       return queryColumns
          .filter((queryColumn) => queryColumn.relation)
          .map((queryColumn) => {
 
             return new QueryJoin<T>({
-               type: 'left',
+               type: queryColumn.relation?.type,
                table: queryColumn.relation?.table,
                alias: queryColumn?.relation?.alias,
                condition: queryColumn?.relation?.condition
@@ -431,38 +441,79 @@ export class TableManager<T> {
 
    }
 
-   /**
-    * 
-    * @param values 
-    */
-   public getObjectValues(values: QueryValues<T>, useDatabaseNames: boolean, columns?: string[]): any {
-      if (!values) {
-         return;
+   private setFindOptionsDefault(findOptions: FindOptions<T>, hierarchyRelation?: string): FindOptions<T> {
+
+      this.setFindOptionsDefaultOrderBy(findOptions, hierarchyRelation);
+      return findOptions;
+
+   }
+
+   private setFindOptionsDefaultOrderBy(findOptions: FindOptions<T>, hierarchyRelation?: string): void {
+      let orderBy: any = findOptions.orderBy;
+
+      if (!orderBy) {
+
+         orderBy = this.tableMetadata.orderBy ?? {};
+         if (!orderBy) {
+            for (const columnPropertyName of this.tableMetadata.primaryKey?.columns as string[]) {
+               orderBy[columnPropertyName] = 'ASC';         
+            }
+         }
+
       }
 
-      const object: any = {};
-      for (const key of Object.keys(values)) {
+      for (const columnPropertyName in orderBy) {
+         
+         const columnMetadata = this.tableMetadata.columns[columnPropertyName];
+         const relationMetadata: ForeignKeyMetadata | undefined = columnMetadata.relation;
 
-         if (columns && columns.indexOf(key) < 0) {
-            continue;
+         if (relationMetadata) {
+
+            if (relationMetadata.relationType == 'OneToMany') {
+
+               delete (orderBy as any)[columnPropertyName];
+
+            }
+
+            // let relationName: string = columnMetadata.propertyName;
+            // let hierarchyRelationIndex: number = -1;
+
+            // if (hierarchyRelation) {
+            //    relationName = `${hierarchyRelation}.${relationName}`;                  
+            //    hierarchyRelationIndex = (findOptions.relations?.indexOf(hierarchyRelation) ?? -1) as number;
+            // }
+            
+            // const relationIndex: number = (findOptions.relations?.indexOf(relationName) ?? -1) as number;
+            // if (relationIndex < 0) {
+            //    if (hierarchyRelationIndex >= 0) {
+
+            //       //const previousRelations: string[] = findOptions.relations?.slice(0, hierarchyRelationIndex) as string[];
+            //       //const laterRelations: string[] = findOptions.relations?.slice(hierarchyRelationIndex, findOptions.relations.length) as string[];
+            //       //findOptions.relations = [].concat(previousRelations, [relationName], laterRelations);
+            //       findOptions.relations?.splice(hierarchyRelationIndex, 0, relationName);
+
+            //    } else {
+            //       findOptions.relations?.push(relationName);
+            //    }
+            // }
+            
+            // const relationFindOptions = this.connection.getTableManager(relationMetadata.referencedTable).setFindOptionsDefault({
+            //    orderBy: orderBy[columnPropertyName],
+            //    relations: []
+            // }, relationName);
+
+            // orderBy[columnPropertyName] = relationFindOptions.orderBy;
+
          }
 
-         const columnMetadata: ColumnMetadata = this.tableMetadata.columns[key];
-         if (!columnMetadata || (columnMetadata.relation && columnMetadata.relation?.relationType == 'OneToMany')) {
-            continue;
-         }
-
-         const value: any = (values as any)[key];
-         const columnName: string = (useDatabaseNames ? columnMetadata.name as string : columnMetadata.propertyName);
-
-         if (value instanceof Object && columnMetadata.relation && columnMetadata.relation.relationType != 'OneToMany') {
-            object[columnName] = value[columnMetadata.relation.referencedColumn];
-         } else {
-            object[columnName] = value;
-         }
       }
 
-      return object;
+      findOptions.orderBy = orderBy;
+      // findOptions.orderBy = {};
+      // for (const columnPropertyName in orderBy) {
+      //    const columnDatebaseName: string = this.tableMetadata.columns[columnPropertyName]?.name as string;
+      //    (findOptions.orderBy as any)[columnDatebaseName] = orderBy[columnPropertyName];
+      // }
    }
 
    /**
@@ -490,9 +541,14 @@ export class TableManager<T> {
             throw Error('Coluna inválida para criação do Where')
          }
 
-         where[columnMetadata.name as string] = (values[column] == null 
+         let value: any = (values as any)[column];
+         if (value instanceof Object && columnMetadata.relation && columnMetadata.relation.relationType != 'OneToMany') {
+            value = value[columnMetadata.relation.referencedColumn];
+         }
+
+         where[columnMetadata.name as string] = (value == null 
             ? { isNull: true }
-            : values[column]);
+            : value);
 
       }
 

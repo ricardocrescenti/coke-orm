@@ -13,7 +13,7 @@ export class UpdateQueryBuilder<T> extends QueryBuilder<T> {
    }
 
    public set(values: QueryValues<T>): this {
-      this.queryManager.values = values;
+      this.queryManager.values = this.queryManager.getObjectValues(values);
       return this;
    }
 
@@ -54,7 +54,7 @@ export class UpdateQueryBuilder<T> extends QueryBuilder<T> {
 
       expressions.push(this.mountUpdateTableExpression());
       expressions.push(this.mountUpdateValuesExpression());
-      expressions.push(this.queryManager.mountWhereExpression());
+      expressions.push(this.queryManager.mountWhereExpression(this.queryManager));
       expressions.push(this.queryManager.mountReturningExpression());
 
       const sql = expressions.filter(expression => (expression ?? '').length > 0).join(' ');

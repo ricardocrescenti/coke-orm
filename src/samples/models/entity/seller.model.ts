@@ -1,11 +1,8 @@
-import { Connection } from "../../../connection/connection";
-import { BeforeLoadPrimaryKey, Column, OneToOne, Table, Unique } from "../../../decorators";
-import { QueryExecutor } from "../../../query-executor/query-executor";
-import { TableManager } from "../../../table-manager/table-manager";
+import { Column, OneToOne, Table, Unique } from "../../../decorators";
 import { PatternModel } from "../pattern.model";
 import { EntityModel } from "./entity.model";
 
-@Table({ name: 'sellers' })
+@Table({ name: 'sellers', orderBy: { 'comission': 'ASC' } })
 @Unique({ columns: ['entity'] })
 export class SellerModel extends PatternModel {
 

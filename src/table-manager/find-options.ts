@@ -6,7 +6,7 @@ export class FindOptions<T> {
    select?: FindSelect[];
    relations?: string[];
    where?: QueryWhere<T> | QueryWhere<T>[];
-   orderBy?: QueryOrder<T> | string[];
+   orderBy?: QueryOrder<T>;
    take?: number;
    limit?: number;
    roles?: string[];

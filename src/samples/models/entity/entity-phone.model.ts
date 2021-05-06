@@ -2,7 +2,7 @@ import { Column, ManyToOne, Table, Unique } from "../../../decorators";
 import { PatternModel } from "../pattern.model";
 import { EntityModel } from "./entity.model";
 
-@Table({ name: 'entities_phones' })
+@Table({ name: 'entities_phones', orderBy: { type: 'ASC', phoneNumber: 'ASC' } })
 @Unique({ columns: ['entity', 'phoneNumber'] })
 export class EntityPhoneModel extends PatternModel {
 

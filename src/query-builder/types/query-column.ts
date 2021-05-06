@@ -4,6 +4,7 @@ import { SelectJsonBuilder } from "./select-json-builder";
 
 export type QueryColumn<T> = { 
    table?: string, 
+   jsonObjectName?: string,
    column: string | SelectJsonBuilder<T> | SelectJsonAgg<T>, 
    alias?: string, 
    relation?: QueryJoin<T> 

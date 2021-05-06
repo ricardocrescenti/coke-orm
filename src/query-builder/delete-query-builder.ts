@@ -40,7 +40,7 @@ export class DeleteQueryBuilder<T> extends QueryBuilder<T> {
       this.queryManager.parameters = [];
       
       expressions.push(this.mountDeleteFromExpression());
-      expressions.push(this.queryManager.mountWhereExpression());
+      expressions.push(this.queryManager.mountWhereExpression(this.queryManager));
       expressions.push(this.queryManager.mountReturningExpression());
 
       const sql = expressions.filter(expression => (expression ?? '').length > 0).join(' ');
