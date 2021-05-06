@@ -1,6 +1,6 @@
-import { QueryOrder } from "../query-builder/types/query-order";
-import { QueryWhere } from "../query-builder/types/query-where";
-import { FindSelect } from "./types/find-select";
+import { QueryOrder } from "../../query-builder/types/query-order";
+import { QueryWhere } from "../../query-builder/types/query-where";
+import { FindSelect } from "../types/find-select";
 
 export class FindOptions<T> {
    select?: FindSelect[];

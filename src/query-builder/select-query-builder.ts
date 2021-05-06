@@ -11,9 +11,15 @@ import { QueryTable } from "./types/query-table";
 import { QueryWhere } from "./types/query-where";
 
 export class SelectQueryBuilder<T> extends QueryBuilder<T> {
+   private indentation: number = 0;
 
    constructor(connection: Connection, table: QueryTable<T> | TableMetadata) {
       super(connection, table);
+   }
+
+   public level(level?: number): this {
+      this.indentation = (4 * (level ?? 0));
+      return this;
    }
 
    public select(columns: QueryColumn<T> | QueryColumn<T>[]): this {
@@ -78,18 +84,19 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
    public getQuery(queryManager?: QueryManager<any>): string {
 
       const expressions: string[] = [];
+      const indentation: string = ''.padStart(this.indentation, " ");
       this.queryManager.parameters = [];
 
-      expressions.push(this.queryManager.mountSelectExpression());
-      expressions.push(this.queryManager.mountFromExpression());
-      expressions.push(this.queryManager.mountJoinsExpression(queryManager ?? this.queryManager));
-      expressions.push(this.queryManager.mountWhereExpression(queryManager ?? this.queryManager))
-      expressions.push(this.queryManager.mountGroupByExpression())
-      expressions.push(this.queryManager.mountOrderByExpression());
-      expressions.push(this.queryManager.mountTakeExpression());
-      expressions.push(this.queryManager.mountLimitExpression());
+      expressions.push((indentation.length > 0 ? '\n' + indentation : '') + this.queryManager.mountSelectExpression());
+      expressions.push(indentation + this.queryManager.mountFromExpression());
+      expressions.push(this.queryManager.mountJoinsExpression(queryManager ?? this.queryManager, indentation));
+      expressions.push(indentation + this.queryManager.mountWhereExpression(queryManager ?? this.queryManager))
+      expressions.push(indentation + this.queryManager.mountGroupByExpression())
+      expressions.push(indentation + this.queryManager.mountOrderByExpression());
+      expressions.push(indentation + this.queryManager.mountTakeExpression());
+      expressions.push(indentation + this.queryManager.mountLimitExpression());
 
-      const sql = expressions.filter(expression => (expression ?? '').length > 0).join(' ');
+      const sql = expressions.filter(expression => (expression ?? '').trim().length > 0).join('\n');
       return sql;
       
    }

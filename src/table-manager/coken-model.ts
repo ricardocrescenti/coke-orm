@@ -6,7 +6,7 @@ import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
 import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
 import { QueryWhere } from "../query-builder/types/query-where";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
-import { SaveOptions } from "./save-options";
+import { SaveOptions } from "./options/save-options";
 import { TableManager } from "./table-manager";
 
 export abstract class CokenModel {

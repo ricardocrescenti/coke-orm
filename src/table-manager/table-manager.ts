@@ -3,7 +3,7 @@ import { SimpleMap } from "../common/interfaces/map";
 import { Connection } from "../connection/connection";
 import { ColumnMetadata, ForeignKeyMetadata, TableMetadata } from "../metadata";
 import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
-import { FindOptions } from "./find-options";
+import { FindOptions } from "./options/find-options";
 import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
 import { SelectQueryBuilder } from "../query-builder/select-query-builder";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
@@ -13,7 +13,7 @@ import { QueryColumn } from "../query-builder/types/query-column";
 import { FindSelect } from "./types/find-select";
 import { TableValues } from "./types/table-values";
 import { CokenModel } from "./coken-model";
-import { SaveOptions } from "./save-options";
+import { SaveOptions } from "./options/save-options";
 import { QueryValues } from "../query-builder/types/query-values";
 import { QueryOrder } from "../query-builder/types/query-order";
 
@@ -106,7 +106,7 @@ export class TableManager<T> {
       // TODO - Ver para criar "rules" a nivel de linha, neste caso o cara pode adiconar um SQL ou uma condição JavaScript, permissões.
 
       /// create the query
-      const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions);
+      const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions, 0);
 
       /// run the query to get the result
       const result = await query.execute(queryExecutor);
@@ -162,7 +162,7 @@ export class TableManager<T> {
     * @param tableManager 
     * @returns 
     */
-   public createSelectQuery(findOptions: FindOptions<T>): SelectQueryBuilder<T> {
+   public createSelectQuery(findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
       
       findOptions = this.setFindOptionsDefault({
          ...findOptions
@@ -176,7 +176,7 @@ export class TableManager<T> {
       /// In the related columns, the `SelectQueryBuilder` will also be returned 
       /// to make the` left join` in the table and obtain the JSON of the table 
       /// data.
-      const queryColumns: QueryColumn<T>[] = this.loadQueryColumns(findOptions);
+      const queryColumns: QueryColumn<T>[] = this.loadQueryColumns(findOptions, level ?? 0);
 
       /// extract the `SelectQueryBuilder` from the related columns to generate
       /// the `left join` in the main table
@@ -184,6 +184,7 @@ export class TableManager<T> {
 
       /// create the query to get the data
       const query: SelectQueryBuilder<T> = this.connection.createSelectQuery<T>(this.tableMetadata)
+         .level(level ?? 0)
          .select(queryColumns)
          .join(queryJoins)
          .virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name)
@@ -234,7 +235,7 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private loadQueryColumns<T>(findOptions: FindOptions<T>): QueryColumn<T>[] {
+   private loadQueryColumns<T>(findOptions: FindOptions<T>, level: number): QueryColumn<T>[] {
 
       /// If there are no columns informed to be loaded, all columns of tables 
       /// that do not have relations will be obtained, or that the relation is 
@@ -276,7 +277,7 @@ export class TableManager<T> {
             if (columnMetadata.relation.relationType == 'OneToMany') {
 
                const referencedColumn: ColumnMetadata = relationTableManager.tableMetadata.columns[columnMetadata.relation.referencedColumn];
-               const relationQuery: SelectQueryBuilder<any> = this.createChildSubquery(columnMetadata, columnData, relationTableManager, findOptions);
+               const relationQuery: SelectQueryBuilder<any> = this.createChildSubquery(columnMetadata, columnData, relationTableManager, findOptions, level + 1);
 
                queryColumns[columnData[0]] = {
                   table: relationAlias,
@@ -291,7 +292,7 @@ export class TableManager<T> {
 
             } else {
 
-               const relationQuery: SelectQueryBuilder<any> = this.createParentSubquery(columnMetadata, columnData, relationTableManager, findOptions);
+               const relationQuery: SelectQueryBuilder<any> = this.createParentSubquery(columnMetadata, columnData, relationTableManager, findOptions, level + 1);
 
                queryColumns[columnData[0]] = {
                   table: relationAlias,
@@ -329,7 +330,7 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private createSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>): SelectQueryBuilder<T> {
+   private createSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
       
       const subqueryRelations = (findOptions.relations ?? [])
          .filter(relation => relation.startsWith(`${columnMetadata.propertyName}.`))
@@ -345,7 +346,7 @@ export class TableManager<T> {
          where: subqueryWhere,
          orderBy: subqueryOrderBy,
          roles: findOptions.roles
-      });
+      }, level);
 
       return relationQuery;
    }
@@ -359,8 +360,8 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private createChildSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>): SelectQueryBuilder<T> {
-      const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions);
+   private createChildSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
+      const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions, level);
 
       relationQuery.select([
          {
@@ -399,8 +400,8 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private createParentSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>): SelectQueryBuilder<T> {
-      const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions);
+   private createParentSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
+      const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions, level);
 
       relationQuery.select([
          {

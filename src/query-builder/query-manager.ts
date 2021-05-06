@@ -129,9 +129,9 @@ export class QueryManager<T> {
    public hasJoins(): boolean {
       return (this.joins?.length ?? 0) > 0;
    }
-   public mountJoinsExpression(queryManager: QueryManager<any>): string {
+   public mountJoinsExpression(queryManager: QueryManager<any>, indentation: string): string {
       if (this.hasJoins()) {
-         return (this.joins ?? []).map(join => `${join.type} join (${join.getTableSql(queryManager)}) "${join.alias}" on (${join.condition})`).join(' ') as string;
+         return (this.joins ?? []).map(join => `${indentation}${join.type} join (${join.getTableSql(queryManager)}) "${join.alias}" on (${join.condition})`).join('\n') as string;
       }
       return '';
    }
