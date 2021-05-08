@@ -71,6 +71,8 @@ export class QueryManager<T> {
 
    public parameters: string[] = [];
 
+   /// COLUMNS
+
    public hasSelect(): boolean {
       return (this.columns?.length ?? 0) > 0;
    }
@@ -102,6 +104,8 @@ export class QueryManager<T> {
       return `"${alias}".${((column.jsonObjectsName ?? []).length > 0 ? `${column.jsonObjectsName?.map((jsonObjectsName, index) => (index == 0 ? `"${jsonObjectsName}"` : `'${jsonObjectsName}'`)).join('->')}->>'${columnDatebaseName}'` : `"${columnDatebaseName}"`)}`;
    }
 
+   /// TABLE
+
    public hasTable(): boolean {
       return this.table != null;
    }
@@ -118,13 +122,14 @@ export class QueryManager<T> {
       }
       return expresson;
    }
-
    public mountFromExpression(): string {
       if (this.hasTable()) {
          return `from ${this.mountTableExpression()}`;
       }
       return '';
    }
+
+   /// JOINS
 
    public hasJoins(): boolean {
       return (this.joins?.length ?? 0) > 0;
@@ -135,6 +140,8 @@ export class QueryManager<T> {
       }
       return '';
    }
+
+   /// WHERE
 
    public setWhere(where?: QueryWhere<T> | QueryWhere<T>[]): void {
       if (!where) {
@@ -185,43 +192,6 @@ export class QueryManager<T> {
    }
    private decodeWhereCondition(queryManager: QueryManager<any>, whereCondition: QueryWhere<any>): string {
       let expressions: string[] = [];
-
-      /**
-       * Exemplos:
-       * 
-       * ( (id = 1) or (id = 2) or (id = 3) )
-       * [
-       *    { id: { equal: 1 } },
-       *    { id: { equal: 2 } },
-       *    { id: { equal: 3 } }
-       * ]
-       * 
-       * ( (company is not null and (company.entity.name like 'Ricardo' or company.entity.displayName like 'Ricardo')) or (company is null and (user.entity.name like 'Ricardo' or user.entity.displayName like 'Ricardo')) )
-       * [
-       *    {
-       *       company: { isNull: false },
-       *       AND: [
-       *          {
-       *             company.entity.name: { iLike: 'Ricardo' }
-       *          },
-       *          {
-       *             company.entity.displayName: { iLike: 'Ricardo' }
-       *          },
-       *       ]
-       *    },
-       *    {
-       *       company: { isNull: true },
-       *       AND: [
-       *          {
-       *             user.entity.name: { iLike: 'Ricardo' }
-       *          },
-       *          {
-       *             user.entity.displayName: { iLike: 'Ricardo' }
-       *          },
-       *       ]
-       *    },
-       * ]
-       */
 
       for (const key of Object.keys(whereCondition)) {
 
@@ -279,6 +249,8 @@ export class QueryManager<T> {
       return expressions.filter(expression => expression.length > 0).join(' or ');
    }
 
+   /// GROUP BY
+
    public hasGroupBy(): boolean {
       return (this.groupBy?.length ?? 0) > 0;
    }
@@ -288,6 +260,8 @@ export class QueryManager<T> {
       }
       return '';
    }
+
+   /// ORDER BY
 
    public hasOrderBy(orderBy?: QueryOrder<T>): boolean {
       return Object.keys((orderBy ?? this.orderBy) ?? {}).length > 0;
@@ -331,6 +305,8 @@ export class QueryManager<T> {
 
    }
 
+   /// TAKE
+
    public hasTake(): boolean {
       return (this.take ?? 0) > 0;
    }
@@ -340,6 +316,8 @@ export class QueryManager<T> {
       }
       return '';
    }
+
+   /// LIMIT
 
    public hasLimit(): boolean {
       return (this.limit ?? 0) > 0;
@@ -351,6 +329,8 @@ export class QueryManager<T> {
       return '';
    }
 
+   /// RETURNING
+
    public hasReturning(): boolean {
       return (this.returning?.length ?? 0) > 0;
    }
@@ -361,9 +341,13 @@ export class QueryManager<T> {
       return '';
    }
 
+   /// PARAMETERS
+
    public storeParameter(value: any): number {
       return this.parameters.push(value);
    }
+
+   /// USEFUL METHODS
 
    /**
     * 

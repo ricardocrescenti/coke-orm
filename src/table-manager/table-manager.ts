@@ -160,11 +160,12 @@ export class TableManager<T> {
     */
    public createSelectQuery(findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
       
-      findOptions = this.setFindOptionsDefault({
-         ...findOptions
-      });
+      /// create a copy of findOptions to not modify the original and help to 
+      /// copy it with the standard data needed to find the records
+      findOptions = new FindOptions(findOptions);
+      FindOptions.loadDefaultOrderBy(this.tableMetadata, findOptions);
 
-      /// Obtain the list of columns to be consulted in the main table (if the 
+      /// obtain the list of columns to be consulted in the main table (if the 
       /// list of columns is not informed in the find options, all columns that 
       /// are unrelated will be obtained, or that the relation is in the 
       /// `relations` parameter).
@@ -436,81 +437,6 @@ export class TableManager<T> {
 
          });
 
-   }
-
-   private setFindOptionsDefault(findOptions: FindOptions<T>, hierarchyRelation?: string): FindOptions<T> {
-
-      this.setFindOptionsDefaultOrderBy(findOptions, hierarchyRelation);
-      return findOptions;
-
-   }
-
-   private setFindOptionsDefaultOrderBy(findOptions: FindOptions<T>, hierarchyRelation?: string): void {
-      let orderBy: any = findOptions.orderBy;
-
-      if (!orderBy) {
-
-         orderBy = this.tableMetadata.orderBy ?? {};
-         if (!orderBy) {
-            for (const columnPropertyName of this.tableMetadata.primaryKey?.columns as string[]) {
-               orderBy[columnPropertyName] = 'ASC';         
-            }
-         }
-
-      }
-
-      for (const columnPropertyName in orderBy) {
-         
-         const columnMetadata = this.tableMetadata.columns[columnPropertyName];
-         const relationMetadata: ForeignKeyMetadata | undefined = columnMetadata.relation;
-
-         if (relationMetadata) {
-
-            if (relationMetadata.relationType == 'OneToMany') {
-
-               delete (orderBy as any)[columnPropertyName];
-
-            }
-
-            // let relationName: string = columnMetadata.propertyName;
-            // let hierarchyRelationIndex: number = -1;
-
-            // if (hierarchyRelation) {
-            //    relationName = `${hierarchyRelation}.${relationName}`;                  
-            //    hierarchyRelationIndex = (findOptions.relations?.indexOf(hierarchyRelation) ?? -1) as number;
-            // }
-            
-            // const relationIndex: number = (findOptions.relations?.indexOf(relationName) ?? -1) as number;
-            // if (relationIndex < 0) {
-            //    if (hierarchyRelationIndex >= 0) {
-
-            //       //const previousRelations: string[] = findOptions.relations?.slice(0, hierarchyRelationIndex) as string[];
-            //       //const laterRelations: string[] = findOptions.relations?.slice(hierarchyRelationIndex, findOptions.relations.length) as string[];
-            //       //findOptions.relations = [].concat(previousRelations, [relationName], laterRelations);
-            //       findOptions.relations?.splice(hierarchyRelationIndex, 0, relationName);
-
-            //    } else {
-            //       findOptions.relations?.push(relationName);
-            //    }
-            // }
-            
-            // const relationFindOptions = this.connection.getTableManager(relationMetadata.referencedTable).setFindOptionsDefault({
-            //    orderBy: orderBy[columnPropertyName],
-            //    relations: []
-            // }, relationName);
-
-            // orderBy[columnPropertyName] = relationFindOptions.orderBy;
-
-         }
-
-      }
-
-      findOptions.orderBy = orderBy;
-      // findOptions.orderBy = {};
-      // for (const columnPropertyName in orderBy) {
-      //    const columnDatebaseName: string = this.tableMetadata.columns[columnPropertyName]?.name as string;
-      //    (findOptions.orderBy as any)[columnDatebaseName] = orderBy[columnPropertyName];
-      // }
    }
 
    /**
