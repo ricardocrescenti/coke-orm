@@ -1,5 +1,6 @@
 import { QueryExecutor } from "..";
 import { Connection } from "../connection/connection";
+import { NonExistentObjectOfRelationError } from "../errors/non-existent-object-of-relation";
 import { ColumnMetadata, TableMetadata } from "../metadata";
 import { ForeignKeyMetadata } from "../metadata/foreign-key/foreign-key-metadata";
 import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
@@ -37,11 +38,15 @@ export abstract class CokenModel {
          const columnsChildrenRelation: ColumnMetadata[] = Object.values(tableManager.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation?.relationType == 'OneToMany');
 
          /// go through the columns with the parent relation to load their primary
-         /// keys, if the relation is configured to be inserted, changed or removed, 
-         /// these operations will also be performed, otherwise, if the record 
+         /// keys, if the relation is configured to be inser, update or remove, 
+         /// these operations will be performed, otherwise, if the record 
          /// does not exist, an error will be returned
          for (const columnParentRelation of columnsParentRelation) {
 
+            /// checks if the relation that requested to save the current object 
+            /// is this relation, so as not to save the parent object and to avoid 
+            /// a stack of calls, this occurs when the children of an object are 
+            /// updated
             if (saveOptions?.relation) {
                const referencedTableMetadata: TableMetadata = queryExecutor.connection.tables[columnParentRelation.relation?.referencedTable as string];
                if (Object.values(referencedTableMetadata.columns).some(columnMetadata => columnMetadata.relation?.referencedTable == tableManager.tableMetadata.className && columnMetadata.relation?.referencedColumn == columnParentRelation.propertyName)) {
@@ -49,16 +54,38 @@ export abstract class CokenModel {
                }
             }
 
-            const parentObject: CokenModel = (objectToSave as any)[columnParentRelation.propertyName];
-            if (parentObject instanceof Object) {
+            // let currentParentObject: any;
+            // if (columnParentRelation.relation?.canRemove) {
+            //    currentParentObject = await columnParentRelation.relation.referencedTableManager.findOne({
+            //       select: [columnParentRelation.relation?.column.propertyName]
+            //       where
+            //    });
+            // }
 
+            /// get the parent object and load the primary key to check if it exists
+            const parentObject: CokenModel = (objectToSave as any)[columnParentRelation.propertyName];
+            const parentExists: boolean = await parentObject.loadPrimaryKey(queryExecutor);
+
+            /// if the parent does not exist, and the relation is not configured 
+            /// to insert, an error will be returned
+            if (!parentExists && !columnParentRelation.relation?.canInsert) {
+               throw new NonExistentObjectOfRelationError(columnParentRelation.relation as ForeignKeyMetadata);
+            }
+
+            /// check if the object can be inserted or updated to perform the 
+            /// necessary operation
+            let savedParentObject: any = undefined;
+            if (columnParentRelation.relation?.canInsert || columnParentRelation.relation?.canUpdate) {
                const savedParentObject = await parentObject.save(queryExecutor, { 
                   relation: columnParentRelation.relation,
                   requester: objectToSave
                });
                (objectToSave as any)[columnParentRelation.propertyName] = savedParentObject;//(savedParentObject as any)[columnParentRelation.relation?.referencedColumn as string];
-            
             }
+
+            // if (currentParentObject && (currentParentObject as any)[columnParentRelation.relation?.referencedTableManager.tableMetadata.primaryKey?.columns[0] as string] != (savedParentObject as any)[columnParentRelation.relation?.referencedTableManager.tableMetadata.primaryKey?.columns[0] as string]) {
+            //    await currentParentObject.delete(queryExecutor);
+            // }
 
          }
 
@@ -75,70 +102,114 @@ export abstract class CokenModel {
          const objectExists: boolean = await objectToSave.loadPrimaryKey(queryExecutor, saveOptions?.requester);
          if (objectExists) {
             
-            if (!saveOptions?.relation || (saveOptions.relation.cascade?.indexOf('update') ?? -1) >= 0) {
+            const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(objectToSave, tableManager.tableMetadata.primaryKey?.columns ?? []);
 
-               const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(objectToSave, tableManager.tableMetadata.primaryKey?.columns ?? []);
+            const updatedAtColumn: ColumnMetadata | null = tableManager.tableMetadata.getUpdatedAtColumn();
+            if (updatedAtColumn && columnsToSave.indexOf(updatedAtColumn.propertyName) < 0) {
+               (objectToSave as any)[updatedAtColumn.propertyName] = 'now()';
+            }
 
-               const updatedAtColumn: ColumnMetadata | null = tableManager.tableMetadata.getUpdatedAtColumn();
-               if (updatedAtColumn && columnsToSave.indexOf(updatedAtColumn.propertyName) < 0) {
-                  (objectToSave as any)[updatedAtColumn.propertyName] = 'now()';
-               }
+            const updateQuery: UpdateQueryBuilder<this> = tableManager.createUpdateQuery()
+               .set(objectToSave)
+               .where(where)
+               .returning(columnsToReturn);
+            await updateQuery.execute(queryExecutor);
 
-               const updateQuery: UpdateQueryBuilder<this> = tableManager.createUpdateQuery()
-                  .set(objectToSave)
-                  .where(where)
-                  .returning(columnsToReturn);
-               await updateQuery.execute(queryExecutor);
-
-               if (updatedAtColumn && columnsToSave.indexOf(updatedAtColumn.propertyName) < 0) {
-                  delete (objectToSave as any)[updatedAtColumn.propertyName];
-               }
+            if (updatedAtColumn && columnsToSave.indexOf(updatedAtColumn.propertyName) < 0) {
+               delete (objectToSave as any)[updatedAtColumn.propertyName];
             }
 
          } else {
 
-            if (!saveOptions?.relation || (saveOptions.relation.cascade?.indexOf('insert') ?? -1) >= 0) {
-
-               const insertQuery: InsertQueryBuilder<this> = tableManager.createInsertQuery()
-                  .values(objectToSave)
-                  .returning(columnsToReturn);
-               const insertedObject = await insertQuery.execute(queryExecutor);
-               tableManager.populate(objectToSave, insertedObject.rows[0]);
-
-            } else {
-
-               throw new Error(`O objeto relacionado a coluna ${saveOptions.relation.column} da entidade ${saveOptions.relation.table.className} não existe no banco de dados`);
-
-            }
+            const insertQuery: InsertQueryBuilder<this> = tableManager.createInsertQuery()
+               .values(objectToSave)
+               .returning(columnsToReturn);
+            const insertedObject = await insertQuery.execute(queryExecutor);
+            tableManager.populate(objectToSave, insertedObject.rows[0]);
 
          }
 
-         /// 
+         /// goes through all the child records of the current object to load 
+         /// them, if the relationship is configured to insert, update or remove, 
+         /// these operations will be performed, otherwise, if the record does 
+         /// not exist, an error will be returned
          for (const columnChildRelation of columnsChildrenRelation) {
 
+            /// create the default relation object of the current object with the
+            /// child object, this object will be used to load the current children
+            /// if the relation is configured to remove, and to set  the value on
+            /// the child object when inserting or updating the child object
+            const childRelationColumn: any = {};
+            childRelationColumn[columnChildRelation.relation?.referencedColumn as string] = {};
+            childRelationColumn[columnChildRelation.relation?.referencedColumn as string][tableManager.tableMetadata.primaryKey?.columns[0] as string] = (objectToSave as any)[tableManager.tableMetadata.primaryKey?.columns[0] as string];
+
+            /// if the relation is configured to remove, all current children will
+            /// be loaded, and as they are loaded by the new children list, they
+            /// will be removed from the list of children to be removed, and in
+            /// the end, those left over will be deleted
+            let childrenToRemove: CokenModel[] | undefined = undefined;
+            if (columnChildRelation.relation?.canRemove) {
+               childrenToRemove = await columnChildRelation.relation.referencedTableManager.find({
+                  where: childRelationColumn
+               }, queryExecutor) as any[];
+            }
+
+            /// go through the current children to check if they exist and perform
+            /// the necessary operations on them
             for (const childIndex in (objectToSave as any)[columnChildRelation.propertyName]) {
 
-               /// obter o objeto filho e setar no campo que relaciona ele com o pai, para poder fazer o insert ou update
+               /// set the parent object in the child object, to check if it exists,
+               /// and if necessary insert or update it
                const childObject: CokenModel = (objectToSave as any)[columnChildRelation.propertyName][childIndex];
-               (childObject as any)[columnChildRelation.relation?.referencedColumn as string] = {
-                  id: (objectToSave as any)[tableManager.tableMetadata.primaryKey?.columns[0] as string]
-               };
+               Object.assign(childObject, childRelationColumn);
 
-               /// salva o objeto no banco de dados
-               const savedChildObject = await childObject.save(queryExecutor, { 
-                  relation: columnChildRelation.relation,
-                  requester: objectToSave
-               });
+               /// load the primary key to verify that it exists
+               const childExists: boolean = await childObject.loadPrimaryKey(queryExecutor);
+               
+               /// if the child does not exist, and the relation is not configured 
+               /// to insert, an error will be returned
+               if (!childExists && !columnChildRelation.relation?.canInsert) {
+                  throw new NonExistentObjectOfRelationError(columnChildRelation.relation as ForeignKeyMetadata);
+               }
 
-               delete (savedChildObject as any)[columnChildRelation.relation?.referencedColumn as string];
+               /// check if the object can be inserted or updated to perform the 
+               /// necessary operation
+               if (columnChildRelation.relation?.canInsert || columnChildRelation.relation?.canUpdate) {
 
-               /// atualiza o objeto no pai
-               (objectToSave as any)[columnChildRelation.propertyName][childIndex] = savedChildObject;
+                  /// save the object
+                  const savedChildObject = await childObject.save(queryExecutor, { 
+                     relation: columnChildRelation.relation,
+                     requester: objectToSave
+                  });
 
+                  /// remove the object used to relate it to the current object
+                  delete (savedChildObject as any)[columnChildRelation.relation?.referencedColumn as string];
+
+                  /// updates the object saved in the list of child objects of the 
+                  /// current object so that when saving the entire structure of the 
+                  /// object, a new object with all updated data is returned
+                  (objectToSave as any)[columnChildRelation.propertyName][childIndex] = savedChildObject;
+
+                  /// removes the saved object from the list of objects to be removed
+                  childrenToRemove?.splice(childrenToRemove.findIndex((child: any) => {
+                     return child[columnChildRelation.relation?.referencedTableManager.tableMetadata.primaryKey?.columns[0] as string] == (savedChildObject as any)[columnChildRelation.relation?.referencedTableManager.tableMetadata.primaryKey?.columns[0] as string]
+                  }), 1)
+               
+               }
+
+            }
+
+            /// if the relationship is configured to remove, objects that have 
+            /// not been loaded will be removed
+            if (childrenToRemove) {
+               for (const childToRemove of childrenToRemove) {
+                  await childToRemove.delete(queryExecutor);
+               }
             }
 
          }
 
+         /// returns the current updated object
          return objectToSave;
 
       }

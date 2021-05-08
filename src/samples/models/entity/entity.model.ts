@@ -39,7 +39,7 @@ export class EntityModel extends PatternModel {
 	@OneToMany({ relation: { referencedTable: 'EntityDocumentModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
 	documents?: Array<EntityDocumentModel>;
 
-	@OneToMany({ relation: { referencedTable: 'EntityAddressModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
+	@OneToMany({ relation: { referencedTable: 'EntityAddressModel', referencedColumn: 'entity', cascade: ['insert', 'update','remove'] } })
 	addresses?: Array<EntityAddressModel>;
 
 	@ManyToOne({ nullable: true, relation: { referencedTable: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
@@ -47,38 +47,6 @@ export class EntityModel extends PatternModel {
 
 	constructor(object: any = null) {
 		super(object);
-
-		// if (!Utility.isEmpty(object)) {
-		// 	Object.assign(this, object);
-
-		// 	if (!Utility.isEmpty(object.phones)) {
-		// 		this.phones = new Array<EntityPhoneModel>();
-
-		// 		for (let phone of object.phones) {
-		// 			this.phones.push(this.createEntityPhoneModel(phone));
-		// 		}
-		// 	}
-
-		// 	if (!Utility.isEmpty(object.documents)) {
-		// 		this.documents = new Array<EntityDocumentModel>();
-
-		// 		for (let document of object.documents) {
-		// 			this.documents.push(this.createEntityDocumentModel(document));
-		// 		}
-		// 	}
-
-		// 	if (!Utility.isEmpty(object.addresses)) {
-		// 		this.addresses = new Array<EntityAddressModel>();
-
-		// 		for (let address of object.addresses) {
-		// 			this.addresses.push(this.createEntityAddressModel(address));
-		// 		}
-		// 	}
-
-		// 	if (!Utility.isEmpty(object.photo)) {
-		// 		this.photo = this.createFileModel(object.photo, 'entities/photos');
-		// 	}
-		// }
 	}
 
 	public async loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
