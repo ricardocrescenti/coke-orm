@@ -54,74 +54,74 @@ export async function test() {
 
    let city: CityModel;
 
-   // city = await connection.findOne(CityModel, {
-   //    where: { id: 1 }
-   // });
+   city = await connection.findOne(CityModel, {
+      where: { id: 1 }
+   });
 
-   // city = await connection.getTableManager(CityModel).create({
-   //    name: 'Guaporé',
-   //    code: '4309407',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
+   city = await connection.getTableManager(CityModel).create({
+      name: 'Guaporé',
+      code: '4309407',
+      state: 'RS',
+      country: 'BRA'
+   });
 
-   // await city.loadPrimaryKey(connection);
-   // console.log('loadPrimaryKey', city);
+   await city.loadPrimaryKey(connection);
+   console.log('loadPrimaryKey', city);
 
-   // const cities = await connection.find(CityModel, {
-   //    where: [
-   //       {
-   //          name: { equal: 'Guaporé' },
-   //          AND: [
-   //             { 
-   //                code: { between: ['4309406', '4309407'] },
-   //                state: { equal: 'RS' }
-   //             }
-   //          ]
-   //       },
-   //       {
-   //          name: { equal: 'Serafina' },
-   //          AND: [
-   //             { code: { between: ['4309400', '4309402'] } },
-   //             { state: { equal: 'SC' } }
-   //          ]
-   //       },
-   //       {
-   //          RAW: {
-   //             condition: 'id = :teste',
-   //             params: {
-   //                teste: 1
-   //             }
-   //          }
-   //       }
-   //    ]
-   // });
-   // console.log('find', cities);
+   const cities = await connection.find(CityModel, {
+      where: [
+         {
+            name: { equal: 'Guaporé' },
+            AND: [
+               { 
+                  code: { between: ['4309406', '4309407'] },
+                  state: { equal: 'RS' }
+               }
+            ]
+         },
+         {
+            name: { equal: 'Serafina' },
+            AND: [
+               { code: { between: ['4309400', '4309402'] } },
+               { state: { equal: 'SC' } }
+            ]
+         },
+         // {
+         //    RAW: {
+         //       condition: 'id = :teste',
+         //       params: {
+         //          teste: 1
+         //       }
+         //    }
+         // }
+      ]
+   });
+   console.log('find', cities);
    
-   // city = await connection.getTableManager(CityModel).create({
-   //    name: 'Guaporé',
-   //    code: '4309407',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
-   // await city.save(connection);
+   city = await connection.getTableManager(CityModel).create({
+      name: 'Guaporé',
+      code: '4309407',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.save(connection);
 
-   // city = await connection.getTableManager(CityModel).create({
-   //    name: 'Guaporé 2',
-   //    code: '4309408',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
-   // await city.save(connection);
+   city = await connection.getTableManager(CityModel).create({
+      name: 'Guaporé 2',
+      code: '4309408',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.save(connection);
 
-   // city = await connection.getTableManager(CityModel).create({
-   //    name: 'Guaporé 3',
-   //    code: '4309408',
-   //    state: 'RS',
-   //    country: 'BRA'
-   // });
-   // await city.save(connection);
-   // await city.delete(connection);
+   city = await connection.getTableManager(CityModel).create({
+      name: 'Guaporé 3',
+      code: '4309408',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.save(connection);
+   await city.delete(connection);
 
    const sellerTableManager = connection.getTableManager(SellerModel);
    let seller: SellerModel = sellerTableManager.create({
@@ -215,7 +215,7 @@ export async function test() {
     * 09 - Passar por todo o ORM validando e adicionando os comentários nos métodos
     * 
     * * Find
-    * 01 - Carregar as relações com base na necessidade das condiçoes e ordenação.
+    * 99 - Carregar as relações com base na necessidade das condiçoes e ordenação.
     *      - No TableManager.find adicionar as relações automáticamente
     *      - No QueryBuild validar se falta alguma relação para o caso do cliente montar a query manualmente 
     * 22 - Ver para criar "rules" a nivel de linha, neste caso o cara pode adiconar um SQL ou uma condição JavaScript, permissões.

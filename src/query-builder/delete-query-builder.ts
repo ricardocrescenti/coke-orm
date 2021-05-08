@@ -31,7 +31,7 @@ export class DeleteQueryBuilder<T> extends QueryBuilder<T> {
    }
 
    private mountDeleteFromExpression(): string {
-      return `DELETE FROM ${this.queryManager.mountTableExpression(false)}`;
+      return `DELETE FROM ${this.queryManager.mountTableExpression()}`;
    }
    
    public getQuery(): string {

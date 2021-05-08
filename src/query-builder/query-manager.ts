@@ -3,7 +3,7 @@ import { QueryJoin } from "./types/query-join";
 import { QueryOrder } from "./types/query-order";
 import { QueryTable } from "./types/query-table";
 import { QueryValues } from "./types/query-values";
-import { QueryWhere, QueryWhereRaw } from "./types/query-where";
+import { QueryWhere } from "./types/query-where";
 import { SelectJsonAgg } from "./types/select-json-agg";
 import { SelectJsonBuilder } from "./types/select-json-builder";
 import { Equal } from "./operators/equal";
