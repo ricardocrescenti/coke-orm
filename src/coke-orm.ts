@@ -1,7 +1,10 @@
+const path = require('path');
+const fs = require('fs');
 import { ConnectionOptions } from "./connection/connection-options";
 import { SimpleMap } from  "./common/interfaces/map";
 import { Connection } from "./connection/connection";
 import { ConnectionAlreadyExistsError } from "./errors/connection-already-exists";
+import { ConfigFileNotFoundError } from "./errors/config-file-not-found";
 
 export class CokeORM {
 
@@ -20,17 +23,51 @@ export class CokeORM {
     * 
     * @param connectionOptions 
     */
-   public static async connect(connectionOptions: ConnectionOptions): Promise<Connection> {
-      if (CokeORM.connections[connectionOptions.name ?? 'default'] != null) {
-         throw new ConnectionAlreadyExistsError(connectionOptions.name ?? 'default');
+   public static async connect(connectionOptions?: ConnectionOptions | ConnectionOptions[]): Promise<Connection> {
+      
+      /// if the configuration in the parameter is not informed, it will be 
+      /// tried to load through the configuration file 'coke-orm.config.json' 
+      /// located in the root folder
+      if (!connectionOptions) {
+         connectionOptions = this.loadConfigFile();
       }
 
-      const connection: Connection = new Connection(connectionOptions);
-      if (await connection.connect()) {
-         CokeORM.connections[connectionOptions.name ?? 'default'] = connection;
+      /// standardize the configuration to be an array of configurations
+      if (!Array.isArray(connectionOptions)) {
+         connectionOptions = [connectionOptions];
       }
 
-      return CokeORM.connections[connectionOptions.name ?? 'default'];
+      /// make the connection
+      for (const options of connectionOptions) {
+
+         /// checks if a configuration with the same name already exists
+         if (CokeORM.connections[options.name ?? 'default'] != null) {
+            throw new ConnectionAlreadyExistsError(options.name ?? 'default');
+         }
+
+         /// make the connection
+         const connection: Connection = new Connection(options);
+         if (await connection.connect()) {
+            CokeORM.connections[options.name ?? 'default'] = connection;
+         }
+
+      }
+
+      /// returns the first connection made, the others can be obtained by the 
+      /// `get` method
+      return CokeORM.connections[connectionOptions[0].name ?? 'default'];
+   }
+
+   private static loadConfigFile(): ConnectionOptions | ConnectionOptions[] {
+      const configFileName = 'coke-orm.config.json';
+      
+      let configFilePath = path.join(__dirname, configFileName);
+      if (!fs.existsSync(configFilePath)) {         
+         throw new ConfigFileNotFoundError();
+      }
+      
+      const configFile = require(configFilePath);
+      return configFile;
    }
 
    /**

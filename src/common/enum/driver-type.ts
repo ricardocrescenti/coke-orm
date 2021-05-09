@@ -1,3 +1,1 @@
-export enum DatabaseDriver {
-   Postgres
-}
+export type DatabaseDriver = 'postgres';

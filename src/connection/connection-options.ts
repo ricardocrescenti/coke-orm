@@ -64,7 +64,7 @@ export class ConnectionOptions {
    /**
     * 
     */
-   public readonly tables: Function[];
+   public readonly entities: Function[] | string[];
 
    /**
     * 
@@ -97,7 +97,7 @@ export class ConnectionOptions {
       this.schema = options?.schema;
       this.timezone = options?.timezone;
       this.pool = new PoolOptions(options?.pool);
-      this.tables = options.tables;
+      this.entities = options.entities;
       this.migrations = new MigrationOptions(options?.migrations);
       this.namingStrategy = options.namingStrategy ?? new NamingStrategy();
       this.additional = new AdditionalOptions(options.additional);

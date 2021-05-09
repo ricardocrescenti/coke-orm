@@ -8,14 +8,14 @@ export class Generate {
    /**
     * 
     */
-   public readonly value;
+   public readonly value?: string;
 
-   constructor(strategy: 'sequence' | 'uuid') {
-      this.strategy = strategy;
-      this.value = '';
+   constructor(options: Generate) {
+      this.strategy = options.strategy;
+      this.value = options.value;
    }
 
    toString(): string {
-      return this.value;
+      return this.value as string;
    }
 }

@@ -36,8 +36,11 @@ export class ColumnMetadata extends ColumnOptions<any, ForeignKeyMetadata> {
 
       if (this.default instanceof Generate) {
 
-         Object.assign(this.default, {
-            value: this.table.connection.driver.queryBuilder.generateColumnDefaultValue(this)
+         Object.assign(this, {
+            default: new Generate({ 
+               strategy: this.default.strategy, 
+               value: this.default.value ?? this.table.connection.driver.queryBuilder.generateColumnDefaultValue(this)
+            })
          })
 
       }

@@ -1,3 +1,6 @@
+const path = require('path');
+const fs = require('fs');
+import * as glob from "glob";
 import { DatabaseDriver } from "../common/enum/driver-type";
 import { SimpleMap } from "../common/interfaces/map";
 import { EntityParameter } from "../common/types/table-type";
@@ -117,10 +120,44 @@ export class Connection {
    /**
     * 
     */
-   private loadMetadataSchema() {
+   private getEntities(): Function[] {
+      const entities: Function[] = [];
+
+      for (const entity of this.options.entities) {
+
+         if (entity instanceof Function) {
+            entities.push(entity);
+         } else {
+            
+            const entityPath = path.join(__dirname, '../' + entity);
+            const filesPath: string[] = glob.sync(entityPath);
+
+            for (const filePath of filesPath) {
+               const stat = fs.statSync(filePath);
+               if (stat.isFile()) {
+                  const file = require(filePath);
+                  for (const key of Object.keys(file)) {
+                     if (file.__esModule) {
+                        entities.push(file[key]);
+                     }
+                  }
+               }
+            }
+
+         }
+
+      }
+
+      return entities;
+   }
+
+   /**
+    * 
+    */
+   private loadMetadataSchema(): void {
       console.time('loadMetadataSchema');
 
-      const tablesOptions: TableOptions[] = DecoratorStore.getTables(this.options.tables);
+      const tablesOptions: TableOptions[] = DecoratorStore.getTables(this.getEntities());
       const namingStrategy: NamingStrategy = this.options.namingStrategy as NamingStrategy;
 
       const tableRelations: SimpleMap<SimpleMap<ColumnMetadata>> = new SimpleMap<SimpleMap<ColumnMetadata>>();
@@ -353,6 +390,7 @@ export class Connection {
     */
    public getTableManager<T>(table: EntityParameter<T>): TableManager<T> {
 
+      const parameterTable: EntityParameter<T> = table
       if (typeof(table) == 'string') {
          table = this.tables[table as string];
       } else if (table instanceof Function) {
@@ -360,7 +398,7 @@ export class Connection {
       }
 
       if (!table) {
-         throw new Error(`Não foi possível obter o TableManager`);
+         throw new TableMetadataNotLocated((parameterTable as any)?.name ?? parameterTable);
       }
       
       if (!this.tableManagers[table.className]) {
@@ -513,7 +551,6 @@ export class Connection {
          await queryExecutor.beginTransaction();
 
          for (const sql of sqlsMigrations) {
-            console.info(sql);
             await queryExecutor.query(sql);
          }
 
@@ -541,7 +578,7 @@ export class Connection {
     */
    private getDriver(databaseDriver: DatabaseDriver): Driver {
       switch (databaseDriver) {
-         case DatabaseDriver.Postgres: return new PostgresDriver(this.options);
+         case 'postgres': return new PostgresDriver(this.options);
          default: throw Error('The requested driver is invalid');
       }
    }

@@ -12,43 +12,40 @@ import { EntityPhoneModel } from "./models/entity/entity-phone.model";
 import { EntityModel } from "./models/entity/entity.model";
 import { SellerModel } from "./models/entity/seller.model";
 import { FileModel } from "./models/file/file.model";
+import { PatternModel } from "./models/pattern.model";
 import { PriceListModel } from "./models/product/price-list.model";
 
 export async function test() {
 
    console.log('Connecting', new Date().toLocaleString());
 
-   const connection: Connection = await CokeORM.connect({
-      // driver: DatabaseDriver.Postgres,
-      // host: '34.122.198.83',
-      // port: 9815,
-      // user: 'admin',
-      // password: 'd3v@Master*',
-      // database: 'hant-dev'
-      driver: DatabaseDriver.Postgres,
-      host: 'localhost',
-      port: 5432,
-      user: 'devmaster',
-      password: 'supadm',
-      database: 'devmaster',
-      tables: [
-         CarrierModel,
-         CityModel,
-         CollaboratorModel,
-         CompanyModel,
-         CustomerModel,
-         EntityAddressModel,
-         EntityDocumentModel,
-         EntityPhoneModel,
-         EntityModel,
-         SellerModel,
-         FileModel,
-         PriceListModel
-      ],
-      migrations: {
-         synchronize: true
-      }
-   });
+   const connection: Connection = await CokeORM.connect();
+   // const connection: Connection = await CokeORM.connect({
+   //    driver: 'postgres',
+   //    host: 'localhost',
+   //    port: 5432,
+   //    user: 'devmaster',
+   //    password: 'supadm',
+   //    database: 'devmaster',
+   //    entities: [
+   //       CarrierModel,
+   //       CityModel,
+   //       CollaboratorModel,
+   //       CompanyModel,
+   //       CustomerModel,
+   //       EntityAddressModel,
+   //       EntityDocumentModel,
+   //       EntityPhoneModel,
+   //       EntityModel,
+   //       SellerModel,
+   //       FileModel,
+   //       PatternModel,
+   //       PriceListModel
+   //    ],
+   //    migrations: {
+   //       synchronize: true
+   //    }
+   // });
 
    console.log('Connected', new Date().toLocaleString());
 

@@ -6,14 +6,14 @@ import { CokenModel } from "../../table-manager/coken-model";
 export abstract class PatternModel extends CokenModel {
 
    @PrimaryColumn({ 
-      default: new Generate('sequence')
+      default: new Generate({ strategy: 'sequence' })
    })
    public id?: bigint;
 
    @Column({ 
       type: 'uuid', 
       nullable: false,
-      default: new Generate('uuid') 
+      default: new Generate({ strategy: 'uuid' }) 
    })
    public uuid?: string;
 
