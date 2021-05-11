@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 import * as glob from "glob";
+import { number } from "yargs";
 import { DatabaseDriver } from "../common/enum/driver-type";
 import { SimpleMap } from "../common/interfaces/map";
 import { EntityParameter } from "../common/types/table-type";
@@ -13,6 +14,8 @@ import { AlreadyConnectedError, ColumnMetadataNotLocated, ReferencedColumnMetada
 import { TableHasNoPrimaryKey } from "../errors/table-has-no-primary-key";
 import { ColumnMetadata, ColumnOptions, EventMetadata, EventType, ForeignKeyMetadata, ForeignKeyOptions, IndexMetadata, TableMetadata, TableOptions, UniqueMetadata, UniqueOptions } from "../metadata";
 import { PrimaryKeyMetadata } from "../metadata/primary-key/primary-key-metadata";
+import { MigrationInterface } from "../migration/migration.interface";
+import { Migration } from "../migration/migration.model";
 import { NamingStrategy } from "../naming-strategy/naming-strategy";
 import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
 import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
@@ -20,10 +23,12 @@ import { SelectQueryBuilder } from "../query-builder/select-query-builder";
 import { QueryTable } from "../query-builder/types/query-table";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
 import { QueryExecutor } from "../query-executor/query-executor";
+import { TableSchema } from "../schema/table-schema";
 import { FindOptions } from "../table-manager/options/find-options";
 import { SaveOptions } from "../table-manager/options/save-options";
 import { TableManager } from "../table-manager/table-manager";
 import { TableValues } from "../table-manager/types/table-values";
+import { OrmUtils } from "../utils/orm-utils";
 import { ConnectionOptions } from "./connection-options";
 
 export class Connection {
@@ -68,10 +73,14 @@ export class Connection {
     */
    public readonly activeQueryExecutors: QueryExecutor[] = [];
 
+   /**
+    * 
+    * @param options 
+    */
    constructor(options: ConnectionOptions) {
-      this.options = new ConnectionOptions(options);
+      this.options = (options instanceof ConnectionOptions ? options : new ConnectionOptions(options));
       this.driver = this.getDriver(options.driver);
-      this.loadMetadataSchema();
+      this.loadMetadata();
    }
 
    /**
@@ -129,17 +138,14 @@ export class Connection {
             entities.push(entity);
          } else {
             
-            const entityPath = path.join(__dirname, '../' + entity);
+            const entityPath = path.join(OrmUtils.rootPath(this.connection.options), entity);
             const filesPath: string[] = glob.sync(entityPath);
 
             for (const filePath of filesPath) {
-               const stat = fs.statSync(filePath);
-               if (stat.isFile()) {
-                  const file = require(filePath);
-                  for (const key of Object.keys(file)) {
-                     if (file.__esModule) {
-                        entities.push(file[key]);
-                     }
+               const file = require(filePath);
+               for (const key of Object.keys(file)) {
+                  if (file.__esModule) {
+                     entities.push(file[key]);
                   }
                }
             }
@@ -154,10 +160,13 @@ export class Connection {
    /**
     * 
     */
-   private loadMetadataSchema(): void {
+   private loadMetadata(): void {
       console.time('loadMetadataSchema');
 
-      const tablesOptions: TableOptions[] = DecoratorStore.getTables(this.getEntities());
+      const entitiesToLoad: Function[] = this.getEntities();
+      entitiesToLoad.unshift(Migration);
+
+      const tablesOptions: TableOptions[] = DecoratorStore.getTables(entitiesToLoad);
       const namingStrategy: NamingStrategy = this.options.namingStrategy as NamingStrategy;
 
       const tableRelations: SimpleMap<SimpleMap<ColumnMetadata>> = new SimpleMap<SimpleMap<ColumnMetadata>>();
@@ -169,7 +178,7 @@ export class Connection {
          const tableMetadata: TableMetadata = new TableMetadata({
             ...tableOption,
             connection: this,
-            name: namingStrategy.tableName(tableOption)
+            name: (tableOption.target == Migration ? this.options.migrations?.tableName : namingStrategy.tableName(tableOption))
          });
          this.tables[tableOption.target.name] = tableMetadata;        
 
@@ -186,7 +195,7 @@ export class Connection {
             let referencedColumnOptions: ColumnOptions | undefined;
             let referencedDefaultColumnOptions: DefaultColumnOptions | undefined;
             if (columnOption.relation?.relationType == 'ManyToOne' || columnOption.relation?.relationType == 'OneToOne') {
-               
+
                const referencedTableOptions: TableOptions | undefined = tablesOptions.find((table) => table.className == columnOption.relation?.referencedTable)
                if (!referencedTableOptions) {
                   throw new ReferencedTableMetadataNotLocated(tableMetadata.className, columnOption.relation.referencedTable);
@@ -416,7 +425,7 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public async find<T>(table: EntityParameter<T>, findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
+   public async find<T>(table: EntityParameter<T>, findOptions?: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
       return this.getTableManager<T>(table).find(findOptions, queryExecutor);
    }
 
@@ -538,7 +547,7 @@ export class Connection {
    public async syncronize(): Promise<void> {
 
       /// obtain the query list with the changes to be made in the database
-      const sqlsMigrations: string[] = await this.driver.generateSQLsMigrations(this);
+      const sqlsMigrations: string[] = await this.driver.generateSQLsMigrations();
       if (sqlsMigrations.length == 0) {
          return;
       }
@@ -566,9 +575,95 @@ export class Connection {
 
    /**
     * 
+    * @returns 
+    */
+   public async loadPendingMigrations(): Promise<MigrationInterface[]> {
+      const migrations: MigrationInterface[] = [];
+
+      const migrationTableName: string = this.tables['Migration'].name as string;
+      const tablesSchema: SimpleMap<TableSchema> = await this.driver.loadSchema([migrationTableName]);
+      const performedMigrations: Migration[] = (tablesSchema[migrationTableName] != null ? await this.find(Migration) : []);
+
+      const migrationsPath = path.join(OrmUtils.rootPath(this.connection.options), this.options.migrations?.directory, '*.js');
+      const filesPath: string[] = glob.sync(migrationsPath);
+
+      for (const filePath of filesPath) {
+         const file = require(filePath);
+         for (const key of Object.keys(file)) {
+            if (file.__esModule) {
+
+               if (performedMigrations.findIndex(migration => migration.name == file[key].name) < 0) {
+                  migrations.push(file[key]);
+               }
+
+            }
+         }
+      }
+
+      return migrations;
+   }
+
+   /**
+    * 
     */
    public async runMigrations(): Promise<void> {
 
+      const migrations: MigrationInterface[] = await this.loadPendingMigrations();
+      if (migrations.length > 0) {
+
+         const queryExecutor: QueryExecutor = await this.createQueryExecutor();
+         try {
+            
+            if (this.options.migrations?.transactionMode == 'all') {
+               await queryExecutor.beginTransaction();
+            }
+
+            for (const migration of migrations) {
+
+               if (this.options.migrations?.transactionMode == 'each') {
+                  await queryExecutor.beginTransaction();
+               }
+
+               const instance = new (migration as any)();
+               await instance.up(queryExecutor);
+
+               const migrationCreationDate: string = (instance.constructor.name as string).substring(instance.constructor.name.length - 18, instance.constructor.name.length)
+               await this.getTableManager(Migration).save({
+                  name: instance.constructor.name,
+                  createdAt: new Date(
+                     Number.parseInt(migrationCreationDate.substring(0, 4)),
+                     (Number.parseInt(migrationCreationDate.substring(4, 6)) - 1),
+                     Number.parseInt(migrationCreationDate.substring(6, 8)),
+                     Number.parseInt(migrationCreationDate.substring(8, 10)),
+                     Number.parseInt(migrationCreationDate.substring(10, 12)),
+                     Number.parseInt(migrationCreationDate.substring(12, 14)),
+                     Number.parseInt(migrationCreationDate.substring(14, 18)),
+                  )
+               }, {
+                  queryExecutor: queryExecutor
+               });
+               
+               if (this.options.migrations?.transactionMode == 'each') {
+                  await queryExecutor.commitTransaction();
+               }
+
+            }
+
+            if (this.options.migrations?.transactionMode == 'all') {
+               await queryExecutor.commitTransaction();
+            }
+
+         } catch (error) {
+
+            if (queryExecutor.inTransaction) {
+               await queryExecutor.rollbackTransaction();
+            }
+            throw error;
+
+         }
+
+      }
+   
    }
 
    /**
@@ -578,7 +673,7 @@ export class Connection {
     */
    private getDriver(databaseDriver: DatabaseDriver): Driver {
       switch (databaseDriver) {
-         case 'postgres': return new PostgresDriver(this.options);
+         case 'postgres': return new PostgresDriver(this);
          default: throw Error('The requested driver is invalid');
       }
    }

@@ -15,6 +15,11 @@ export abstract class Driver {
    /**
     * 
     */
+   public readonly connection: Connection;
+
+   /**
+    * 
+    */
    public readonly connectionOptions: ConnectionOptions;
 
    /**
@@ -52,8 +57,9 @@ export abstract class Driver {
     */
    public readonly defaultColumnOptionsByPropertyType: Map<string, DefaultColumnOptions>;
 
-   constructor(connectionOptions: ConnectionOptions) {
-      this.connectionOptions = connectionOptions;
+   constructor(connection: Connection) {
+      this.connection = connection;
+      this.connectionOptions = connection.options;
       this.queryBuilder = this.getQueryBuilder();
       this.supportedColumnsTypes = this.getSupportedColumnsType();
       this.columnTypesWithLength = this.getColumnsTypeWithLength();
@@ -102,13 +108,13 @@ export abstract class Driver {
    /**
     * 
     */
-   protected abstract loadSchema(connection: Connection): Promise<SimpleMap<TableSchema>>;
+   public abstract loadSchema(tablesToLoad?: string[]): Promise<SimpleMap<TableSchema>>;
 
    /**
     * 
     * @param connection 
     */
-   public abstract generateSQLsMigrations(connection: Connection): Promise<string[]>;
+   public abstract generateSQLsMigrations(): Promise<string[]>;
 
    /**
     * 

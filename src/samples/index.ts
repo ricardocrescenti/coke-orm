@@ -272,16 +272,24 @@ export async function test() {
          'entity.phones',
          'entity.photo'
       ],
-      where: {
-         entity: {
-            photo: {
-               privateUrl: 'Ricardo Crescenti'
-            },
-            addresses: {
-               isDefault: true
-            } as any
+      where: [
+         {
+            entity: {
+               photo: {
+                  privateUrl: 'Ricardo Crescenti'
+               },
+               addresses: {
+                  isDefault: true
+               } as any
+            }
+         },
+         {
+            id: 6
+         },
+         {
+            id: 12
          }
-      },
+      ],
       roles: [
          'public'
       ],

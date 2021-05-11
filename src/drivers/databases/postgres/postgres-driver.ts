@@ -1,5 +1,4 @@
 import { Driver } from "../../driver";
-import { ConnectionOptions } from "../../../connection/connection-options";
 import { SimpleMap } from "../../../common/interfaces/map";
 import { DefaultColumnOptions } from "../../options/default-column-options";
 import { QueryExecutor } from "../../../query-executor/query-executor";
@@ -29,22 +28,22 @@ export class PostgresDriver extends Driver {
    /**
     * 
     */
-   constructor(connectionOptions: ConnectionOptions) {
-      super(connectionOptions);
+   constructor(connection: Connection) {
+      super(connection);
 
       this.postgres = require("pg");
 
       this.client = new this.postgres.Pool({
          application_name: 'CokeORM',
-         host: connectionOptions.host,
-         port: connectionOptions.port,
-         user: connectionOptions.user,
-         password: connectionOptions.password,
-         database: connectionOptions.database,
-         connectionString: connectionOptions.connectionString,
-         max: connectionOptions.pool?.max as number,
-         min: connectionOptions.pool?.min as number,
-         connectionTimeoutMillis: connectionOptions.pool?.connectionTimeout,
+         host: connection.options.host,
+         port: connection.options.port,
+         user: connection.options.user,
+         password: connection.options.password,
+         database: connection.options.database,
+         connectionString: connection.options.connectionString,
+         max: connection.options.pool?.max as number,
+         min: connection.options.pool?.min as number,
+         connectionTimeoutMillis: connection.options.pool?.connectionTimeout,
       });
    }
    
@@ -89,12 +88,12 @@ export class PostgresDriver extends Driver {
      });
    }
    
-   protected async loadSchema(connection: Connection): Promise<SimpleMap<TableSchema>> {
+   public async loadSchema(tablesToLoad?: string[]): Promise<SimpleMap<TableSchema>> {
       const tables: SimpleMap<TableSchema> = new SimpleMap<TableSchema>();
 
       console.time('schema query');
 
-      const informationSchema = await connection.query(`
+      const informationSchema = await this.connection.query(`
          SELECT t.table_schema, t.table_name, c.columns
          FROM information_schema.tables t
          LEFT JOIN (
@@ -141,7 +140,8 @@ export class PostgresDriver extends Driver {
             GROUP BY c.table_schema, c.table_name 
             ORDER BY c.table_schema, c.table_name) c on (c.table_schema = t.table_schema and c.table_name = t.table_name)
          
-         WHERE t.table_schema = '${connection.options.schema ?? 'public'}'
+         WHERE t.table_schema = '${this.connection.options.schema ?? 'public'}'
+         ${(tablesToLoad ?? []).length > 0 ? `AND t.table_name in ('${tablesToLoad?.join(`','`)}')` : ''}
          ORDER BY t.table_name`);
       
       console.timeLog('schema query');
@@ -273,11 +273,11 @@ export class PostgresDriver extends Driver {
       return tables;
    }
 
-   private async loadExtensions(connection: Connection): Promise<string[]> {
+   private async loadExtensions(): Promise<string[]> {
 
       console.time('loadExtensions');
 
-      const extensions = await connection.query(`
+      const extensions = await this.connection.query(`
          SELECT name 
          FROM pg_available_extensions
          WHERE installed_version is not null
@@ -288,10 +288,10 @@ export class PostgresDriver extends Driver {
       return extensions.rows.map((row: any) => row.name);
    }
 
-   public async generateSQLsMigrations(connection: Connection): Promise<string[]> {
+   public async generateSQLsMigrations(): Promise<string[]> {
 
-      const tablesSchema = await this.loadSchema(connection);
-      const extensions = await this.loadExtensions(connection);
+      const tablesSchema = await this.loadSchema();
+      const extensions = await this.loadExtensions();
 
       const sqlMigrationsCreateExtension: string[] = [];
       const sqlMigrationsCreateSequence: string[] = [];
@@ -321,26 +321,26 @@ export class PostgresDriver extends Driver {
 
       //const columnsVarifyHaveUnique: any = {};
       
-      for (const tableMetadata of Object.values(connection.tables)) {
+      for (const tableMetadata of Object.values(this.connection.tables)) {
 
          const tableSchema: TableSchema = tablesSchema[tableMetadata.name as string];
          if (!tableSchema) {
 
             // create new table
-            sqlMigrationsCreateTable.push(connection.driver.queryBuilder.createTableFromMetadata(tableMetadata));
+            sqlMigrationsCreateTable.push(this.connection.driver.queryBuilder.createTableFromMetadata(tableMetadata));
 
             // get all the columns that need to create sequence to create sequences.
             for (const columnMetadata of Object.values(tableMetadata.columns).filter(columnMetadata => columnMetadata.default instanceof Generate)) {
 
                if (columnMetadata.default.strategy == 'sequence') {
                
-                  sqlMigrationsCreateSequence.push(connection.driver.queryBuilder.createSequenceFromMetadata(columnMetadata));
-                  sqlMigrationsAssociateSequences.push(connection.driver.queryBuilder.associateSequenceFromMetadata(columnMetadata));
+                  sqlMigrationsCreateSequence.push(this.connection.driver.queryBuilder.createSequenceFromMetadata(columnMetadata));
+                  sqlMigrationsAssociateSequences.push(this.connection.driver.queryBuilder.associateSequenceFromMetadata(columnMetadata));
                
                } else if (columnMetadata.default.strategy == 'uuid') {
 
                   if (extensions.indexOf('uuid-ossp') < 0) {
-                     sqlMigrationsCreateExtension.push(connection.driver.queryBuilder.createUUIDExtension());
+                     sqlMigrationsCreateExtension.push(this.connection.driver.queryBuilder.createUUIDExtension());
                      extensions.push('uuid-ossp');
                   }
 
@@ -365,14 +365,14 @@ export class PostgresDriver extends Driver {
                if (!columnSchema) {
 
                   // create new column
-                  sqlMigrationsCreateColumns.push(connection.driver.queryBuilder.createColumnFromMetadata(columnMetadata));
+                  sqlMigrationsCreateColumns.push(this.connection.driver.queryBuilder.createColumnFromMetadata(columnMetadata));
                
                } else {
 
                   if (columnMetadata.type != columnSchema.type && !this.allowChangeColumnType(columnSchema.type, columnMetadata.type as string)) {
 
-                     sqlMigrationsDropColumns.push(connection.driver.queryBuilder.deleteColumnFromSchema(tableMetadata, columnSchema));
-                     sqlMigrationsCreateColumns.push(connection.driver.queryBuilder.createColumnFromMetadata(columnMetadata));
+                     sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.deleteColumnFromSchema(tableMetadata, columnSchema));
+                     sqlMigrationsCreateColumns.push(this.connection.driver.queryBuilder.createColumnFromMetadata(columnMetadata));
                      
                   } else if ((columnMetadata.type != columnSchema.type) ||
                      (columnMetadata.length != null && columnMetadata.length != columnSchema.length) || 
@@ -381,7 +381,7 @@ export class PostgresDriver extends Driver {
                      ((columnMetadata.default?.value ?? columnMetadata.default) != columnSchema.default)) {
 
                      // alter column
-                     for (const alterColumnSql of connection.driver.queryBuilder.alterColumnFromMatadata(columnMetadata, columnSchema)) {
+                     for (const alterColumnSql of this.connection.driver.queryBuilder.alterColumnFromMatadata(columnMetadata, columnSchema)) {
                         sqlMigrationsAlterColumns.push(alterColumnSql);
                      };
 
@@ -396,19 +396,19 @@ export class PostgresDriver extends Driver {
 
                   if (columnMetadata.default.strategy == 'sequence') {
                      
-                     const sequenceName: string = connection.options.namingStrategy?.sequenceName(columnMetadata) as string;
+                     const sequenceName: string = this.connection.options.namingStrategy?.sequenceName(columnMetadata) as string;
                      
                      // verify that the sequence is not created in the database, to create it
                      if (columnSchema.sequences.indexOf(sequenceName) < 0) {
-                        sqlMigrationsCreateSequence.push(connection.driver.queryBuilder.createSequenceFromMetadata(columnMetadata));
-                        sqlMigrationsAssociateSequences.push(connection.driver.queryBuilder.associateSequenceFromMetadata(columnMetadata));
+                        sqlMigrationsCreateSequence.push(this.connection.driver.queryBuilder.createSequenceFromMetadata(columnMetadata));
+                        sqlMigrationsAssociateSequences.push(this.connection.driver.queryBuilder.associateSequenceFromMetadata(columnMetadata));
                      }
 
                      if (columnSchema) {
 
                         // check for other created sequences related to this column to delete them and leave only one
                         for (const sequenceNameSchema in columnSchema.sequences.filter(sequenceNameSchema => sequenceNameSchema != sequenceName)) {
-                           sqlMigrationsDropSequence.push(connection.driver.queryBuilder.deleteSequenceFromName(sequenceNameSchema));
+                           sqlMigrationsDropSequence.push(this.connection.driver.queryBuilder.deleteSequenceFromName(sequenceNameSchema));
                         }
 
                      }
@@ -416,7 +416,7 @@ export class PostgresDriver extends Driver {
                   } else if (columnMetadata.default.strategy == 'uuid') {
 
                      if (extensions.indexOf('uuid-ossp') < 0) {
-                        sqlMigrationsCreateExtension.push(connection.driver.queryBuilder.createUUIDExtension());
+                        sqlMigrationsCreateExtension.push(this.connection.driver.queryBuilder.createUUIDExtension());
                         extensions.push('uuid-ossp');
                      }
 
@@ -427,40 +427,40 @@ export class PostgresDriver extends Driver {
             }
 
             // delete columns
-            if (connection.options.migrations?.deleteColumns) {
+            if (this.connection.options.migrations?.deleteColumns) {
                for (const columnName of pendingColumnsSchema) {
                   const columnSchema = tableSchema.columns[columnName];
 
                   // delete the foreign keys related to this field
                   for (const foreignKeyName in columnSchema.foreignKeys) {
-                     sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]));
+                     sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]));
                      deletedForeignKeys.push(foreignKeyName);
                   }
 
                   // delete the uniques related to this field
                   for (const uniqueName in columnSchema.uniques) {
-                     sqlMigrationsDropUniques.push(connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]));
+                     sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]));
                      deletedUniques.push(uniqueName);
                   }
 
                   // delete the indexs related to this field
                   for (const indexName in columnSchema.indexs) {
-                     sqlMigrationsDropIndex.push(connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]));
+                     sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]));
                      deletedIndex.push(indexName);
                   }
 
-                  sqlMigrationsDropColumns.push(connection.driver.queryBuilder.deleteColumnFromSchema(tableMetadata, columnSchema));
+                  sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.deleteColumnFromSchema(tableMetadata, columnSchema));
                }
             }
 
             // check primary key
             if (tableMetadata.primaryKey && !tableSchema.primaryKey) {
-               sqlMigrationsCreatePrimaryKeys.push(connection.driver.queryBuilder.createPrimaryKeyFromMetadata(tableMetadata, true));
+               sqlMigrationsCreatePrimaryKeys.push(this.connection.driver.queryBuilder.createPrimaryKeyFromMetadata(tableMetadata, true));
             } else if (!tableMetadata.primaryKey && tableSchema.primaryKey) {
-               sqlMigrationsDropPrimaryKeys.push(connection.driver.queryBuilder.deletePrimaryKeyFromSchema(tableMetadata));
+               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.deletePrimaryKeyFromSchema(tableMetadata));
             } else if (tableMetadata.primaryKey && tableSchema.primaryKey && (tableMetadata.primaryKey.columns.length != tableSchema.primaryKey.columns.length || tableMetadata.primaryKey.columns.every((columnMetadata) => (tableSchema.primaryKey?.columns?.indexOf(tableMetadata.columns[columnMetadata].name as string) ?? -1)))) {
-               sqlMigrationsCreatePrimaryKeys.push(connection.driver.queryBuilder.createPrimaryKeyFromMetadata(tableMetadata, true));
-               sqlMigrationsDropPrimaryKeys.push(connection.driver.queryBuilder.deletePrimaryKeyFromSchema(tableMetadata));
+               sqlMigrationsCreatePrimaryKeys.push(this.connection.driver.queryBuilder.createPrimaryKeyFromMetadata(tableMetadata, true));
+               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.deletePrimaryKeyFromSchema(tableMetadata));
             }
 
             // check uniques
@@ -471,7 +471,7 @@ export class PostgresDriver extends Driver {
                const uniqueSchema: UniqueSchema = tableSchema.uniques[uniqueMetadata.name as string];
                
                if (!uniqueSchema || deletedUniques.indexOf(uniqueSchema.name) >= 0) {
-                  sqlMigrationsCreateUniques.push(connection.driver.queryBuilder.createUniqueFromMetadata(uniqueMetadata, true));
+                  sqlMigrationsCreateUniques.push(this.connection.driver.queryBuilder.createUniqueFromMetadata(uniqueMetadata, true));
                }
    
                if (pendingUniquesSchema.indexOf(uniqueMetadata.name as string) >= 0) {
@@ -481,7 +481,7 @@ export class PostgresDriver extends Driver {
    
             // delete uniques
             for (const uniqueName of pendingUniquesSchema) {
-               sqlMigrationsDropUniques.push(connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]))
+               sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]))
             }
 
          }
@@ -495,9 +495,9 @@ export class PostgresDriver extends Driver {
 
             if (!foreignKeySchema || foreignKeyMetadata.onUpdate != foreignKeySchema.onUpdate || foreignKeyMetadata.onDelete != foreignKeySchema.onDelete || deletedForeignKeys.indexOf(foreignKeySchema.name) >= 0) {
                if (foreignKeySchema) {
-                  sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, foreignKeySchema));
+                  sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, foreignKeySchema));
                }
-               sqlMigrationsCreateForeignKeys.push(connection.driver.queryBuilder.createForeignKeyFromMetadata(foreignKeyMetadata));
+               sqlMigrationsCreateForeignKeys.push(this.connection.driver.queryBuilder.createForeignKeyFromMetadata(foreignKeyMetadata));
             }
 
             if (pendingForeignKeysSchema.indexOf(foreignKeyMetadata.name as string) >= 0) {
@@ -507,7 +507,7 @@ export class PostgresDriver extends Driver {
 
          // delete foreign keys
          for (const foreignKeyName of pendingForeignKeysSchema) {
-            sqlMigrationsDropForeignKeys.push(connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]))
+            sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]))
          }
 
          // check indexs
@@ -518,7 +518,7 @@ export class PostgresDriver extends Driver {
             const indexSchema: IndexSchema = tableSchema?.indexs[indexMetadata.name as string];
             
             if (!indexSchema || deletedIndex.indexOf(indexSchema.name) >= 0) {
-               sqlMigrationsCreateIndexs.push(connection.driver.queryBuilder.createIndexFromMetadata(indexMetadata));
+               sqlMigrationsCreateIndexs.push(this.connection.driver.queryBuilder.createIndexFromMetadata(indexMetadata));
             }
 
             if (pendingIndexsSchema.indexOf(indexMetadata.name as string) >= 0) {
@@ -528,7 +528,7 @@ export class PostgresDriver extends Driver {
 
          // delete indexs
          for (const indexName of pendingIndexsSchema) {
-            sqlMigrationsDropIndex.push(connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]))
+            sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]))
          }
 
       }

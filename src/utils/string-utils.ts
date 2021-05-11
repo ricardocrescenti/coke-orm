@@ -1,6 +1,8 @@
 import shajs from "sha.js";
 
 export class StringUtils {
+   private constructor() {}
+
    /**
     * Converts string into camelCase.
     *

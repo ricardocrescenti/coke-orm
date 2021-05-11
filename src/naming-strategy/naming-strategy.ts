@@ -71,6 +71,23 @@ export class NamingStrategy {
       return `${columnMetadata.propertyName}_${columnMetadata.relation?.referencedTable}`;
    }
 
+   migrationName(name: string, date: Date, forFile: boolean): string {
+      const formatedDate = (
+			date.getFullYear().toString().padStart(4, '0') + '-' +
+			(date.getMonth() + 1).toString().padStart(2, '0') + '-' +
+			date.getDate().toString().padStart(2, '0') + '-' +
+			date.getHours().toString().padStart(2, '0') + '-' +
+			date.getMinutes().toString().padStart(2, '0') + '-' +
+			date.getSeconds().toString().padStart(2, '0') + '-' +
+			date.getMilliseconds().toString().padStart(4, '0'));
+      const formatedName = StringUtils.camelCase(name, true);
+
+      return (forFile 
+         ? formatedDate + '-' + formatedName 
+         : (formatedName.replace(new RegExp('-', 'g'), '') + formatedDate)
+      );
+   }
+
    /** ABAIXO - METODOS NÃO USADOS */
 
 

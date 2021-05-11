@@ -6,9 +6,10 @@
    "password": "supadm",
    "database": "devmaster",
    "entities": [
-      "/samples/models/**.*"
+      "samples/models/**/*.model.js"
    ],
    "migrations": {
-      "synchronize": true
+      "synchronize": false,
+      "directory": "samples/migrations"
    }
 }

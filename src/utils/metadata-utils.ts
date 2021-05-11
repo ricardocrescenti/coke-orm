@@ -2,6 +2,7 @@
  * Metadata args utility functions.
  */
 export class MetadataUtils {
+    private constructor() {}
 
     /**
      * Gets given's entity all inherited classes.

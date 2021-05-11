@@ -68,5 +68,5 @@
   },
   "include": [
     "src"
-, "samples/inventory_control/test.ts"  ]
+  ]
 }

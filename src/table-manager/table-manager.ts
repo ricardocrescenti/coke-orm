@@ -99,7 +99,7 @@ export class TableManager<T> {
     * @param tableManager 
     * @returns 
     */
-   public async find(findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
+   public async find(findOptions?: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
 
       /// create the query
       const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions, 0);
@@ -158,7 +158,7 @@ export class TableManager<T> {
     * @param tableManager 
     * @returns 
     */
-   public createSelectQuery(findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
+   public createSelectQuery(findOptions?: FindOptions<T>, level?: number): SelectQueryBuilder<T> {
       
       /// create a copy of findOptions to not modify the original and help to 
       /// copy it with the standard data needed to find the records
