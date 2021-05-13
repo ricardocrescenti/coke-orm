@@ -180,15 +180,18 @@ export class QueryManager<T> {
       return '';
    }
    private decodeWhereConditions(queryManager: QueryManager<any>, whereConditions: QueryWhere<T>[]): string {
+      let expressions: string[] = [];
+
       if (!Array.isArray(whereConditions)) {
          whereConditions = [whereConditions];
       }
 
-      const expressions: string[] = [];
       for (const whereCondition of whereConditions) {
          expressions.push(this.decodeWhereCondition(queryManager, whereCondition));
       }
-      return (expressions.filter(expression => expression.length > 0).length > 0 ? `(${expressions.join(' or ')})` : '');
+      
+      expressions = expressions.filter(expression => expression.length > 0);
+      return (expressions.length > 0 ? `(${expressions.join(' or ')})` : '');
    }
    private decodeWhereCondition(queryManager: QueryManager<any>, whereCondition: QueryWhere<any>): string {
       let expressions: string[] = [];
@@ -196,33 +199,28 @@ export class QueryManager<T> {
       for (const key of Object.keys(whereCondition)) {
 
          if (key == 'RAW') {
+            
             const rawOperator = (whereCondition as any)[key];
             expressions.push(this.decodeWhereOperators(queryManager, rawOperator.condition, { RAW: rawOperator.params }));
+         
          } else if (key == 'AND') {
+            
             const andConditions = (whereCondition as any)['AND'];
             expressions.push(this.decodeWhereConditions(queryManager, (Array.isArray(andConditions) ? andConditions : [andConditions]) as QueryWhere<any>[]));
+         
          } else {
 
             const relationMetadata: ForeignKeyMetadata | undefined = this.tableMetadata?.columns[key]?.relation;
-            if (relationMetadata) {
-
-               //if (relationMetadata.relationType == 'ManyToOne') {
-                  continue;
-               //}
-
-               //expressions.push(this.decodeWhereOperators(this.getColumnDatabaseName(key), (whereCondition as any)[key]));
-
-            } else {
-
+            if (!relationMetadata) {
                expressions.push(this.decodeWhereOperators(queryManager, key, (whereCondition as any)[key]));
-
             }
 
          }
 
       }
 
-      return (expressions.filter(expression => expression.length > 0).length > 0 ?`(${expressions.join(' and ')})` : '');
+      expressions = expressions.filter(expression => expression.length > 0);
+      return (expressions.length > 0 ? `(${expressions.join(' and ')})` : '');
    }
    private decodeWhereOperators(queryManager: QueryManager<any>, column: string, operators: any): string {
       let expressions: string[] = [];
@@ -246,7 +244,8 @@ export class QueryManager<T> {
          expressions.push(operator.getExpression());
       }
       
-      return expressions.filter(expression => expression.length > 0).join(' or ');
+      expressions = expressions.filter(expression => expression.length > 0);
+      return (expressions.length > 0 ? `(${expressions.join(' or ')})` : '');
    }
 
    /// GROUP BY

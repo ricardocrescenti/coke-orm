@@ -274,6 +274,9 @@ export async function test() {
       ],
       where: [
          {
+            id: 6
+         },
+         {
             entity: {
                photo: {
                   privateUrl: 'Ricardo Crescenti'
@@ -282,9 +285,6 @@ export async function test() {
                   isDefault: true
                } as any
             }
-         },
-         {
-            id: 6
          },
          {
             id: 12
