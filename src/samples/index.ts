@@ -49,6 +49,7 @@ export async function test() {
 
    console.log('Connected', new Date().toLocaleString());
 
+   /*
    let city: CityModel;
 
    city = await connection.findOne(CityModel, {
@@ -124,7 +125,7 @@ export async function test() {
    let seller: SellerModel = sellerTableManager.create({
       uuid: '1fecca37-3d8c-4ff7-8df6-cf7b496b6bcb',
       entity: {
-         name: 'Ana Luis Crescenti',
+         name: 'Ana Luiza Crescenti',
          displayName: 'Ana',
          email: 'analuiza.crescenti@gmail.com',
          addresses: [
@@ -163,7 +164,7 @@ export async function test() {
    seller = sellerTableManager.create({
       uuid: '1fecca37-3d8c-4ff7-8df6-cf7b496b6bcb',
       entity: {
-         name: 'Ana Luis Crescenti',
+         name: 'Ana Luiza Crescenti',
          displayName: 'Ana',
          email: 'analuiza.crescenti@gmail.com',
          addresses: [
@@ -245,7 +246,8 @@ export async function test() {
    seller.entity?.addresses?.splice(1, 1);
    seller.entity?.addresses?.splice(1, 1);
    await seller.save(connection);
-
+   */
+  
    const sellers = await connection.find(SellerModel, {
       select: [
          ['entity', [
@@ -260,7 +262,8 @@ export async function test() {
                'id', 
                'description', 
                'contact',
-               'city'
+               'city',
+               'isDefault'
             ]],
             'photo'
          ]]
@@ -274,22 +277,34 @@ export async function test() {
       ],
       where: [
          {
-            id: 6
-         },
-         {
             entity: {
+               name: 'Ana Luis Crescenti',
                photo: {
-                  privateUrl: 'Ricardo Crescenti'
+                  privateUrl: { isNull: true }
                },
-               addresses: {
-                  isDefault: true
-               } as any
+               // addresses: {
+               //    isDefault: false
+               // } as any
+               //(("entity_EntityModel"."entity"->'addresses')::jsonb @> '[{"id": 140}]')
             }
-         },
-         {
-            id: 12
          }
+         // {
+         //    id: 6
+         // },
+         // {
+         //    id: {
+         //       greaterThanOrEqual: 0,
+         //       lessThanOrEqual: 50
+         //    }
+         // }
       ],
+      // childWhere: {
+      //    entity: {
+      //       addresses: {
+      //          isDefault: true
+      //       } as any
+      //    }
+      // },
       roles: [
          'public'
       ],

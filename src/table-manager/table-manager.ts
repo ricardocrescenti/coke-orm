@@ -280,7 +280,7 @@ export class TableManager<T> {
                   table: relationAlias,
                   column: columnMetadata.propertyName,
                   relation: new QueryJoin<any>({
-                     type: ((findOptions.where as any ?? {})[columnMetadata.propertyName] ? 'inner' : 'left'),
+                     type: 'left',
                      table: relationQuery,
                      alias: relationAlias,
                      condition: `"${relationAlias}"."${referencedColumn.propertyName}" = "${this.tableMetadata.className}"."${referencedColumn.relation?.referencedColumn}"`
@@ -333,14 +333,14 @@ export class TableManager<T> {
          .filter(relation => relation.startsWith(`${columnMetadata.propertyName}.`))
          .map(relation => relation.substring(relation.indexOf('.') + 1, relation.length));
 
-      const subqueryWhere: any = (findOptions.where as any ?? {})[columnMetadata.propertyName];
+      //const subqueryWhere: any = (findOptions.where as any ?? {})[columnMetadata.propertyName];
 
       const subqueryOrderBy: any = (findOptions.orderBy as any ?? {})[columnMetadata.propertyName];
       
       const relationQuery: SelectQueryBuilder<T> = relationTableManager.createSelectQuery({
          select: (columnData.length > 1 ? columnData[1] as [string, FindSelect] : []),
          relations: subqueryRelations,
-         where: subqueryWhere,
+         //where: subqueryWhere,
          orderBy: subqueryOrderBy,
          roles: findOptions.roles
       }, level);

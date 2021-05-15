@@ -23,6 +23,7 @@ import { Between } from "./operators/between";
 import { Raw } from "./operators/raw";
 import { IsNull } from "./operators/is-null";
 import { ColumnMetadata, ForeignKeyMetadata, TableMetadata } from "../metadata";
+import { InvalidWhereOperatorError } from "../errors/invalid-where-operator-error";
 
 export class QueryManager<T> {
    private static operatorsConstructor: { [p: string]: Function } = {
@@ -187,21 +188,21 @@ export class QueryManager<T> {
       }
 
       for (const whereCondition of whereConditions) {
-         expressions.push(this.decodeWhereCondition(queryManager, whereCondition));
+         expressions.push(this.decodeWhereCondition(queryManager, whereCondition, this.tableMetadata));
       }
       
       expressions = expressions.filter(expression => expression.length > 0);
       return (expressions.length > 0 ? `(${expressions.join(' or ')})` : '');
    }
-   private decodeWhereCondition(queryManager: QueryManager<any>, whereCondition: QueryWhere<any>): string {
+   private decodeWhereCondition(queryManager: QueryManager<any>, whereCondition: QueryWhere<any>, tableMetadata?: TableMetadata, jsonObjectsName?: string[]): string {
       let expressions: string[] = [];
 
-      for (const key of Object.keys(whereCondition)) {
+      for (const key in whereCondition) {
 
          if (key == 'RAW') {
             
             const rawOperator = (whereCondition as any)[key];
-            expressions.push(this.decodeWhereOperators(queryManager, rawOperator.condition, { RAW: rawOperator.params }));
+            expressions.push(this.decodeWhereOperators(queryManager, { column: rawOperator.condition }, { RAW: rawOperator.params }, tableMetadata));
          
          } else if (key == 'AND') {
             
@@ -210,9 +211,37 @@ export class QueryManager<T> {
          
          } else {
 
-            const relationMetadata: ForeignKeyMetadata | undefined = this.tableMetadata?.columns[key]?.relation;
-            if (!relationMetadata) {
-               expressions.push(this.decodeWhereOperators(queryManager, key, (whereCondition as any)[key]));
+            const relationMetadata: ForeignKeyMetadata | undefined = tableMetadata?.columns[key]?.relation;
+            if (relationMetadata) {
+
+               const relationTableMetadata: TableMetadata = relationMetadata.getReferencedTableMetadata();
+               
+               let relationJsonObjectsName: string[];
+               if (!jsonObjectsName) {
+                  relationJsonObjectsName = [
+                     `${relationMetadata.column.propertyName}_${relationMetadata.referencedTable}`,
+                     relationMetadata.column.propertyName];
+               } else {
+                  relationJsonObjectsName = [...jsonObjectsName];
+                  relationJsonObjectsName.push(key);
+               }
+
+               expressions.push(this.decodeWhereCondition(queryManager, (whereCondition as any)[key], relationTableMetadata, relationJsonObjectsName));
+
+            } else {
+               
+               const queryColumn: QueryColumn<T> = {
+                  column: key
+               };
+
+               if (jsonObjectsName) {
+                  queryColumn.jsonObjectsName = [...jsonObjectsName]
+                  queryColumn.table = queryColumn.jsonObjectsName[0];
+                  queryColumn.jsonObjectsName.shift();
+               }
+
+               expressions.push(this.decodeWhereOperators(queryManager, queryColumn, (whereCondition as any)[key], tableMetadata));
+            
             }
 
          }
@@ -222,22 +251,19 @@ export class QueryManager<T> {
       expressions = expressions.filter(expression => expression.length > 0);
       return (expressions.length > 0 ? `(${expressions.join(' and ')})` : '');
    }
-   private decodeWhereOperators(queryManager: QueryManager<any>, column: string, operators: any): string {
+   private decodeWhereOperators(queryManager: QueryManager<any>, queryColumn: QueryColumn<T>, operators: any, tableMetadata?: TableMetadata): string {
       let expressions: string[] = [];
 
       if (!(operators instanceof Object) || (operators instanceof Date)) {
          operators = { equal: operators };
       }
 
-      for (const key of Object.keys(operators)) {
+      for (const key in operators) {
          const constructor = QueryManager.operatorsConstructor[key];
          if (!constructor) {
-            throw new Error('Operador de where inválido');
+            throw new InvalidWhereOperatorError(key);
          }
          
-         const queryColumn: QueryColumn<T> = {
-            column: column,
-         }
          const operator: Operator = new (constructor as any)(this.getColumnDatabaseName(this.tableMetadata, queryColumn), operators[key]);
          operator.registerParameters(queryManager);
          
@@ -245,7 +271,7 @@ export class QueryManager<T> {
       }
       
       expressions = expressions.filter(expression => expression.length > 0);
-      return (expressions.length > 0 ? `(${expressions.join(' or ')})` : '');
+      return (expressions.length > 0 ? `(${expressions.join(' and ')})` : '');
    }
 
    /// GROUP BY
