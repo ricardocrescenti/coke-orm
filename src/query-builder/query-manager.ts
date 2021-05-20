@@ -1,11 +1,8 @@
-import { QueryColumn } from "./types/query-column";
-import { QueryJoin } from "./types/query-join";
+import { QueryJoin } from "./column-builder/query-relation-builder";
 import { QueryOrder } from "./types/query-order";
 import { QueryTable } from "./types/query-table";
 import { QueryValues } from "./types/query-values";
 import { QueryWhere } from "./types/query-where";
-import { SelectJsonAgg } from "./types/select-json-agg";
-import { SelectJsonBuilder } from "./types/select-json-builder";
 import { Equal } from "./operators/equal";
 import { GreaterThan } from "./operators/greater-than";
 import { GreaterThanOrEqual } from "./operators/greater-than-or-equal";
@@ -24,6 +21,8 @@ import { Raw } from "./operators/raw";
 import { IsNull } from "./operators/is-null";
 import { ColumnMetadata, ForeignKeyMetadata, TableMetadata } from "../metadata";
 import { InvalidWhereOperatorError } from "../errors/invalid-where-operator-error";
+import { QueryColumnBuilder } from "./column-builder/query-column-builder";
+import { QueryDatabaseColumnBuilder } from "./column-builder/query-database-column-builder";
 
 export class QueryManager<T> {
    private static operatorsConstructor: { [p: string]: Function } = {
@@ -50,17 +49,17 @@ export class QueryManager<T> {
 
    public table?: QueryTable<T>;
 
-   public columns?: QueryColumn<T>[];
+   public columns?: QueryColumnBuilder<T>[];
 
    public joins?: QueryJoin<T>[];
 
    public values?: QueryValues<T>;
 
-   public virtualDeletionColumn?: string;
+   // public virtualDeletionColumn?: string;
 
    public where?: QueryWhere<T>[];
 
-   public groupBy?: Omit<QueryColumn<T>, 'alias' | 'relation'>[];
+   public groupBy?: Omit<QueryColumnBuilder<T>, 'alias' | 'relation'>[];
 
    public orderBy?: QueryOrder<T>;
 
@@ -77,32 +76,13 @@ export class QueryManager<T> {
    public hasSelect(): boolean {
       return (this.columns?.length ?? 0) > 0;
    }
-   public mountSelectExpression(): string {
+   public mountSelectExpression(mainQueryManager: QueryManager<any>): string {
       if (this.hasSelect()) {
-         return `select ${(this.columns ?? []).map(column => `${this.mountColumnExpression(column)} as "${column.alias ?? column.column}"`).join(', ')}`;
+         return `select ${(this.columns ?? []).map(column => {
+            return column.getExpressionWithAlias(mainQueryManager, this, this.tableMetadata);
+         }).join(', ')}`;
       }
       return '';
-   }
-   public mountColumnExpression(column: QueryColumn<T>): string {
-      if ((column.column as SelectJsonAgg<T>).jsonColumn) {
-         const orderBy: string = this.mountOrderByExpression((column.column as SelectJsonAgg<T>).orderBy);
-         return `json_agg(${this.mountJsonBuilderExpression((column.column as SelectJsonAgg<T>).jsonColumn as SelectJsonBuilder<T>)}${orderBy.length > 0 ? ' ' + orderBy : ''})`;
-      } else if ((column.column as SelectJsonBuilder<T>).jsonColumns) {
-         return this.mountJsonBuilderExpression(column.column as SelectJsonBuilder<T>);
-      } else {
-         return this.getColumnDatabaseName<T>(this.tableMetadata, column);
-      }
-   }
-   public mountJsonBuilderExpression(column: SelectJsonBuilder<T>): string {
-      return `json_build_object(${column.jsonColumns?.map(column => `'${column.alias ?? column.column}', ${this.getColumnDatabaseName<T>(this.tableMetadata, column)}`).join(', ')})`
-   }
-   public getColumnDatabaseName<T>(tableMetadata: TableMetadata | undefined, column: Omit<QueryColumn<T>, 'alias'>): string {
-      const columnMetadata: ColumnMetadata | undefined = tableMetadata?.columns[column.column as string];
-
-      const alias = (column.table ?? this.table?.alias ?? this.table?.table);
-      const columnDatebaseName = (column?.relation ? column.column : (columnMetadata?.name ?? column.column));
-      
-      return `"${alias}".${((column.jsonObjectsName ?? []).length > 0 ? `${column.jsonObjectsName?.map((jsonObjectsName, index) => (index == 0 ? `"${jsonObjectsName}"` : `'${jsonObjectsName}'`)).join('->')}->>'${columnDatebaseName}'` : `"${columnDatebaseName}"`)}`;
    }
 
    /// TABLE
@@ -152,35 +132,45 @@ export class QueryManager<T> {
 
       this.where = (Array.isArray(where) ? where : [where]);
    }
-   public hasVirtualDeletion(): boolean {
-      return this.virtualDeletionColumn != null;
+   // public hasVirtualDeletion(): boolean {
+   //    return this.virtualDeletionColumn != null;
+   // }
+   public hasWhere(where?: QueryWhere<T> | QueryWhere<T>[]): boolean {
+      return Object.keys(where ?? {}).length > 0;//this.hasVirtualDeletion() || (this.where?.length ?? 0) > 0;
    }
-   public hasWhere(): boolean {
-      return this.hasVirtualDeletion() || (this.where?.length ?? 0) > 0;
-   }
-   public mountWhereExpression(queryManager: QueryManager<any>): string {
-      let where: any;
-
-      if (this.hasVirtualDeletion()) {
-         where = {};
-         where[this.virtualDeletionColumn as string] = { isNull: true }
+   public mountWhereExpression(mainQueryManager: QueryManager<any>, where?: QueryWhere<T> | QueryWhere<T>[]): string {
+      if (!where) {
+         where = this.where;
       }
 
-      if (this.hasWhere()) {
-         if (where) {
-            where['AND'] = this.where;
-         } else {
-            where = this.where;
-         }
+      if (!this.hasWhere(where)) {
+         return '';
+      }
+      
+      if (!Array.isArray(where)) {
+         where = [where];
       }
 
-      if (where) {
-         const expression = this.decodeWhereConditions(queryManager, where as QueryWhere<T>[]);
-         return (expression.length > 0 ? `where ${expression}` : '')
-      }
-      return '';
+      // if (this.hasVirtualDeletion()) {
+      //    where = {};
+      //    where[this.virtualDeletionColumn as string] = { isNull: true }
+      // }
+
+      // if (this.hasWhere(where)) {
+      //    if (where) {
+      //       where['AND'] = this.where;
+      //    } else {
+      //       where = this.where;
+      //    }
+      // }
+
+      //if (where) {
+      const expression = this.decodeWhereConditions(mainQueryManager, where as QueryWhere<T>[]);
+      return (expression.length > 0 ? `where ${expression}` : '')
+      //}
+      //return '';
    }
-   private decodeWhereConditions(queryManager: QueryManager<any>, whereConditions: QueryWhere<T>[]): string {
+   private decodeWhereConditions(mainQueryManager: QueryManager<any>, whereConditions: QueryWhere<T>[]): string {
       let expressions: string[] = [];
 
       if (!Array.isArray(whereConditions)) {
@@ -188,13 +178,13 @@ export class QueryManager<T> {
       }
 
       for (const whereCondition of whereConditions) {
-         expressions.push(this.decodeWhereCondition(queryManager, whereCondition, this.tableMetadata));
+         expressions.push(this.decodeWhereCondition(mainQueryManager, whereCondition, this.tableMetadata));
       }
       
       expressions = expressions.filter(expression => expression.length > 0);
       return (expressions.length > 0 ? `(${expressions.join(' or ')})` : '');
    }
-   private decodeWhereCondition(queryManager: QueryManager<any>, whereCondition: QueryWhere<any>, tableMetadata?: TableMetadata, jsonObjectsName?: string[]): string {
+   private decodeWhereCondition(mainQueryManager: QueryManager<any>, whereCondition: QueryWhere<any>, tableMetadata?: TableMetadata, jsonObjectsName?: string[]): string {
       let expressions: string[] = [];
 
       for (const key in whereCondition) {
@@ -202,12 +192,12 @@ export class QueryManager<T> {
          if (key == 'RAW') {
             
             const rawOperator = (whereCondition as any)[key];
-            expressions.push(this.decodeWhereOperators(queryManager, { column: rawOperator.condition }, { RAW: rawOperator.params }, tableMetadata));
+            expressions.push(this.decodeWhereOperators(mainQueryManager, new QueryDatabaseColumnBuilder({ column: rawOperator.condition }), { RAW: rawOperator.params }, tableMetadata));
          
          } else if (key == 'AND') {
             
             const andConditions = (whereCondition as any)['AND'];
-            expressions.push(this.decodeWhereConditions(queryManager, (Array.isArray(andConditions) ? andConditions : [andConditions]) as QueryWhere<any>[]));
+            expressions.push(this.decodeWhereConditions(mainQueryManager, (Array.isArray(andConditions) ? andConditions : [andConditions]) as QueryWhere<any>[]));
          
          } else {
 
@@ -226,13 +216,13 @@ export class QueryManager<T> {
                   relationJsonObjectsName.push(key);
                }
 
-               expressions.push(this.decodeWhereCondition(queryManager, (whereCondition as any)[key], relationTableMetadata, relationJsonObjectsName));
+               expressions.push(this.decodeWhereCondition(mainQueryManager, (whereCondition as any)[key], relationTableMetadata, relationJsonObjectsName));
 
             } else {
                
-               const queryColumn: QueryColumn<T> = {
+               const queryColumn: QueryDatabaseColumnBuilder<T> = new QueryDatabaseColumnBuilder<T>({
                   column: key
-               };
+               });
 
                if (jsonObjectsName) {
                   queryColumn.jsonObjectsName = [...jsonObjectsName]
@@ -240,7 +230,7 @@ export class QueryManager<T> {
                   queryColumn.jsonObjectsName.shift();
                }
 
-               expressions.push(this.decodeWhereOperators(queryManager, queryColumn, (whereCondition as any)[key], tableMetadata));
+               expressions.push(this.decodeWhereOperators(mainQueryManager, queryColumn, (whereCondition as any)[key], tableMetadata));
             
             }
 
@@ -251,7 +241,7 @@ export class QueryManager<T> {
       expressions = expressions.filter(expression => expression.length > 0);
       return (expressions.length > 0 ? `(${expressions.join(' and ')})` : '');
    }
-   private decodeWhereOperators(queryManager: QueryManager<any>, queryColumn: QueryColumn<T>, operators: any, tableMetadata?: TableMetadata): string {
+   private decodeWhereOperators(mainQueryManager: QueryManager<any>, queryColumn: QueryColumnBuilder<T>, operators: any, tableMetadata?: TableMetadata): string {
       let expressions: string[] = [];
 
       if (!(operators instanceof Object) || (operators instanceof Date)) {
@@ -264,8 +254,8 @@ export class QueryManager<T> {
             throw new InvalidWhereOperatorError(key);
          }
          
-         const operator: Operator = new (constructor as any)(this.getColumnDatabaseName(this.tableMetadata, queryColumn), operators[key]);
-         operator.registerParameters(queryManager);
+         const operator: Operator = new (constructor as any)(queryColumn.getExpression(mainQueryManager, this, this.tableMetadata), operators[key]);
+         operator.registerParameters(mainQueryManager);
          
          expressions.push(operator.getExpression());
       }
@@ -279,9 +269,9 @@ export class QueryManager<T> {
    public hasGroupBy(): boolean {
       return (this.groupBy?.length ?? 0) > 0;
    }
-   public mountGroupByExpression(): string {
+   public mountGroupByExpression(mainQueryManager: QueryManager<any>): string {
       if (this.hasGroupBy()) {
-         return `group by ` + this.groupBy?.map(groupBy => this.mountColumnExpression(groupBy)).join(', ');
+         return `group by ` + this.groupBy?.map(groupBy => groupBy.getExpression(mainQueryManager, this, this.tableMetadata)).join(', ');
       }
       return '';
    }
@@ -291,37 +281,37 @@ export class QueryManager<T> {
    public hasOrderBy(orderBy?: QueryOrder<T>): boolean {
       return Object.keys((orderBy ?? this.orderBy) ?? {}).length > 0;
    }
-   public mountOrderByExpression(orderBy?: QueryOrder<T>): string {
+   public mountOrderByExpression(mainQueryManager: QueryManager<any>, orderBy?: QueryOrder<T>): string {
       if (!orderBy) {
          orderBy = this.orderBy;
       }
 
       if (this.hasOrderBy(orderBy)) {
          orderBy = orderBy as QueryOrder<T>;
-         const expression = `order by ` + this.getOrderByColumn(this.tableMetadata, this.table, orderBy);
+         const expression = `order by ` + this.getOrderByColumn(mainQueryManager, this.tableMetadata, this.table, orderBy);
          return expression;
       }
       return '';
    }
-   private getOrderByColumn(tableMetadata: TableMetadata | undefined, table: QueryTable<T> | undefined, orderBy: QueryOrder<T> | undefined, jsonObjectsName?: string[]): string {
+   private getOrderByColumn(mainQueryManager: QueryManager<any>, tableMetadata: TableMetadata | undefined, table: QueryTable<T> | undefined, orderBy: QueryOrder<T> | undefined, jsonObjectsName?: string[]): string {
       return Object.keys(orderBy ?? []).map(columnName => {
 
          const relationMetadata: ForeignKeyMetadata | undefined = tableMetadata?.columns[columnName].relation;
          if (relationMetadata) {
 
             const referencedTableMetadata = tableMetadata?.connection.tables[relationMetadata.referencedTable];
-            return this.getOrderByColumn(referencedTableMetadata, { 
+            return this.getOrderByColumn(mainQueryManager, referencedTableMetadata, { 
                table: referencedTableMetadata?.name as string,
                alias: ((jsonObjectsName ?? []).length == 0 ? `${relationMetadata.column.propertyName}_${referencedTableMetadata?.className}` : table?.alias ?? table?.table) as string
              }, (orderBy as any)[columnName], (jsonObjectsName ?? [])?.concat([relationMetadata.column.propertyName]));
 
          } else {
             
-            const columnDatebaseName = this.getColumnDatabaseName<any>(tableMetadata, {
+            const columnDatebaseName = new QueryDatabaseColumnBuilder({
                table: (table?.alias ?? table?.table) as string,
                jsonObjectsName: jsonObjectsName,
                column: columnName
-            });
+            }).getExpression(mainQueryManager, this, tableMetadata as TableMetadata);
             return `${columnDatebaseName} ${(orderBy as any)[columnName] ?? 'ASC'}`;
 
          }

@@ -8,14 +8,19 @@ import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
 import { SelectQueryBuilder } from "../query-builder/select-query-builder";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
 import { QueryWhere, QueryWhereColumn } from "../query-builder/types/query-where";
-import { QueryJoin } from "../query-builder/types/query-join";
-import { QueryColumn } from "../query-builder/types/query-column";
+import { QueryJoin } from "../query-builder/column-builder/query-relation-builder";
 import { FindSelect } from "./types/find-select";
 import { TableValues } from "./types/table-values";
 import { CokenModel } from "./coken-model";
 import { SaveOptions } from "./options/save-options";
-import { QueryValues } from "../query-builder/types/query-values";
-import { QueryOrder } from "../query-builder/types/query-order";
+import { StringUtils } from "../utils/string-utils";
+import { OrmUtils } from "../utils/orm-utils";
+import { QueryColumnBuilder } from "../query-builder/column-builder/query-column-builder";
+import { QueryDatabaseColumnBuilder } from "../query-builder/column-builder/query-database-column-builder";
+import { QueryJsonAggColumnBuilder } from "../query-builder/column-builder/query-json-agg-column-builder";
+import { QueryJsonColumnBuilder } from "../query-builder/column-builder/query-json-column-builder";
+import { QueryWhereColumnBuilder } from "../query-builder/column-builder/query-where-column-builder";
+import { QueryAggregateColumnBuilder } from "../query-builder/column-builder/query-aggregate-column-builder";
 
 export class TableManager<T> {
 
@@ -109,7 +114,7 @@ export class TableManager<T> {
 
       if (result.rows.length > 0) {
 
-         /// transformar o resultado da consulta nas suas classes específicas
+         /// transform the query result into its specific classes
          return result.rows.map((row: any) => this.create(row));
       }
 
@@ -158,7 +163,7 @@ export class TableManager<T> {
     * @param tableManager 
     * @returns 
     */
-   public createSelectQuery(findOptions?: FindOptions<T>, level?: number): SelectQueryBuilder<T> {
+   public createSelectQuery(findOptions?: FindOptions<T>, level?: number, relationMetadata?: ForeignKeyMetadata): SelectQueryBuilder<T> {
       
       /// create a copy of findOptions to not modify the original and help to 
       /// copy it with the standard data needed to find the records
@@ -173,19 +178,46 @@ export class TableManager<T> {
       /// In the related columns, the `SelectQueryBuilder` will also be returned 
       /// to make the` left join` in the table and obtain the JSON of the table 
       /// data.
-      const queryColumns: QueryColumn<T>[] = this.loadQueryColumns(findOptions, level ?? 0);
+      const queryColumns: QueryColumnBuilder<T>[] = this.loadQueryColumns(findOptions, level ?? 0);
 
       /// extract the `SelectQueryBuilder` from the related columns to generate
       /// the `left join` in the main table
       const queryJoins: QueryJoin<T>[] = this.loadQueryJoins(queryColumns);
+
+      /// if the table has a column with 'DeletedAt' operation, a filter will be 
+      /// added to 'findOptions.where' so as not to get the deleted rows
+      const deletedAtColumnMetadata: ColumnMetadata | null = this.tableMetadata.getDeletedAtColumn();
+      if (deletedAtColumnMetadata) {
+         
+         if (!findOptions.where) {
+            findOptions.where = {};
+         }
+
+         const deletedAtWhere: any = {};
+         deletedAtWhere[deletedAtColumnMetadata.propertyName] = { isNull: true };
+
+         if (Array.isArray(findOptions.where)) {
+         
+            findOptions.where = {
+               ...deletedAtWhere,
+               AND: findOptions.where
+            }
+            
+         } else {
+            
+            Object.assign(findOptions.where, deletedAtWhere);
+         
+         }
+      
+      }
 
       /// create the query to get the data
       const query: SelectQueryBuilder<T> = this.connection.createSelectQuery<T>(this.tableMetadata)
          .level(level ?? 0)
          .select(queryColumns)
          .join(queryJoins)
-         .virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name)
-         .where(findOptions?.where)
+         //.virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name)
+         .where(findOptions.where)
          .orderBy(findOptions.orderBy)
          .take(findOptions.take)
          .limit(findOptions.limit)
@@ -209,7 +241,7 @@ export class TableManager<T> {
     */
    public createUpdateQuery() : UpdateQueryBuilder<T> {
       const query: UpdateQueryBuilder<T> = this.connection.createUpdateQuery<T>(this.tableMetadata)
-         .virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name);
+         //.virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name);
       return query;      
    }
 
@@ -220,7 +252,7 @@ export class TableManager<T> {
     */
    public createDeleteQuery(): DeleteQueryBuilder<T> {
       const query: DeleteQueryBuilder<T> = this.connection.createDeleteQuery<T>(this.tableMetadata)
-         .virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name);
+         //.virtualDeletionColumn(this.tableMetadata.getDeletedAtColumn()?.name);
       return query;
    }
 
@@ -232,7 +264,7 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private loadQueryColumns<T>(findOptions: FindOptions<T>, level: number): QueryColumn<T>[] {
+   private loadQueryColumns<T>(findOptions: FindOptions<T>, level: number): QueryColumnBuilder<T>[] {
 
       /// If there are no columns informed to be loaded, all columns of tables 
       /// that do not have relations will be obtained, or that the relation is 
@@ -245,7 +277,7 @@ export class TableManager<T> {
       }
 
       /// initialize the array that will store the query columns
-      const queryColumns: SimpleMap<QueryColumn<T>> = new SimpleMap();
+      const queryColumns: SimpleMap<QueryColumnBuilder<T>> = new SimpleMap();
 
       for (const columnStructure of findOptions.select) {
 
@@ -276,41 +308,43 @@ export class TableManager<T> {
                const referencedColumn: ColumnMetadata = relationTableManager.tableMetadata.columns[columnMetadata.relation.referencedColumn];
                const relationQuery: SelectQueryBuilder<any> = this.createChildSubquery(columnMetadata, columnData, relationTableManager, findOptions, level + 1);
 
-               queryColumns[columnData[0]] = {
+               queryColumns[columnData[0]] = new QueryDatabaseColumnBuilder({
                   table: relationAlias,
                   column: columnMetadata.propertyName,
+                  alias: columnMetadata.propertyName,
                   relation: new QueryJoin<any>({
                      type: 'left',
                      table: relationQuery,
                      alias: relationAlias,
                      condition: `"${relationAlias}"."${referencedColumn.propertyName}" = "${this.tableMetadata.className}"."${referencedColumn.relation?.referencedColumn}"`
                   }),
-               }
+               });
 
             } else {
 
                const relationQuery: SelectQueryBuilder<any> = this.createParentSubquery(columnMetadata, columnData, relationTableManager, findOptions, level + 1);
 
-               queryColumns[columnData[0]] = {
+               queryColumns[columnData[0]] = new QueryDatabaseColumnBuilder({
                   table: relationAlias,
                   column: columnMetadata.propertyName,
+                  alias: columnMetadata.propertyName,
                   relation: new QueryJoin<any>({
                      type: ((findOptions.where as any ?? {})[columnMetadata.propertyName] ? 'inner' : 'left'),
                      table: relationQuery,
                      alias: relationAlias,
                      condition: `"${relationAlias}"."${columnMetadata.relation.referencedColumn}" = "${this.tableMetadata.className}"."${columnMetadata.name}"`
                   }),
-               }
+               });
 
             }
 
          } else {
 
-            queryColumns[columnData[0]] = {
+            queryColumns[columnData[0]] = new QueryDatabaseColumnBuilder({
                table: this.tableMetadata.className,
                column: columnMetadata.propertyName,
                alias: columnMetadata.propertyName
-            }
+            });
 
          }
       }      
@@ -333,17 +367,59 @@ export class TableManager<T> {
          .filter(relation => relation.startsWith(`${columnMetadata.propertyName}.`))
          .map(relation => relation.substring(relation.indexOf('.') + 1, relation.length));
 
-      //const subqueryWhere: any = (findOptions.where as any ?? {})[columnMetadata.propertyName];
+      const queryWhereColumns: QueryWhereColumnBuilder<T>[] = [];
+      if (OrmUtils.isNotEmpty(findOptions.where)) {
+
+         let subqueryWhere: any[] = [];
+         if (!Array.isArray(findOptions.where)) {
+            subqueryWhere = [findOptions.where];
+         } else {
+            subqueryWhere = findOptions.where;
+         }
+
+         for (let i = 0; i < subqueryWhere.length; i++) {
+            
+            const where: any = subqueryWhere[i];
+            if (OrmUtils.isNotEmpty(where[columnMetadata.propertyName])) {
+            
+               const sha1Where: string = StringUtils.sha1(JSON.stringify(where[columnMetadata.propertyName]));
+               if (queryWhereColumns.filter(column => column.alias == sha1Where).length == 0) { 
+
+                  queryWhereColumns.push(new QueryWhereColumnBuilder({
+                     where: where[columnMetadata.propertyName],
+                     alias: sha1Where
+                  }))
+
+               }
+
+               subqueryWhere[i][sha1Where] = { equal: true };
+               delete where[columnMetadata.propertyName];
+            
+            }
+
+         }
+
+      }
 
       const subqueryOrderBy: any = (findOptions.orderBy as any ?? {})[columnMetadata.propertyName];
       
       const relationQuery: SelectQueryBuilder<T> = relationTableManager.createSelectQuery({
          select: (columnData.length > 1 ? columnData[1] as [string, FindSelect] : []),
          relations: subqueryRelations,
-         //where: subqueryWhere,
+         where: queryWhereColumns.map(queryWhereColumn => queryWhereColumn.where),
          orderBy: subqueryOrderBy,
          roles: findOptions.roles
-      }, level);
+      }, level, columnMetadata.relation);
+
+      if (OrmUtils.isNotEmpty(queryWhereColumns)) {
+         relationQuery.select([
+            ...(relationQuery.queryManager.columns ?? []),
+            ...queryWhereColumns.map(queryWhereColumn => new QueryWhereColumnBuilder({
+               where: queryWhereColumn.where,
+               alias: queryWhereColumn.alias
+            }))
+         ]);
+      }
 
       return relationQuery;
    }
@@ -361,26 +437,37 @@ export class TableManager<T> {
       const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions, level);
 
       relationQuery.select([
-         {
+         new QueryDatabaseColumnBuilder({
             table: relationTableManager.tableMetadata.className,
             column: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string,
             alias: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string
-         },
-         {
-            column: {
-               jsonColumn: {
-                  jsonColumns: relationQuery.queryManager.columns as QueryColumn<any>[],
-               },
-               orderBy: relationQuery.queryManager.orderBy
-            },
+         }),
+         new QueryJsonAggColumnBuilder({
+            jsonColumn: new QueryJsonColumnBuilder({
+               jsonColumns: (relationQuery.queryManager.columns as QueryColumnBuilder<any>[]).filter((column) => !(column instanceof QueryWhereColumnBuilder)),
+               alias: columnMetadata.propertyName
+            }),
+            orderBy: relationQuery.queryManager.orderBy,
             alias: columnMetadata.propertyName
-         }
+         }),
+         ...(relationQuery.queryManager.columns as QueryColumnBuilder<any>[])
+            .filter((column) => column instanceof QueryWhereColumnBuilder)
+            .map((column) => new QueryAggregateColumnBuilder({
+               type: 'max',
+               column: new QueryWhereColumnBuilder({
+                  ...column as any,
+                  cast: 'int'
+               }),
+               cast: 'boolean',
+               alias: column.alias
+            }))
       ]);
 
-      relationQuery.groupBy({
+      relationQuery.groupBy(new QueryDatabaseColumnBuilder({
          table: relationTableManager.tableMetadata.className,
-         column: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName
-      });
+         column: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName,
+         alias: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName
+      }));
 
       /// remove o order by pois ele foi adicionado dentro do SelectJsonAgg
       relationQuery.orderBy();
@@ -401,17 +488,17 @@ export class TableManager<T> {
       const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions, level);
 
       relationQuery.select([
-         {
+         new QueryDatabaseColumnBuilder({
             table: relationTableManager.tableMetadata.className,
             column: columnMetadata.relation?.referencedColumn as string,
             alias: relationTableManager.tableMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName
-         },
-         {
-            column: {
-               jsonColumns: relationQuery.queryManager.columns as QueryColumn<any>[],
-            },
+         }),
+         new QueryJsonColumnBuilder({
+            jsonColumns: (relationQuery.queryManager.columns as QueryColumnBuilder<any>[]).filter((column) => !(column instanceof QueryWhereColumnBuilder)),
             alias: columnMetadata.propertyName
-         }
+         }),
+         ...(relationQuery.queryManager.columns as QueryColumnBuilder<any>[])
+            .filter((column) => column instanceof QueryWhereColumnBuilder)
       ]);
 
       return relationQuery;
@@ -422,17 +509,17 @@ export class TableManager<T> {
     * @param queryColumns 
     * @returns 
     */
-   private loadQueryJoins(queryColumns: QueryColumn<T>[]): QueryJoin<T>[] {
+   private loadQueryJoins(queryColumns: QueryColumnBuilder<T>[]): QueryJoin<T>[] {
 
       return queryColumns
-         .filter((queryColumn) => queryColumn.relation)
+         .filter((queryColumn) => queryColumn instanceof QueryDatabaseColumnBuilder && queryColumn.relation)
          .map((queryColumn) => {
 
             return new QueryJoin<T>({
-               type: queryColumn.relation?.type,
-               table: queryColumn.relation?.table,
-               alias: queryColumn?.relation?.alias,
-               condition: queryColumn?.relation?.condition
+               type: (queryColumn as QueryDatabaseColumnBuilder<T>).relation?.type,
+               table: (queryColumn as QueryDatabaseColumnBuilder<T>).relation?.table,
+               alias: (queryColumn as QueryDatabaseColumnBuilder<T>).relation?.alias,
+               condition: (queryColumn as QueryDatabaseColumnBuilder<T>).relation?.condition
             } as any)
 
          });

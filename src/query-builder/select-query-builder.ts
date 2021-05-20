@@ -1,14 +1,14 @@
 import { Connection } from "../connection/connection";
 import { TableMetadata } from "../metadata";
-import { QueryExecutor } from "../query-executor/query-executor";
 import { QueryBuilder } from "./query-builder";
 import { QueryManager } from "./query-manager";
 import { JoinType } from "./types/join-type";
-import { QueryColumn } from "./types/query-column";
-import { QueryJoin } from "./types/query-join";
+import { QueryJoin } from "./column-builder/query-relation-builder";
 import { QueryOrder } from "./types/query-order";
 import { QueryTable } from "./types/query-table";
 import { QueryWhere } from "./types/query-where";
+import { QueryDatabaseColumnBuilder } from "./column-builder/query-database-column-builder";
+import { QueryColumnBuilder } from "./column-builder/query-column-builder";
 
 export class SelectQueryBuilder<T> extends QueryBuilder<T> {
    private indentation: number = 0;
@@ -22,7 +22,7 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public select(columns: QueryColumn<T> | QueryColumn<T>[]): this {
+   public select(columns: QueryColumnBuilder<T> | QueryColumnBuilder<T>[]): this {
       this.queryManager.columns = (Array.isArray(columns) ? columns : [columns]);
       return this;
    }   
@@ -47,17 +47,17 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public virtualDeletionColumn(databaseColumnName?: string): this {
-      this.queryManager.virtualDeletionColumn = databaseColumnName;
-      return this;
-   }
+   // public virtualDeletionColumn(databaseColumnName?: string): this {
+   //    this.queryManager.virtualDeletionColumn = databaseColumnName;
+   //    return this;
+   // }
 
    public where(where?: QueryWhere<T> | QueryWhere<T>[]): this {
       this.queryManager.setWhere(where);
       return this;
    }
 
-   public groupBy(groupBy?: Omit<QueryColumn<T>, 'alias' | 'relation'> | Omit<QueryColumn<T>, 'alias' | 'relation'>[]): this {
+   public groupBy(groupBy?: Omit<QueryDatabaseColumnBuilder<T>, 'alias' | 'relation'> | Omit<QueryDatabaseColumnBuilder<T>, 'alias' | 'relation'>[]): this {
       if (groupBy) {
          this.queryManager.groupBy = (Array.isArray(groupBy) ? groupBy : [groupBy]);
       } else {
@@ -81,18 +81,21 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public getQuery(queryManager?: QueryManager<any>): string {
+   public getQuery(mainQueryManager?: QueryManager<any>): string {
+      if (!mainQueryManager) {
+         mainQueryManager = this.queryManager;
+      }
 
       const expressions: string[] = [];
       const indentation: string = ''.padStart(this.indentation, " ");
       this.queryManager.parameters = [];
 
-      expressions.push((indentation.length > 0 ? '\n' + indentation : '') + this.queryManager.mountSelectExpression());
+      expressions.push((indentation.length > 0 ? '\n' + indentation : '') + this.queryManager.mountSelectExpression(mainQueryManager));
       expressions.push(indentation + this.queryManager.mountFromExpression());
-      expressions.push(this.queryManager.mountJoinsExpression(queryManager ?? this.queryManager, indentation));
-      expressions.push(indentation + this.queryManager.mountWhereExpression(queryManager ?? this.queryManager))
-      expressions.push(indentation + this.queryManager.mountGroupByExpression())
-      expressions.push(indentation + this.queryManager.mountOrderByExpression());
+      expressions.push(this.queryManager.mountJoinsExpression(mainQueryManager, indentation));
+      expressions.push(indentation + this.queryManager.mountWhereExpression(mainQueryManager))
+      expressions.push(indentation + this.queryManager.mountGroupByExpression(mainQueryManager))
+      expressions.push(indentation + this.queryManager.mountOrderByExpression(mainQueryManager));
       expressions.push(indentation + this.queryManager.mountTakeExpression());
       expressions.push(indentation + this.queryManager.mountLimitExpression());
 

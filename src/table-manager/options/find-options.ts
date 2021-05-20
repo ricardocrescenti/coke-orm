@@ -15,7 +15,13 @@ export class FindOptions<T> {
 
    constructor(findOptions?: FindOptions<T>) {
       if (findOptions) { 
-         Object.assign(this, JSON.parse(JSON.stringify(findOptions)));
+         this.select = findOptions.select;
+         this.relations = findOptions.relations;
+         this.where = findOptions.where;
+         this.orderBy = findOptions.orderBy;
+         this.take = findOptions.take;
+         this.limit = findOptions.limit;
+         this.roles = findOptions.roles;
       }
    }
 

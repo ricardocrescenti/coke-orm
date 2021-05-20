@@ -1,4 +1,4 @@
-import { JoinType } from "./join-type";
+import { JoinType } from "../types/join-type";
 import { SelectQueryBuilder } from "../select-query-builder";
 import { QueryManager } from "../query-manager";
 

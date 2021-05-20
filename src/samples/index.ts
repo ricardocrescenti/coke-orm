@@ -250,6 +250,7 @@ export async function test() {
   
    const sellers = await connection.find(SellerModel, {
       select: [
+         'id',
          ['entity', [
             'id',
             'name',
@@ -266,7 +267,8 @@ export async function test() {
                'isDefault'
             ]],
             'photo'
-         ]]
+         ]],
+         'status'
       ],
       relations: [
          'entity',
@@ -278,25 +280,41 @@ export async function test() {
       where: [
          {
             entity: {
-               name: 'Ana Luis Crescenti',
+               name: 'Ana Luiza Crescenti',
                photo: {
                   privateUrl: { isNull: true }
                },
-               // addresses: {
-               //    isDefault: false
-               // } as any
-               //(("entity_EntityModel"."entity"->'addresses')::jsonb @> '[{"id": 140}]')
+               addresses: {
+                  isDefault: true,
+                  city: {
+                     code: '4309407'
+                  }
+               } as any
+            }
+         },
+         {
+            entity: {
+               name: 'Ana Luiza Crescenti',
+               photo: {
+                  privateUrl: { isNull: true }
+               },
+               addresses: {
+                  isDefault: false,
+                  city: {
+                     code: '4309407'
+                  }
+               } as any
+            }
+         },
+         {
+            id: 6
+         },
+         {
+            id: {
+               greaterThanOrEqual: 0,
+               lessThanOrEqual: 50
             }
          }
-         // {
-         //    id: 6
-         // },
-         // {
-         //    id: {
-         //       greaterThanOrEqual: 0,
-         //       lessThanOrEqual: 50
-         //    }
-         // }
       ],
       // childWhere: {
       //    entity: {
