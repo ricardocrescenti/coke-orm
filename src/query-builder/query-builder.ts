@@ -44,7 +44,7 @@ export abstract class QueryBuilder<T> {
    /**
     * 
     */
-   public abstract getQuery(): string;
+   public abstract mountQuery(mainQueryManager?: QueryManager<any>): string;
 
    /**
     * 
@@ -52,6 +52,14 @@ export abstract class QueryBuilder<T> {
     */
    public getParams(): string[] {
       return this.queryManager?.parameters;
+   }
+
+   public getQuery(mainQueryManager?: QueryManager<any>): string {
+      const query: string = this.mountQuery(mainQueryManager);
+      const params: string[] = this.getParams();
+
+      return `${query}
+      ${params.length > 0 ? '-- ' + params.reduce((previousValues, currentValue, currentIndex) => previousValues + (currentIndex > 0 ? ', ' : '') + (currentIndex + ': ' + currentValue)) : ''}`;
    }
 
    /**

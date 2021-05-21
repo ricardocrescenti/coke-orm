@@ -372,7 +372,11 @@ export class QueryManager<T> {
 
    /// PARAMETERS
 
-   public storeParameter(value: any): number {
+   public registerParameter(value: any): number {
+      const parameterIndex: number = this.parameters.indexOf(value);
+      if (parameterIndex >= 0) {
+         return parameterIndex;
+      }
       return this.parameters.push(value);
    }
 

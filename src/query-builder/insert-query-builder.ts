@@ -1,8 +1,7 @@
 import { Connection } from "../connection/connection";
-import { PostgresDriver } from "../drivers";
 import { TableMetadata } from "../metadata";
-import { QueryExecutor } from "../query-executor/query-executor";
 import { QueryBuilder } from "./query-builder";
+import { QueryManager } from "./query-manager";
 import { QueryTable } from "./types/query-table";
 import { QueryValues } from "./types/query-values";
 
@@ -31,7 +30,7 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
       let columns: string = '';
       for (const column in this.queryManager.values) {
          columns += (columns.length > 0 ? ', ' : '') + column;
-         this.queryManager.storeParameter((this.queryManager.values as any)[column]);
+         this.queryManager.registerParameter((this.queryManager.values as any)[column]);
       }
 
       return `INSERT INTO ${this.queryManager.mountTableExpression(false)} (${columns})`;
@@ -47,7 +46,7 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
       return `VALUES (${values}) `;
    }
    
-   public getQuery(): string {
+   public mountQuery(mainQueryManager?: QueryManager<any>): string {
 
       const expressions: string[] = [];
       this.queryManager.parameters = [];

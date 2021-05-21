@@ -19,7 +19,7 @@ export abstract class Operator {
 
    public registerParameters(queryManager: QueryManager<any>): void {
       if (this.canRegisterParameters) {
-         this.parameters = this.values.map(value => queryManager.storeParameter(value));
+         this.parameters = this.values.map(value => queryManager.registerParameter(value));
       }
    }
 

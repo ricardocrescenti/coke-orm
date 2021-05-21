@@ -7,8 +7,9 @@
 * **04** - [x] Carregar as classes de pastas
 * **07** - [x] Criar a tabela "migrations" para gerenciar as migrações do banco de dados
 * **08** - [ ] Criar propriedade no ColumnOptions para especificar o campo padrão do where caso não seja informado ficando tipo { entity: { equal: 1 } }
-* **09** - [ ] No TableManager criar método para efetuar count passando um findOptions sem select, relations, orderBy, roles.
-* **10** - [ ] Instalar o Jest para efetuar testes automatizados
+* **09** - [ ] Criar classe de Log para mostrar os dados
+* **10** - [ ] No TableManager criar método para efetuar count passando um findOptions sem select, relations, orderBy, roles.
+* **11** - [ ] Instalar o Jest para efetuar testes automatizados
 * **19** = [ ] Desenvolver o procedimento de roolback das migrations.
 * **20** - [ ] Passar por todo o ORM validando e adicionando os comentários nos métodos
 * **23** - [ ] Estudar uma forma de gerar as triggers, procedures e views pelo ORM

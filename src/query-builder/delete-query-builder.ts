@@ -1,7 +1,7 @@
 import { Connection } from "../connection/connection";
 import { TableMetadata } from "../metadata";
-import { QueryExecutor } from "../query-executor/query-executor";
 import { QueryBuilder } from "./query-builder";
+import { QueryManager } from "./query-manager";
 import { QueryTable } from "./types/query-table";
 import { QueryWhere } from "./types/query-where";
 
@@ -34,7 +34,7 @@ export class DeleteQueryBuilder<T> extends QueryBuilder<T> {
       return `DELETE FROM ${this.queryManager.mountTableExpression()}`;
    }
    
-   public getQuery(): string {
+   public mountQuery(mainQueryManager?: QueryManager<any>): string {
 
       const expressions: string[] = [];
       this.queryManager.parameters = [];

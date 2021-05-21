@@ -81,7 +81,7 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }
 
-   public getQuery(mainQueryManager?: QueryManager<any>): string {
+   public mountQuery(mainQueryManager?: QueryManager<any>): string {
       if (!mainQueryManager) {
          mainQueryManager = this.queryManager;
       }

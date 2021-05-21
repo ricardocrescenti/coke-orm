@@ -1,7 +1,7 @@
 import { Connection } from "../connection/connection";
 import { TableMetadata } from "../metadata";
-import { QueryExecutor } from "../query-executor/query-executor";
 import { QueryBuilder } from "./query-builder";
+import { QueryManager } from "./query-manager";
 import { QueryTable } from "./types/query-table";
 import { QueryValues } from "./types/query-values";
 import { QueryWhere } from "./types/query-where";
@@ -40,14 +40,14 @@ export class UpdateQueryBuilder<T> extends QueryBuilder<T> {
 
       let values: string = ''
       for (const column in this.queryManager.values) {
-         const param = this.queryManager.storeParameter((this.queryManager.values as any)[column]);
+         const param = this.queryManager.registerParameter((this.queryManager.values as any)[column]);
          values += (values.length > 0 ? ', ' : '') + `${column} = $${param}`;
       }
 
       return values;
    }
 
-   public getQuery(): string {
+   public mountQuery(mainQueryManager?: QueryManager<any>): string {
 
       const expressions: string[] = [];
       this.queryManager.parameters = [];
