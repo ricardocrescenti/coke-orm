@@ -220,14 +220,28 @@ export class QueryManager<T> {
 
             } else {
                
-               const queryColumn: QueryDatabaseColumnBuilder<T> = new QueryDatabaseColumnBuilder<T>({
-                  column: key
-               });
+               let queryColumn: QueryDatabaseColumnBuilder<T>
 
-               if (jsonObjectsName) {
-                  queryColumn.jsonObjectsName = [...jsonObjectsName]
-                  queryColumn.table = queryColumn.jsonObjectsName[0];
-                  queryColumn.jsonObjectsName.shift();
+               if (key.indexOf('.') > 0) {
+
+                  const [table, column] = key.split('.');
+                  queryColumn = new QueryDatabaseColumnBuilder<T>({
+                     column: column,
+                     table: table
+                  });
+
+               } else {
+
+                  queryColumn = new QueryDatabaseColumnBuilder<T>({
+                     column: key
+                  });
+
+                  if (jsonObjectsName) {
+                     queryColumn.jsonObjectsName = [...jsonObjectsName]
+                     queryColumn.table = queryColumn.jsonObjectsName[0];
+                     queryColumn.jsonObjectsName.shift();
+                  }
+
                }
 
                expressions.push(this.decodeWhereOperators(mainQueryManager, queryColumn, (whereCondition as any)[key], tableMetadata));

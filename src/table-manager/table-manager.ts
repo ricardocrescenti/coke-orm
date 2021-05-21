@@ -165,6 +165,11 @@ export class TableManager<T> {
     */
    public createSelectQuery(findOptions?: FindOptions<T>, level?: number, relationMetadata?: ForeignKeyMetadata): SelectQueryBuilder<T> {
       
+      // TODO: poder fazer condicoes direto na relation, para ver se ela está nula ou não
+      // TODO: ao registrar os parametros da query, verificar se ele já está na lista, pra não duplicar ele
+      // TODO: definir um tipo de construtor geral, que seria usado para as tabelas e operadores
+      // TODO: não inserir os wheres nas tabelas filhas, pois as condições estarão somente na tabela principal, e nas filhas ficará somente no select
+
       /// create a copy of findOptions to not modify the original and help to 
       /// copy it with the standard data needed to find the records
       findOptions = new FindOptions(findOptions);
@@ -392,7 +397,7 @@ export class TableManager<T> {
 
                }
 
-               subqueryWhere[i][sha1Where] = { equal: true };
+               subqueryWhere[i][`${columnMetadata.propertyName}_${columnMetadata.relation?.referencedTable}.${sha1Where}`] = { equal: true };
                delete where[columnMetadata.propertyName];
             
             }
@@ -402,7 +407,7 @@ export class TableManager<T> {
       }
 
       const subqueryOrderBy: any = (findOptions.orderBy as any ?? {})[columnMetadata.propertyName];
-      
+
       const relationQuery: SelectQueryBuilder<T> = relationTableManager.createSelectQuery({
          select: (columnData.length > 1 ? columnData[1] as [string, FindSelect] : []),
          relations: subqueryRelations,
