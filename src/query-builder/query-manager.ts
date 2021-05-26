@@ -375,7 +375,7 @@ export class QueryManager<T> {
    public registerParameter(value: any): number {
       const parameterIndex: number = this.parameters.indexOf(value);
       if (parameterIndex >= 0) {
-         return parameterIndex;
+         return (parameterIndex + 1);
       }
       return this.parameters.push(value);
    }
