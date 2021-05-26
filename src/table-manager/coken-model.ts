@@ -102,29 +102,48 @@ export abstract class CokenModel {
          const objectExists: boolean = await objectToSave.loadPrimaryKey(queryExecutor, saveOptions?.requester);
          if (objectExists) {
             
+            /// create condition by primary key to change specific record
             const where: QueryWhere<this> | undefined = tableManager.createWhereFromColumns(objectToSave, tableManager.tableMetadata.primaryKey?.columns ?? []);
 
+            /// set the date of the last update in the record
             const updatedAtColumn: ColumnMetadata | null = tableManager.tableMetadata.getUpdatedAtColumn();
             if (updatedAtColumn && columnsToSave.indexOf(updatedAtColumn.propertyName) < 0) {
                (objectToSave as any)[updatedAtColumn.propertyName] = 'now()';
             }
 
+            /// remove fields that cannot be updated
+            for (const columnMetadata of tableManager.tableMetadata.getColumnsThatCannotBeUpdated()) {
+               delete (objectToSave as any)[columnMetadata.propertyName];
+            }
+
+            /// create and execute the query to update the record
             const updateQuery: UpdateQueryBuilder<this> = tableManager.createUpdateQuery()
                .set(objectToSave)
                .where(where)
                .returning(columnsToReturn);
             await updateQuery.execute(queryExecutor);
 
+            /// if the field related to the record change date is not informed, 
+            /// the link will be removed from the saved object in order not to 
+            /// return fields that were not sent
             if (updatedAtColumn && columnsToSave.indexOf(updatedAtColumn.propertyName) < 0) {
                delete (objectToSave as any)[updatedAtColumn.propertyName];
             }
 
          } else {
 
+            /// remove fields that cannot be inserted
+            for (const columnMetadata of tableManager.tableMetadata.getColumnsThatCannotBeInserted()) {
+               delete (objectToSave as any)[columnMetadata.propertyName];
+            }
+
+            /// create and execute the query to insert the record
             const insertQuery: InsertQueryBuilder<this> = tableManager.createInsertQuery()
                .values(objectToSave)
                .returning(columnsToReturn);
             const insertedObject = await insertQuery.execute(queryExecutor);
+
+            /// fill in the sent object to be saved the primary key of the registry
             tableManager.populate(objectToSave, insertedObject.rows[0]);
 
          }

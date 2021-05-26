@@ -59,7 +59,7 @@ export abstract class QueryBuilder<T> {
       const params: string[] = this.getParams();
 
       return `${query}
-      ${params.length > 0 ? '-- ' + params.reduce((previousValues, currentValue, currentIndex) => previousValues + (currentIndex > 0 ? ', ' : '') + (currentIndex + ': ' + currentValue)) : ''}`;
+      ${params.length > 0 ? '-- 1: ' + params.reduce((previousValues, currentValue, currentIndex) => previousValues + (currentIndex > 0 ? ', ' : '') + ((currentIndex + 1) + ': ' + currentValue)) : ''}`;
    }
 
    /**

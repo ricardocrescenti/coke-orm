@@ -94,9 +94,19 @@ export class TableMetadata extends TableOptions {
 
    /**
     * 
+    */
+   private columnsThatCannotBeInserted?: ColumnMetadata[];
+
+   /**
+    * 
+    */
+   private columnsThatCannotBeUpdated?: ColumnMetadata[];
+
+   /**
+    * 
     * @param options 
     */
-   constructor(options: Omit<TableMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'afterDeleteEvents' | 'beforeLoadPrimaryKey' | 'afterLoadPrimaryKey' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn'>) {
+   constructor(options: Omit<TableMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'afterDeleteEvents' | 'beforeLoadPrimaryKey' | 'afterLoadPrimaryKey' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
       super(options);
       this.connection = options.connection;
    }
@@ -114,6 +124,10 @@ export class TableMetadata extends TableOptions {
       return column;
    }
 
+   /**
+    * 
+    * @returns 
+    */
    public getUpdatedAtColumn(): ColumnMetadata | null {
       if (this.updatedAtColumn === undefined) {
          this.updatedAtColumn = Object.values(this.columns).find(columnMetadata => columnMetadata.operation == 'UpdatedAt') ?? null;
@@ -121,11 +135,37 @@ export class TableMetadata extends TableOptions {
       return this.updatedAtColumn;
    }
 
+   /**
+    * 
+    * @returns 
+    */
    public getDeletedAtColumn(): ColumnMetadata | null {
       if (this.deletedAtColumn === undefined) {
          this.deletedAtColumn = Object.values(this.columns).find(columnMetadata => columnMetadata.operation == 'DeletedAt') ?? null;
       }
       return this.deletedAtColumn;
+   }
+
+   /**
+    * 
+    * @returns 
+    */
+   public getColumnsThatCannotBeInserted(): ColumnMetadata[] {
+      if (this.columnsThatCannotBeInserted === undefined) {
+         this.columnsThatCannotBeInserted = Object.values(this.columns).filter(columnMetadata => !columnMetadata.canInsert);
+      }
+      return this.columnsThatCannotBeInserted as ColumnMetadata[];
+   }
+
+   /**
+    * 
+    * @returns 
+    */
+   public getColumnsThatCannotBeUpdated(): ColumnMetadata[] {
+      if (this.columnsThatCannotBeUpdated === undefined) {
+         this.columnsThatCannotBeUpdated = Object.values(this.columns).filter(columnMetadata => !columnMetadata.canUpdate);
+      }
+      return this.columnsThatCannotBeUpdated as ColumnMetadata[];
    }
 
 }
