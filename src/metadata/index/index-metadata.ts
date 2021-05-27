@@ -25,18 +25,4 @@ export class IndexMetadata extends IndexOptions {
       }
    }
 
-   // public getTableMetadata(): TableMetadata {
-   //    return Metadata.getTable(this.target) as TableMetadata;
-   // }
-
-   // public getColumnsMetadata(): ColumnMetadata[] {
-   //    return Object.values<ColumnMetadata>(this.getTableMetadata().columns).filter((column) => this.columns.indexOf(column.propertyName));
-   // }
-
-   // public getName(): string {
-   //    const table: TableMetadata = this.getTableMetadata();
-   //    const columns: ColumnMetadata[] = this.getColumnsMetadata();
-   //    return this.name ?? StringUtils.sha1(`IDX_${table.name}^${this.unique}^${columns.map((column) => column.name).join('^')}`);
-   // }
-
 }

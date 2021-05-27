@@ -43,11 +43,6 @@ export class ForeignKeyOptions {
     public readonly cascade?: ('insert'|'update'|'remove')[];
 
     /**
-     * Indicates if relation column value can be nullable or not.
-     */
-    public readonly nullable?: boolean;
-
-    /**
      * Database cascade action on delete.
      */
     public readonly onDelete?: ForeignKeyAction;
@@ -78,7 +73,6 @@ export class ForeignKeyOptions {
         this.referencedTable = options.referencedTable;
         this.referencedColumn = options.referencedColumn;
         this.cascade = options.cascade;
-        this.nullable = options.nullable ?? false;
         this.onDelete = options.onDelete ?? 'NO ACTION';
         this.onUpdate = options.onUpdate ?? 'NO ACTION';
         this.lazy = options.lazy ?? false;
