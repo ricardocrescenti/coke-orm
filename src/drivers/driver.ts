@@ -162,7 +162,7 @@ export abstract class Driver {
     */
    public validateColumnMetadatada(table: TableMetadata, column: ColumnMetadata): void {
 
-      if (column.relation?.relationType == 'OneToMany') {
+      if (column.relation?.type == 'OneToMany') {
 
          if (column.propertyType.prototype != Array.prototype) {
             throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table with a 'OneToMany' type relation must be an array.`);

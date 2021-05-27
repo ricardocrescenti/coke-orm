@@ -1,9 +1,9 @@
 import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, Unique, UpdatedAtColumn } from "../../decorators";
 import { Generate } from "../../metadata/add-ons/generate";
-import { CokenModel } from "../../table-manager/coken-model";
+import { CokeModel } from "../../table-manager/coke-model";
 
 @Unique({ columns: ['uuid'] })
-export abstract class PatternModel extends CokenModel {
+export abstract class PatternModel extends CokeModel {
 
    @PrimaryColumn({ 
       default: new Generate({ strategy: 'sequence' })

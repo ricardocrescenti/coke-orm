@@ -194,7 +194,7 @@ export class Connection {
             /// the table, this data will only be used if the types are not reported directly in this column
             let referencedColumnOptions: ColumnOptions | undefined;
             let referencedDefaultColumnOptions: DefaultColumnOptions | undefined;
-            if (columnOption.relation?.relationType == 'ManyToOne' || columnOption.relation?.relationType == 'OneToOne') {
+            if (columnOption.relation?.type == 'ManyToOne' || columnOption.relation?.type == 'OneToOne') {
 
                const referencedTableOptions: TableOptions | undefined = tablesOptions.find((table) => table.className == columnOption.relation?.referencedTable)
                if (!referencedTableOptions) {
@@ -331,11 +331,11 @@ export class Connection {
                   throw new ColumnMetadataNotLocated(referencedTable, referencedColumnName);
                }
 
-               if (sourceColumnMetadata.relation?.relationType == 'OneToOne' || sourceColumnMetadata.relation?.relationType == 'ManyToOne') {
+               if (sourceColumnMetadata.relation?.type == 'OneToOne' || sourceColumnMetadata.relation?.type == 'ManyToOne') {
                   
                   sourceTableMetadata.foreignKeys.push(sourceColumnMetadata.relation);
 
-                  if (sourceColumnMetadata.relation?.relationType == 'OneToOne') {
+                  if (sourceColumnMetadata.relation?.type == 'OneToOne') {
 
                      if (((sourceTableMetadata.primaryKey?.columns?.length ?? 0) != 1 || sourceTableMetadata.columns[sourceTableMetadata.primaryKey?.columns[0] as string].name != sourceColumnMetadata.name) &&
                         sourceTableMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == sourceColumnMetadata.name).length == 0 &&

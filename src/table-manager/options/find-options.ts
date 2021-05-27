@@ -45,7 +45,7 @@ export class FindOptions<T> {
          const relationMetadata: ForeignKeyMetadata | undefined = columnMetadata.relation;
 
          if (relationMetadata) {
-            if (relationMetadata.relationType == 'OneToMany') {
+            if (relationMetadata.type == 'OneToMany') {
                delete (orderBy as any)[columnPropertyName];
             }
          }

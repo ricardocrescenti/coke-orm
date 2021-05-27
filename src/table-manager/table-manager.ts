@@ -11,7 +11,7 @@ import { QueryWhere, QueryWhereColumn } from "../query-builder/types/query-where
 import { QueryJoin } from "../query-builder/column-builder/query-relation-builder";
 import { FindSelect } from "./types/find-select";
 import { TableValues } from "./types/table-values";
-import { CokenModel } from "./coken-model";
+import { CokeModel } from "./coke-model";
 import { SaveOptions } from "./options/save-options";
 import { StringUtils } from "../utils/string-utils";
 import { OrmUtils } from "../utils/orm-utils";
@@ -85,7 +85,7 @@ export class TableManager<T> {
             const relationTableMetadata: TableMetadata = this.connection.tables[columnMetadata.relation.referencedTable];
             const relationTableManager: TableManager<typeof relationTableMetadata.target> = this.connection.getTableManager(columnMetadata.relation.referencedTable);
             
-            if (columnMetadata.relation.relationType == 'OneToMany') {
+            if (columnMetadata.relation.type == 'OneToMany') {
                object[columnMetadata.propertyName] = values[columnMetadata.propertyName].map((value: any) => relationTableManager.create(value));
             } else {
                object[columnMetadata.propertyName] = relationTableManager.create(values[columnMetadata.propertyName]);
@@ -144,7 +144,7 @@ export class TableManager<T> {
     * @param queryExecutor 
     */
    public async save(object: TableValues<T>, saveOptions?: SaveOptions): Promise<any> {
-      const objectToSave: CokenModel = this.create(object);
+      const objectToSave: CokeModel = this.create(object);
       return objectToSave.save(saveOptions?.queryExecutor ?? this.connection, saveOptions);
    }
 
@@ -153,7 +153,7 @@ export class TableManager<T> {
     * @param queryExecutor 
     */
    public async delete(object: any, queryExecutor?: QueryExecutor | Connection): Promise<boolean> {
-      const objectToDelete: CokenModel = this.create(object);
+      const objectToDelete: CokeModel = this.create(object);
       return objectToDelete.delete(queryExecutor ?? this.connection);
    }
 
@@ -308,7 +308,7 @@ export class TableManager<T> {
             const relationAlias: string = this.connection.options.namingStrategy?.eagerJoinRelationAlias(columnMetadata) as string;
             const relationTableManager: TableManager<any> =  this.connection.getTableManager(columnMetadata.relation.referencedTable);
 
-            if (columnMetadata.relation.relationType == 'OneToMany') {
+            if (columnMetadata.relation.type == 'OneToMany') {
 
                const referencedColumn: ColumnMetadata = relationTableManager.tableMetadata.columns[columnMetadata.relation.referencedColumn];
                const relationQuery: SelectQueryBuilder<any> = this.createChildSubquery(columnMetadata, columnData, relationTableManager, findOptions, level + 1);
@@ -557,7 +557,7 @@ export class TableManager<T> {
          }
 
          let value: any = (values as any)[column];
-         if (value instanceof Object && columnMetadata.relation && columnMetadata.relation.relationType != 'OneToMany') {
+         if (value instanceof Object && columnMetadata.relation && columnMetadata.relation.type != 'OneToMany') {
             value = value[columnMetadata.relation.referencedColumn];
          }
 

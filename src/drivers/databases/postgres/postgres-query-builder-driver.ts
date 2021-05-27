@@ -64,7 +64,7 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 
       for (const columnName in tableMetadata.columns) {
          const column: ColumnMetadata = tableMetadata.getColumn(columnName);
-         if (column.relation && column.relation.relationType == 'OneToMany') {
+         if (column.relation && column.relation.type == 'OneToMany') {
             continue;
          }
 

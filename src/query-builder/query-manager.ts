@@ -400,13 +400,13 @@ export class QueryManager<T> {
          if (this.tableMetadata) {
             
             const columnMetadata: ColumnMetadata = this.tableMetadata.columns[key];
-            if (!columnMetadata || (columnMetadata.relation && columnMetadata.relation?.relationType == 'OneToMany')) {
+            if (!columnMetadata || (columnMetadata.relation && columnMetadata.relation?.type == 'OneToMany')) {
                continue;
             }
 
             columnName = columnMetadata.name as string;
             
-            if (value instanceof Object && columnMetadata.relation && columnMetadata.relation.relationType != 'OneToMany') {
+            if (value instanceof Object && columnMetadata.relation && columnMetadata.relation.type != 'OneToMany') {
                value = value[columnMetadata.relation.referencedColumn];
             }
 

@@ -18,7 +18,7 @@ export class NamingStrategy {
    columnName(tableMetadata: TableMetadata, columnOptions: ColumnOptions): string {
       let name = columnOptions.propertyName 
          
-      if (columnOptions.relation?.relationType == 'ManyToOne' || columnOptions.relation?.relationType == 'OneToOne') {
+      if (columnOptions.relation?.type == 'ManyToOne' || columnOptions.relation?.type == 'OneToOne') {
          name += '_' + columnOptions.relation.referencedColumn;
       }
 

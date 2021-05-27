@@ -7,18 +7,16 @@
 * **04** - [x] Carregar as classes de pastas
 * **07** - [x] Criar a tabela "migrations" para gerenciar as migrações do banco de dados
 * **08** - [x] Não inserir os wheres nas tabelas filhas, pois as condições estarão somente na tabela principal, e nas filhas ficará somente no select
-* **09** - [ ] Passar por todas as propriedades das colunas e tabelas para ver se tem alguma proprietade sem uso e implementar ou remover
+* **09** - [x] Passar por todas as propriedades das colunas e tabelas para ver se tem alguma proprietade sem uso e implementar ou remover
 * **10** - [ ] Implementar o lazy e eager das relations.
-* **10** - [ ] Analisar os efentos das tabelas, se será usado os eventos ou métodos sobrescritos dentro dos models.  
-* **11** - [ ] Criar propriedade no ColumnOptions para especificar o campo padrão do where caso não seja informado ficando tipo { entity: { equal: 1 } }
-* **12** - [ ] Criar classe de Log para mostrar os dados
-* **13** - [ ] No TableManager criar método para efetuar count passando um findOptions sem select, relations, orderBy, roles.
-* **14** - [ ] Instalar o Jest para efetuar testes automatizados
+* **11** - [ ] Analisar os efentos das tabelas, se será usado os eventos ou métodos sobrescritos dentro dos models.  
+* **12** - [ ] Criar propriedade no ColumnOptions para especificar o campo padrão do where caso não seja informado ficando tipo { entity: { equal: 1 } }
+* **13** - [ ] Criar classe de Log para mostrar os dados
+* **14** - [ ] No TableManager criar método para efetuar count passando um findOptions sem select, relations, orderBy, roles.
+* **15** - [ ] Instalar o Jest para efetuar testes automatizados
 * **19** = [ ] Desenvolver o procedimento de roolback das migrations.
 * **20** - [ ] Passar por todo o ORM validando e adicionando os comentários nos métodos
 * **23** - [ ] Estudar uma forma de gerar as triggers, procedures e views pelo ORM
-
-* [ ] - renomear o relationType para type
 
 ## Find
 

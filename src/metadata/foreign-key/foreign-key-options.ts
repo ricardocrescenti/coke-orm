@@ -21,7 +21,7 @@ export class ForeignKeyOptions {
     /**
      * 
      */
-    public readonly relationType: ForeignKeyType;
+    public readonly type: ForeignKeyType;
 
     /**
      * Class referenced to this field
@@ -69,7 +69,7 @@ export class ForeignKeyOptions {
     constructor(options: ForeignKeyOptions) {
         this.target = options.target;
         this.name = options.name;
-        this.relationType = options.relationType;
+        this.type = options.type;
         this.referencedTable = options.referencedTable;
         this.referencedColumn = options.referencedColumn;
         this.cascade = options.cascade;

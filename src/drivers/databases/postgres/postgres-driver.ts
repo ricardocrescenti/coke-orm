@@ -356,7 +356,7 @@ export class PostgresDriver extends Driver {
             // check column diferences
             for (const columnName in tableMetadata.columns) {
                const columnMetadata: ColumnMetadata = tableMetadata.getColumn(columnName);
-               if (columnMetadata.relation && columnMetadata.relation.relationType == 'OneToMany') {
+               if (columnMetadata.relation && columnMetadata.relation.type == 'OneToMany') {
                   continue;
                }
 

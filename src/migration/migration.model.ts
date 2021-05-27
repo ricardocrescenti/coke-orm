@@ -1,9 +1,9 @@
 import { Column, PrimaryColumn, Table } from "../decorators";
 import { Generate } from "../metadata/add-ons/generate";
-import { CokenModel } from "../table-manager/coken-model";
+import { CokeModel } from "../table-manager/coke-model";
 
 @Table()
-export class Migration extends CokenModel {
+export class Migration extends CokeModel {
 
     @PrimaryColumn({ 
         default: new Generate({ strategy: 'sequence' }) 

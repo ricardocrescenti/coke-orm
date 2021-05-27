@@ -10,7 +10,7 @@ import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
 import { SaveOptions } from "./options/save-options";
 import { TableManager } from "./table-manager";
 
-export abstract class CokenModel {
+export abstract class CokeModel {
 
    protected getTableManager(queryExecutor: QueryExecutor | Connection): TableManager<this> {
       return queryExecutor.getTableManager(this.constructor.name);
@@ -34,8 +34,8 @@ export abstract class CokenModel {
          /// get the columns of the object being saved to see below the columns 
          /// that have relations with parent and child tables
          const columnsToSave: string[] = Object.keys(objectToSave);
-         const columnsParentRelation: ColumnMetadata[] = Object.values(tableManager.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation && columnMetadata.relation.relationType != 'OneToMany');
-         const columnsChildrenRelation: ColumnMetadata[] = Object.values(tableManager.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation?.relationType == 'OneToMany');
+         const columnsParentRelation: ColumnMetadata[] = Object.values(tableManager.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation && columnMetadata.relation.type != 'OneToMany');
+         const columnsChildrenRelation: ColumnMetadata[] = Object.values(tableManager.tableMetadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation?.type == 'OneToMany');
 
          /// go through the columns with the parent relation to load their primary
          /// keys, if the relation is configured to be inser, update or remove, 
@@ -63,7 +63,7 @@ export abstract class CokenModel {
             // }
 
             /// get the parent object and load the primary key to check if it exists
-            const parentObject: CokenModel = (objectToSave as any)[columnParentRelation.propertyName];
+            const parentObject: CokeModel = (objectToSave as any)[columnParentRelation.propertyName];
             const parentExists: boolean = await parentObject.loadPrimaryKey(queryExecutor);
 
             /// if the parent does not exist, and the relation is not configured 
@@ -165,7 +165,7 @@ export abstract class CokenModel {
             /// be loaded, and as they are loaded by the new children list, they
             /// will be removed from the list of children to be removed, and in
             /// the end, those left over will be deleted
-            let childrenToRemove: CokenModel[] | undefined = undefined;
+            let childrenToRemove: CokeModel[] | undefined = undefined;
             if (columnChildRelation.relation?.canRemove) {
                childrenToRemove = await columnChildRelation.relation.referencedTableManager.find({
                   relations: [columnChildRelation.relation.referencedColumn],
@@ -179,7 +179,7 @@ export abstract class CokenModel {
 
                /// set the parent object in the child object, to check if it exists,
                /// and if necessary insert or update it
-               const childObject: CokenModel = (objectToSave as any)[columnChildRelation.propertyName][childIndex];
+               const childObject: CokeModel = (objectToSave as any)[columnChildRelation.propertyName][childIndex];
                Object.assign(childObject, childRelationColumn);
 
                /// load the primary key to verify that it exists
@@ -254,7 +254,7 @@ export abstract class CokenModel {
       /// get the table manager to perform the processes below
       const tableManager: TableManager<this> = this.getTableManager(queryExecutor);
       
-      const objectToDelete: CokenModel = tableManager.create(this);
+      const objectToDelete: CokeModel = tableManager.create(this);
       const objectExists: boolean = await objectToDelete.loadPrimaryKey(queryExecutor);
       if (objectExists) {
          
@@ -354,15 +354,15 @@ export abstract class CokenModel {
    public async loadPrimaryKeyCascade(queryExecutor: QueryExecutor | Connection, loadChildrensPrimaryKey: boolean = true): Promise<void> {
       const tableManager: TableManager<this> = this.getTableManager(queryExecutor);
       
-      const parentRelations: ForeignKeyMetadata[] = tableManager.tableMetadata.foreignKeys.filter(foreignKey => foreignKey.relationType != 'OneToMany');
+      const parentRelations: ForeignKeyMetadata[] = tableManager.tableMetadata.foreignKeys.filter(foreignKey => foreignKey.type != 'OneToMany');
       for (const relation of parentRelations) {
          
-         let parent: CokenModel = (this as any)[relation.column.propertyName];
+         let parent: CokeModel = (this as any)[relation.column.propertyName];
          if (parent) {
 
             const relationTableManager = queryExecutor.getTableManager(relation.referencedTable);
 
-            if (!(parent instanceof CokenModel)) {
+            if (!(parent instanceof CokeModel)) {
                parent = relationTableManager.create(parent);
             }
 
@@ -376,15 +376,15 @@ export abstract class CokenModel {
 
       if (loadChildrensPrimaryKey) {
 
-         const childRelations: ForeignKeyMetadata[] = tableManager.tableMetadata.foreignKeys.filter(foreignKey => foreignKey.relationType == 'OneToMany');
+         const childRelations: ForeignKeyMetadata[] = tableManager.tableMetadata.foreignKeys.filter(foreignKey => foreignKey.type == 'OneToMany');
          for (const relation of childRelations) {
             
-            const children: CokenModel[] = ((this as any)[relation.column.propertyName] ?? []);
+            const children: CokeModel[] = ((this as any)[relation.column.propertyName] ?? []);
             for (let child of children) {
 
                const childTableManager = queryExecutor.getTableManager(relation.referencedTable);
 
-               if (!(child instanceof CokenModel)) {
+               if (!(child instanceof CokeModel)) {
                   child = childTableManager.create(parent);
                }
 
