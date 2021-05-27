@@ -164,10 +164,6 @@ export class TableManager<T> {
     * @returns 
     */
    public createSelectQuery(findOptions?: FindOptions<T>, level?: number, relationMetadata?: ForeignKeyMetadata): SelectQueryBuilder<T> {
-      
-      // TODO: poder fazer condicoes direto na relation, para ver se ela está nula ou não
-      // TODO: definir um tipo de construtor geral, que seria usado para as tabelas e operadores
-      // TODO: não inserir os wheres nas tabelas filhas, pois as condições estarão somente na tabela principal, e nas filhas ficará somente no select
 
       /// create a copy of findOptions to not modify the original and help to 
       /// copy it with the standard data needed to find the records

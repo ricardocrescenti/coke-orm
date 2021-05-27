@@ -14,6 +14,11 @@
 * **20** - [ ] Passar por todo o ORM validando e adicionando os comentários nos métodos
 * **23** - [ ] Estudar uma forma de gerar as triggers, procedures e views pelo ORM
 
+* poder fazer condicoes direto na relation, para ver se ela está nula ou não
+* definir um tipo de construtor geral, que seria usado para as tabelas e operadores
+* não inserir os wheres nas tabelas filhas, pois as condições estarão somente na tabela principal, e nas filhas ficará somente no select
+* passar por todas as propriedades das colunas e tabelas para ver se tem alguma proprietade sem uso e implementar ou remover
+
 ## Find
 
 * **22** - [ ] Ver para criar "rules" a nivel de linha, neste caso o cara pode adiconar um SQL ou uma condição JavaScript, permissões.

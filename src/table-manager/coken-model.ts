@@ -74,7 +74,6 @@ export abstract class CokenModel {
 
             /// check if the object can be inserted or updated to perform the 
             /// necessary operation
-            let savedParentObject: any = undefined;
             if (columnParentRelation.relation?.canInsert || columnParentRelation.relation?.canUpdate) {
                const savedParentObject = await parentObject.save(queryExecutor, { 
                   relation: columnParentRelation.relation,
@@ -169,6 +168,7 @@ export abstract class CokenModel {
             let childrenToRemove: CokenModel[] | undefined = undefined;
             if (columnChildRelation.relation?.canRemove) {
                childrenToRemove = await columnChildRelation.relation.referencedTableManager.find({
+                  relations: [columnChildRelation.relation.referencedColumn],
                   where: childRelationColumn
                }, queryExecutor) as any[];
             }
@@ -183,7 +183,8 @@ export abstract class CokenModel {
                Object.assign(childObject, childRelationColumn);
 
                /// load the primary key to verify that it exists
-               const childExists: boolean = await childObject.loadPrimaryKey(queryExecutor);
+               await childObject.loadPrimaryKey(queryExecutor, false);
+               const childExists: boolean = await childObject.loadPrimaryKey(queryExecutor, false);//childObject.hasInformedColumns(columnChildRelation.table.primaryKey?.columns as string[]);
                
                /// if the child does not exist, and the relation is not configured 
                /// to insert, an error will be returned
@@ -350,22 +351,22 @@ export abstract class CokenModel {
    /**
     * 
     */
-   public async loadPrimaryKeyCascade(queryExecutor: QueryExecutor | Connection): Promise<void> {
+   public async loadPrimaryKeyCascade(queryExecutor: QueryExecutor | Connection, loadChildrensPrimaryKey: boolean = true): Promise<void> {
       const tableManager: TableManager<this> = this.getTableManager(queryExecutor);
       
       const parentRelations: ForeignKeyMetadata[] = tableManager.tableMetadata.foreignKeys.filter(foreignKey => foreignKey.relationType != 'OneToMany');
       for (const relation of parentRelations) {
          
-         let parent = (this as any)[relation.column.propertyName];
+         let parent: CokenModel = (this as any)[relation.column.propertyName];
          if (parent) {
 
             const relationTableManager = queryExecutor.getTableManager(relation.referencedTable);
 
-            if (parent !instanceof CokenModel) {
+            if (!(parent instanceof CokenModel)) {
                parent = relationTableManager.create(parent);
             }
 
-            await parent.loadPrimaryKeyCascade(relationTableManager);
+            await parent.loadPrimaryKeyCascade(queryExecutor);
 
          }
 
@@ -373,22 +374,31 @@ export abstract class CokenModel {
 
       await this.loadPrimaryKey(queryExecutor);
 
-      const childRelations: ForeignKeyMetadata[] = tableManager.tableMetadata.foreignKeys.filter(foreignKey => foreignKey.relationType == 'OneToMany');
-      for (const relation of childRelations) {
-         
-         const children: CokenModel[] = ((this as any)[relation.column.propertyName] ?? []);
-         for (let child of children) {
+      if (loadChildrensPrimaryKey) {
 
-            const childTableManager = queryExecutor.getTableManager(relation.referencedTable);
+         const childRelations: ForeignKeyMetadata[] = tableManager.tableMetadata.foreignKeys.filter(foreignKey => foreignKey.relationType == 'OneToMany');
+         for (const relation of childRelations) {
+            
+            const children: CokenModel[] = ((this as any)[relation.column.propertyName] ?? []);
+            for (let child of children) {
 
-            if (child !instanceof CokenModel) {
-               child = childTableManager.create(parent);
+               const childTableManager = queryExecutor.getTableManager(relation.referencedTable);
+
+               if (!(child instanceof CokenModel)) {
+                  child = childTableManager.create(parent);
+               }
+
+               await child.loadPrimaryKeyCascade(queryExecutor);
+
             }
-
-            await child.loadPrimaryKeyCascade(queryExecutor);
-
          }
+
       }
+   }
+
+   public hasInformedColumns(columns: string[]): boolean {
+      const currentColumns = Object.keys(this);
+      return columns.every(column => currentColumns.indexOf(column) >= 0);
    }
 
 }
