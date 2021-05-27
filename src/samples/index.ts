@@ -49,7 +49,6 @@ export async function test() {
 
    console.log('Connected', new Date().toLocaleString());
 
-   
    let city: CityModel;
 
    city = await connection.findOne(CityModel, {
@@ -246,7 +245,6 @@ export async function test() {
    seller.entity?.addresses?.splice(1, 1);
    seller.entity?.addresses?.splice(1, 1);
    await seller.save(connection);
-   
   
    const sellers = await connection.find(SellerModel, {
       select: [

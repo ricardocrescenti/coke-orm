@@ -169,7 +169,7 @@ export abstract class CokenModel {
             if (columnChildRelation.relation?.canRemove) {
                childrenToRemove = await columnChildRelation.relation.referencedTableManager.find({
                   relations: [columnChildRelation.relation.referencedColumn],
-                  where: childRelationColumn
+                  where: JSON.parse(JSON.stringify(childRelationColumn))
                }, queryExecutor) as any[];
             }
 

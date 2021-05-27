@@ -14,15 +14,14 @@ export class FindOptions<T> {
    roles?: string[];
 
    constructor(findOptions?: FindOptions<T>) {
-      if (findOptions) { 
-         findOptions = JSON.parse(JSON.stringify(findOptions));
-         this.select = findOptions?.select;
-         this.relations = findOptions?.relations;
-         this.where = findOptions?.where;
-         this.orderBy = findOptions?.orderBy;
-         this.take = findOptions?.take;
-         this.limit = findOptions?.limit;
-         this.roles = findOptions?.roles;
+      if (findOptions) {
+         this.select = findOptions.select;
+         this.relations = findOptions.relations;
+         this.where = findOptions.where;
+         this.orderBy = findOptions.orderBy;
+         this.take = findOptions.take;
+         this.limit = findOptions.limit;
+         this.roles = findOptions.roles;
       }
    }
 

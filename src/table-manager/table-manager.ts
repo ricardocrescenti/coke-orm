@@ -221,6 +221,11 @@ export class TableManager<T> {
          .orderBy(findOptions.orderBy)
          .take(findOptions.take)
          .limit(findOptions.limit)
+
+      if ((level ?? 0) > 0) {
+         query.where();
+      }
+      
       return query;
    
    }
