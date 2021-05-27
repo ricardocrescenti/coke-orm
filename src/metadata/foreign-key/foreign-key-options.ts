@@ -53,12 +53,6 @@ export class ForeignKeyOptions {
     public readonly onUpdate?: ForeignKeyAction;
 
     /**
-     * Set this relation to be lazy. Note: lazy relations are promises. When you call them they return promise
-     * which resolve relation result then. If your property's type is Promise then this relation is set to lazy automatically.
-     */
-    public readonly lazy?: boolean;
-
-    /**
      * Set this relation to be eager.
      * Eager relations are always loaded automatically when relation's owner entity is loaded using find* methods.
      * Only using QueryBuilder prevents loading eager relations.
@@ -75,7 +69,6 @@ export class ForeignKeyOptions {
         this.cascade = options.cascade;
         this.onDelete = options.onDelete ?? 'NO ACTION';
         this.onUpdate = options.onUpdate ?? 'NO ACTION';
-        this.lazy = options.lazy ?? false;
         this.eager = options.eager ?? false;
     }
 }

@@ -8,7 +8,7 @@
 * **07** - [x] Criar a tabela "migrations" para gerenciar as migrações do banco de dados
 * **08** - [x] Não inserir os wheres nas tabelas filhas, pois as condições estarão somente na tabela principal, e nas filhas ficará somente no select
 * **09** - [x] Passar por todas as propriedades das colunas e tabelas para ver se tem alguma proprietade sem uso e implementar ou remover
-* **10** - [ ] Implementar o lazy e eager das relations.
+* **10** - [x] Implementar o eager das relations.
 * **11** - [ ] Analisar os efentos das tabelas, se será usado os eventos ou métodos sobrescritos dentro dos models.  
 * **12** - [ ] Criar propriedade no ColumnOptions para especificar o campo padrão do where caso não seja informado ficando tipo { entity: { equal: 1 } }
 * **13** - [ ] Criar classe de Log para mostrar os dados

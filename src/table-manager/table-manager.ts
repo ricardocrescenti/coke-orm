@@ -277,7 +277,7 @@ export class TableManager<T> {
       if (!findOptions.select || findOptions.select.length == 0) 
       {
          findOptions.select = Object.values(this.tableMetadata.columns)
-            .filter(column => column.canSelect && (!column.relation || ((findOptions.relations ?? []).indexOf(column.propertyName) >= 0)))
+            .filter(column => column.canSelect && (!column.relation || (column.relation.eager || (findOptions.relations ?? []).indexOf(column.propertyName) >= 0)))
             .map(column => column.propertyName);
       }
 

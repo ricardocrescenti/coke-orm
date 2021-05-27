@@ -6,7 +6,7 @@ import { EntityModel } from "./entity.model";
 @Unique({ columns: ['entity'] })
 export class SellerModel extends PatternModel {
 
-	@OneToOne({ relation: { referencedTable: 'EntityModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
+	@OneToOne({ relation: { referencedTable: 'EntityModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE', eager: true } })
 	entity?: EntityModel;
 
 	@Column({ length: 18, precision: 5, nullable: true, default: 0 })
