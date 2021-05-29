@@ -1,52 +1,16 @@
 import { CokeORM } from "../coke-orm";
-import { DatabaseDriver } from "../common/enum/driver-type";
 import { Connection } from "../connection/connection";
-import { CarrierModel } from "./models/entity/carrier.model";
+import { Status } from "./enums/status.enum";
 import { CityModel } from "./models/entity/city.model";
-import { CollaboratorModel } from "./models/entity/collaborator.model";
-import { CompanyModel } from "./models/entity/company.model";
-import { CustomerModel } from "./models/entity/customer.model";
 import { EntityAddressModel } from "./models/entity/entity-address.model";
-import { EntityDocumentModel } from "./models/entity/entity-document.model";
-import { EntityPhoneModel } from "./models/entity/entity-phone.model";
-import { EntityModel } from "./models/entity/entity.model";
 import { SellerModel } from "./models/entity/seller.model";
-import { FileModel } from "./models/file/file.model";
-import { PatternModel } from "./models/pattern.model";
-import { PriceListModel } from "./models/product/price-list.model";
 
 export async function test() {
 
    console.log('Connecting', new Date().toLocaleString());
-
+  
    const connection: Connection = await CokeORM.connect();
-   // const connection: Connection = await CokeORM.connect({
-   //    driver: 'postgres',
-   //    host: 'localhost',
-   //    port: 5432,
-   //    user: 'devmaster',
-   //    password: 'supadm',
-   //    database: 'devmaster',
-   //    entities: [
-   //       CarrierModel,
-   //       CityModel,
-   //       CollaboratorModel,
-   //       CompanyModel,
-   //       CustomerModel,
-   //       EntityAddressModel,
-   //       EntityDocumentModel,
-   //       EntityPhoneModel,
-   //       EntityModel,
-   //       SellerModel,
-   //       FileModel,
-   //       PatternModel,
-   //       PriceListModel
-   //    ],
-   //    migrations: {
-   //       synchronize: true
-   //    }
-   // });
-
+   
    console.log('Connected', new Date().toLocaleString());
 
    let city: CityModel;
@@ -158,6 +122,7 @@ export async function test() {
          ]
       },
       comission: 10,
+      status: Status.active
    });
    await seller.save(connection);
    seller = sellerTableManager.create({
@@ -244,6 +209,7 @@ export async function test() {
    await seller.save(connection);
    seller.entity?.addresses?.splice(1, 1);
    seller.entity?.addresses?.splice(1, 1);
+   seller.status = Status.inactive;
    await seller.save(connection);
   
    const sellers = await connection.find(SellerModel, {

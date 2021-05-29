@@ -1,4 +1,5 @@
 import { Column, OneToOne, Table, Unique } from "../../../decorators";
+import { Status } from "../../enums/status.enum";
 import { PatternModel } from "../pattern.model";
 import { EntityModel } from "./entity.model";
 
@@ -13,6 +14,6 @@ export class SellerModel extends PatternModel {
 	comission?: number;
 
 	@Column({ default: 1 }) //, enum: [Status]
-	status?: number;//Status;
+	status?: Status;
 
 }
