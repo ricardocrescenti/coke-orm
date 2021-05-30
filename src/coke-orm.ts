@@ -64,6 +64,11 @@ export class CokeORM {
       return CokeORM.connections[connectionOptions[0].name ?? 'default'];
    }
 
+   /**
+    * 
+    * @param connectionName 
+    * @returns 
+    */
    public static loadConfigFile(connectionName?: string): ConnectionOptions[] {
       const configFileName = 'coke-orm.config.json';
       

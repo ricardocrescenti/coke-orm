@@ -1,8 +1,6 @@
 import { Connection } from "../../../connection/connection";
-import { BeforeLoadPrimaryKey, Column, ManyToOne, OneToMany, OneToOne, Table } from "../../../decorators";
-import { TableMetadata } from "../../../metadata/tables/table-metadata";
+import { Column, ManyToOne, OneToMany, Table } from "../../../decorators";
 import { QueryExecutor } from "../../../query-executor/query-executor";
-import { TableManager } from "../../../table-manager/table-manager";
 import { FileModel } from "../file/file.model";
 import { PatternModel } from "../pattern.model";
 import { EntityAddressModel } from "./entity-address.model";

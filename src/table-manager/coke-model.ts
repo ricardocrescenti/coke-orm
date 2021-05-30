@@ -292,6 +292,16 @@ export abstract class CokeModel {
 
    /**
     * 
+    * @param columns 
+    * @returns 
+    */
+   public hasInformedColumns(columns: string[]): boolean {
+      const currentColumns = Object.keys(this);
+      return columns.every(column => currentColumns.indexOf(column) >= 0);
+   }
+
+   /**
+    * 
     * @returns 
     */
    public async loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
@@ -394,11 +404,6 @@ export abstract class CokeModel {
          }
 
       }
-   }
-
-   public hasInformedColumns(columns: string[]): boolean {
-      const currentColumns = Object.keys(this);
-      return columns.every(column => currentColumns.indexOf(column) >= 0);
    }
 
 }
