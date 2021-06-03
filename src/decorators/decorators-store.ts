@@ -1,14 +1,13 @@
-import { ConstructorTo } from "../common/types/constructor-to.type";
+import { SubscriberAlreadyInformedError } from "../errors/subscriber-already-informed.error";
 import { IndexOptions, UniqueOptions } from "../metadata";
 import { ColumnOptions } from "../metadata/columns/column-options";
-import { TableSubscriber } from "../metadata/events/table-subscriber";
 import { TableOptions } from "../metadata/tables/table-options";
-import { EventOptions } from "./event/event-options";
+import { SubscriberOptions } from "./event/subscriber-options";
 
 export class DecoratorStore {
    private static tables: TableOptions[] = [];
    private static columns: ColumnOptions[] = [];
-   private static events: EventOptions[] = [];
+   private static events: SubscriberOptions[] = [];
    private static uniques: UniqueOptions[] = [];
    private static indexs: IndexOptions[] = [];
 
@@ -37,10 +36,15 @@ export class DecoratorStore {
       return DecoratorStore.columns.filter((column) => targets.indexOf(column.target.constructor) >= 0);
    }
 
-   public static addSubscriber(event: EventOptions): void {
-      DecoratorStore.events.push(event);
+   public static addSubscriber(subscriber: SubscriberOptions): void {
+      const currentSubscriber = this.getSubscriber(subscriber.target);
+      if (currentSubscriber) {
+         throw new SubscriberAlreadyInformedError(subscriber);
+      }
+
+      DecoratorStore.events.push(subscriber);
    }
-   public static getSubscriber(target: Function): EventOptions | undefined {     
+   public static getSubscriber(target: Function): SubscriberOptions | undefined {     
       const [event] = DecoratorStore.events.filter((event) => target == event.target);
       return event;
    }

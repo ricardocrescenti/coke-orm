@@ -7,6 +7,7 @@ import { InvalidQueryBuilder } from "./invalid-query-builder";
 import { QueryExecutionError } from "./query-execution-error";
 import { ReferencedColumnMetadataNotLocated } from "./referenced_column_metadata_not_located";
 import { ReferencedTableMetadataNotLocated } from "./referenced_table_metadata_not_located";
+import { TableHasNoPrimaryKey } from "./table-has-no-primary-key";
 import { TableMetadataNotLocated } from "./table_metadata_not_located";
 
 export {
@@ -19,5 +20,6 @@ export {
    QueryExecutionError,
    ReferencedColumnMetadataNotLocated,
    ReferencedTableMetadataNotLocated,
-   TableMetadataNotLocated
+   TableMetadataNotLocated,
+   TableHasNoPrimaryKey
 }
