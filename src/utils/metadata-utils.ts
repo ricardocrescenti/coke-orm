@@ -23,20 +23,20 @@ export class MetadataUtils {
         return tree;
     }
 
-    /**
-     * Checks if this table is inherited from another table.
-     */
-    static isInherited(target1: Function, target2: Function) {
-        return target1.prototype instanceof target2;
-    }
+    // /**
+    //  * Checks if this table is inherited from another table.
+    //  */
+    // static isInherited(target1: Function, target2: Function) {
+    //     return target1.prototype instanceof target2;
+    // }
 
-    /**
-     * Filters given array of targets by a given classes.
-     * If classes are not given, then it returns array itself.
-     */
-    static filterByTarget<T extends { target?: any }>(array: T[], classes?: any[]): T[] {
-        if (!classes) return array;
-        return array.filter(item => item.target && classes.indexOf(item.target) !== -1);
-    }
+    // /**
+    //  * Filters given array of targets by a given classes.
+    //  * If classes are not given, then it returns array itself.
+    //  */
+    // static filterByTarget<T extends { target?: any }>(array: T[], classes?: any[]): T[] {
+    //     if (!classes) return array;
+    //     return array.filter(item => item.target && classes.indexOf(item.target) !== -1);
+    // }
 
 }

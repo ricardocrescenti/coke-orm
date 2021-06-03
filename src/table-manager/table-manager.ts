@@ -21,6 +21,7 @@ import { QueryJsonAggColumnBuilder } from "../query-builder/column-builder/query
 import { QueryJsonColumnBuilder } from "../query-builder/column-builder/query-json-column-builder";
 import { QueryWhereColumnBuilder } from "../query-builder/column-builder/query-where-column-builder";
 import { QueryAggregateColumnBuilder } from "../query-builder/column-builder/query-aggregate-column-builder";
+import { TableSubscriber } from "../metadata/events/table-subscriber";
 
 export class TableManager<T> {
 
@@ -83,7 +84,7 @@ export class TableManager<T> {
          if (columnMetadata.relation) {
 
             const relationTableMetadata: TableMetadata = this.connection.tables[columnMetadata.relation.referencedTable];
-            const relationTableManager: TableManager<typeof relationTableMetadata.target> = this.connection.getTableManager(columnMetadata.relation.referencedTable);
+            const relationTableManager: TableManager<any> = this.connection.getTableManager(columnMetadata.relation.referencedTable);
             
             if (columnMetadata.relation.type == 'OneToMany') {
                object[columnMetadata.propertyName] = values[columnMetadata.propertyName].map((value: any) => relationTableManager.create(value));
@@ -114,8 +115,25 @@ export class TableManager<T> {
 
       if (result.rows.length > 0) {
 
+      /// create the table-related subscriber to run the events
+         const subscriber: TableSubscriber<T> | undefined = this.createTableSubscriber();
+
          /// transform the query result into its specific classes
-         return result.rows.map((row: any) => this.create(row));
+         for (let i = 0; i < result.rows.length; i++) {
+            result.rows[i] = this.create(result.rows[i]);
+
+            if (subscriber?.afterLoad) {
+               await subscriber.afterLoad({
+                  connection: (queryExecutor?.connection ?? this.connection),
+                  queryExecutor: (queryExecutor instanceof QueryExecutor ? queryExecutor : undefined),
+                  manager: this,
+                  findOptions: findOptions,
+                  data: result.rows[i]
+               });
+            }
+         }
+         return result.rows;
+
       }
 
       return [];
@@ -366,7 +384,7 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private createSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
+   private createSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<any>, findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
       
       const subqueryRelations = (findOptions.relations ?? [])
          .filter(relation => relation.startsWith(`${columnMetadata.propertyName}.`))
@@ -411,7 +429,7 @@ export class TableManager<T> {
       const relationQuery: SelectQueryBuilder<T> = relationTableManager.createSelectQuery({
          select: (columnData.length > 1 ? columnData[1] as [string, FindSelect] : []),
          relations: subqueryRelations,
-         where: queryWhereColumns.map(queryWhereColumn => queryWhereColumn.where),
+         where: queryWhereColumns.map(queryWhereColumn => queryWhereColumn.where) as any,
          orderBy: subqueryOrderBy,
          roles: findOptions.roles
       }, level, columnMetadata.relation);
@@ -438,7 +456,7 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private createChildSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
+   private createChildSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<any>, findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
       const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions, level);
 
       relationQuery.select([
@@ -489,7 +507,7 @@ export class TableManager<T> {
     * @param roles 
     * @returns 
     */
-   private createParentSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<T>, findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
+   private createParentSubquery<T>(columnMetadata: ColumnMetadata, columnData: [string, FindSelect], relationTableManager: TableManager<any>, findOptions: FindOptions<T>, level: number): SelectQueryBuilder<T> {
       const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationTableManager, findOptions, level);
 
       relationQuery.select([
@@ -569,5 +587,15 @@ export class TableManager<T> {
 
       return where;
 
+   }
+
+   /**
+    * Create the table-related subscriber to run the events
+    */
+   public createTableSubscriber(): TableSubscriber<T> | undefined {
+      if (this.tableMetadata.subscriber) {
+         return new (this.tableMetadata.subscriber)();
+      }
+      return undefined;
    }
 }

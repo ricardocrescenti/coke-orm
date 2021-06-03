@@ -1,9 +1,7 @@
 import { ColumnMetadata } from "./columns/column-metadata";
 import { ColumnOperation } from "./columns/column-operation";
 import { ColumnOptions } from "./columns/column-options";
-import { EventMetadata } from "./events/event-metadata";
-import { EventOptions } from "./events/event-options";
-import { EventType } from "./events/event-type";
+import { TableSubscriber } from "./events/table-subscriber";
 import { ForeignKeyAction } from "./foreign-key/foreign-key-action";
 import { ForeignKeyMetadata } from "./foreign-key/foreign-key-metadata";
 import { ForeignKeyOptions } from "./foreign-key/foreign-key-options";
@@ -19,9 +17,6 @@ export  {
    ColumnMetadata,
    ColumnOperation,
    ColumnOptions,
-   EventMetadata,
-   EventOptions,
-   EventType,
    ForeignKeyAction,
    ForeignKeyMetadata,
    ForeignKeyOptions,
@@ -31,5 +26,6 @@ export  {
    TableMetadata,
    TableOptions,
    UniqueMetadata,
-   UniqueOptions
+   UniqueOptions,
+   TableSubscriber as TableEvents
 }

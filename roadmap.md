@@ -10,7 +10,7 @@
 * **09** - [x] Passar por todas as propriedades das colunas e tabelas para ver se tem alguma proprietade sem uso e implementar ou remover
 * **10** - [x] Implementar o eager das relations.
 * **11** - [x] Implementar o uso de enumerados nos campos
-* **12** - [ ] Analisar os efentos das tabelas, se será usado os eventos ou métodos sobrescritos dentro dos models.  
+* **12** - [x] Implementar o uso de eventos em uma classe separada do model
 * **13** - [ ] No TableManager criar método para efetuar count passando um findOptions sem select, relations, orderBy, roles.
 * **14** - [ ] Criar propriedade no ColumnOptions para especificar o campo padrão do where caso não seja informado ficando tipo { entity: { equal: 1 } }
 * **15** - [ ] Instalar o Jest para efetuar testes automatizados
@@ -18,6 +18,9 @@
 * **19** = [ ] Desenvolver o procedimento de roolback das migrations.
 * **20** - [ ] Passar por todo o ORM validando e adicionando os comentários nos métodos
 * **23** - [ ] Estudar uma forma de gerar as triggers, procedures e views pelo ORM
+
+* - [ ] Criar validação para não deixar inserir 2x um subscriber para a mesma tabela
+* - [ ] Criar valiaçào para ver se os campos informados nas uniques e index estão informados na tabela
 
 ## Find
 

@@ -1,4 +1,4 @@
-import { TableConstructor } from "../../common/types/table-type";
+import { ConstructorTo } from "../../common/types/constructor-to.type";
 import { QueryOrder } from "../../query-builder/types/query-order";
 import { MetadataUtils } from "../../utils/metadata-utils";
 
@@ -7,7 +7,7 @@ export class TableOptions<T = any> {
    /**
     * Class referenced to this table.
     */
-   public readonly target: TableConstructor;
+   public readonly target: ConstructorTo<any>;
 
    /**
     * 

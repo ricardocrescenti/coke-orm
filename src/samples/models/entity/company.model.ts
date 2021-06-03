@@ -1,7 +1,5 @@
-import { Connection } from "../../../connection/connection";
 import { Column, OneToOne, Table, Unique } from "../../../decorators";
-import { QueryExecutor } from "../../../query-executor/query-executor";
-import { TableManager } from "../../../table-manager/table-manager";
+import { Status } from "../../enums/status.enum";
 import { PatternModel } from "../pattern.model";
 import { EntityModel } from "./entity.model";
 
@@ -13,6 +11,6 @@ export class CompanyModel extends PatternModel {
 	entity?: EntityModel;
 
 	@Column({ default: 1 }) //, enum: [Status]
-	status?: number;//Status;
+	status?: Status;
 
 }

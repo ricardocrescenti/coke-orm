@@ -1,7 +1,5 @@
-import { Connection } from "../../../connection/connection";
 import { Column, ManyToOne, OneToOne, Table, Unique } from "../../../decorators";
-import { QueryExecutor } from "../../../query-executor/query-executor";
-import { TableManager } from "../../../table-manager/table-manager";
+import { Status } from "../../enums/status.enum";
 import { PatternModel } from "../pattern.model";
 import { PriceListModel } from "../product/price-list.model";
 import { EntityModel } from "./entity.model";
@@ -17,6 +15,6 @@ export class CustomerModel extends PatternModel {
 	priceList?: PriceListModel;
 
 	@Column({ default: 1 }) //, enum: [Status]
-	status?: number;//Status;
+	status?: Status;
 
 }

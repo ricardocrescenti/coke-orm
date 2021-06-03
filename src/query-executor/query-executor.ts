@@ -1,6 +1,5 @@
-import { TableConstructor } from "../common/types/table-type";
+import { TableParameter } from "../common/types/table-parameter.type";
 import { Connection } from "../connection/connection";
-import { TableMetadata } from "../metadata/tables/table-metadata";
 import { TableManager } from "../table-manager/table-manager";
 
 export class QueryExecutor {
@@ -34,15 +33,47 @@ export class QueryExecutor {
    }
    private _inTransaction: boolean = false;
 
+   /**
+    * 
+    */
+   public beforeTransactionCommit: Function[] = [];
+
+   /**
+    * 
+    */
+   public afterTransactionCommit: Function[] = [];
+
+   /**
+    * 
+    */
+   public beforeTransactionRollback: Function[] = [];
+
+   /**
+    * 
+    */
+   public afterTransactionRollback: Function[] = [];
+
+   /**
+    * 
+    * @param connection 
+    */
    private constructor(connection: Connection) {
       this.connection = connection;
    }
 
+   /**
+    * 
+    */
    private async initializeClient() {
       this._client = await this.connection.driver.getClient();
    }
 
-   public getTableManager<T>(table: TableMetadata | TableConstructor<T> | string): TableManager<T> {
+   /**
+    * 
+    * @param table 
+    * @returns 
+    */
+   public getTableManager<T>(table: TableParameter<T>): TableManager<T> {
       return this.connection.getTableManager<T>(table);
    }
 
@@ -58,16 +89,26 @@ export class QueryExecutor {
     * 
     */
    public async commitTransaction(): Promise<void> {
+
+      await this.performEvents(this.beforeTransactionCommit);
       await this.connection.driver.commitTransaction(this.client);
+      await this.performEvents(this.afterTransactionCommit);
+
       this._inTransaction = false;
+
    }
 
    /**
     * 
     */
    public async rollbackTransaction(): Promise<void> {
+
+      await this.performEvents(this.beforeTransactionRollback);
       await this.connection.driver.rollbackTransaction(this.client);
+      await this.performEvents(this.afterTransactionRollback);
+
       this._inTransaction = false;
+
    }
 
    /**
@@ -96,6 +137,16 @@ export class QueryExecutor {
       const index = this.connection.activeQueryExecutors.indexOf(this);
       if (index >= 0) {
          this.connection.activeQueryExecutors.splice(index, 1);
+      }
+   }
+
+   /**
+    * 
+    * @param events 
+    */
+   private async performEvents(events: Function[]): Promise<void> {
+      for (const event of events) {
+         await event();
       }
    }
 

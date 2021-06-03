@@ -11,10 +11,10 @@ export class Migration extends CokeModel {
     public id?: bigint;
 
     @Column()
-    public name?: string;
+    public createdAt?: Date;
 
     @Column()
-    public createdAt?: Date;
+    public name?: string;
 
     @Column({ 
         default: 'CURRENT_TIMESTAMP' 

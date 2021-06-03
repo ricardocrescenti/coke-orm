@@ -1,5 +1,4 @@
 import { ColumnMetadata } from "../columns/column-metadata";
-import { EventMetadata } from "../events/event-metadata";
 import { SimpleMap } from "../../common/interfaces/map";
 import { TableOptions } from "./table-options";
 import { ForeignKeyMetadata } from "../foreign-key/foreign-key-metadata";
@@ -8,7 +7,8 @@ import { IndexMetadata } from "../index/index-metadata";
 import { PrimaryKeyMetadata } from "../primary-key/primary-key-metadata";
 import { Connection } from "../../connection/connection";
 import { ColumnMetadataNotLocated } from "../../errors/column_metadata_not_located";
-import { TableManager } from "../../table-manager/table-manager";
+import { TableSubscriber } from "../events/table-subscriber";
+import { ConstructorTo } from "../../common/types/constructor-to.type";
 
 export class TableMetadata extends TableOptions {
 
@@ -45,42 +45,7 @@ export class TableMetadata extends TableOptions {
    /**
     * 
     */
-   public readonly beforeInsertEvents: EventMetadata[] = [];
-   
-   /**
-    * 
-    */
-   public readonly afterInsertEvents: EventMetadata[] = [];
-   
-   /**
-    * 
-    */
-   public readonly beforeUpdateEvents: EventMetadata[] = [];
-   
-   /**
-    * 
-    */
-   public readonly afterUpdateEvents: EventMetadata[] = [];
-   
-   /**
-    * 
-    */
-   public readonly beforeDeleteEvents: EventMetadata[] = [];
-   
-   /**
-    * 
-    */
-   public readonly afterDeleteEvents: EventMetadata[] = [];
-   
-   /**
-    * 
-    */
-   public readonly beforeLoadPrimaryKey: EventMetadata[] = [];
-   
-   /**
-    * 
-    */
-   public readonly afterLoadPrimaryKey: EventMetadata[] = [];
+   public readonly subscriber?: ConstructorTo<TableSubscriber<any>>;
    
    /**
     * 
@@ -106,9 +71,10 @@ export class TableMetadata extends TableOptions {
     * 
     * @param options 
     */
-   constructor(options: Omit<TableMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'beforeInsertEvents' | 'afterInsertEvents' | 'beforeUpdateEvents' | 'afterUpdateEvents' | 'beforeDeleteEvents' | 'afterDeleteEvents' | 'beforeLoadPrimaryKey' | 'afterLoadPrimaryKey' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
+   constructor(options: Omit<TableMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
       super(options);
       this.connection = options.connection;
+      this.subscriber = options.subscriber;
    }
 
    /**

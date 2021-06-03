@@ -8,6 +8,9 @@
    "entities": [
       "samples/models/**/*.model.js"
    ],
+   "subscribers": [
+      "samples/models/**/*.subscriber.js"
+   ],
    "migrations": {
       "synchronize": false,
       "directory": "samples/migrations"

@@ -4,7 +4,8 @@ import * as glob from "glob";
 import { number } from "yargs";
 import { DatabaseDriver } from "../common/enum/driver-type";
 import { SimpleMap } from "../common/interfaces/map";
-import { EntityParameter } from "../common/types/table-type";
+import { ConstructorTo } from "../common/types/constructor-to.type";
+import { TableParameter } from "../common/types/table-parameter.type";
 import { TransactionProcess } from "../common/types/transaction-process";
 import { DecoratorStore } from "../decorators/decorators-store";
 import { PostgresDriver } from "../drivers/databases/postgres/postgres-driver";
@@ -12,7 +13,7 @@ import { Driver } from "../drivers/driver";
 import { DefaultColumnOptions } from "../drivers/options/default-column-options";
 import { AlreadyConnectedError, ColumnMetadataNotLocated, ReferencedColumnMetadataNotLocated, ReferencedTableMetadataNotLocated, TableMetadataNotLocated } from "../errors";
 import { TableHasNoPrimaryKey } from "../errors/table-has-no-primary-key";
-import { ColumnMetadata, ColumnOptions, EventMetadata, EventType, ForeignKeyMetadata, ForeignKeyOptions, IndexMetadata, TableMetadata, TableOptions, UniqueMetadata, UniqueOptions } from "../metadata";
+import { ColumnMetadata, ColumnOptions, ForeignKeyMetadata, ForeignKeyOptions, IndexMetadata, TableEvents, TableMetadata, TableOptions, UniqueMetadata, UniqueOptions } from "../metadata";
 import { PrimaryKeyMetadata } from "../metadata/primary-key/primary-key-metadata";
 import { MigrationInterface } from "../migration/migration.interface";
 import { Migration } from "../migration/migration.model";
@@ -62,6 +63,11 @@ export class Connection {
     * 
     */
    public readonly tables: SimpleMap<TableMetadata> = {};
+
+   /**
+    * 
+    */
+   public readonly subscribers: SimpleMap<ConstructorTo<TableEvents<any>>> = {};
 
    /**
     * 
@@ -129,7 +135,7 @@ export class Connection {
    /**
     * 
     */
-   private getEntities(): Function[] {
+   private loadEntities(): Function[] {
       const entities: Function[] = [];
 
       for (const entity of this.options.entities) {
@@ -160,11 +166,44 @@ export class Connection {
    /**
     * 
     */
+   private loadSubscribers(): Function[] {
+      const events: Function[] = [];
+
+      for (const event of this.options.subscribers) {
+
+         if (event instanceof Function) {
+            events.push(event);
+         } else {
+            
+            const eventsPath = path.join(OrmUtils.rootPath(this.connection.options), event);
+            const filesPath: string[] = glob.sync(eventsPath);
+
+            for (const filePath of filesPath) {
+               const file = require(filePath);
+               for (const key of Object.keys(file)) {
+                  if (file.__esModule) {
+                     events.push(file[key]);
+                  }
+               }
+            }
+
+         }
+
+      }
+
+      return events;
+   }
+
+   /**
+    * 
+    */
    private loadMetadata(): void {
       console.time('loadMetadataSchema');
 
-      const entitiesToLoad: Function[] = this.getEntities();
+      const entitiesToLoad: Function[] = this.loadEntities();
       entitiesToLoad.unshift(Migration);
+
+      const subscribersToLoad: Function[] = this.loadSubscribers();
 
       const tablesOptions: TableOptions[] = DecoratorStore.getTables(entitiesToLoad);
       const namingStrategy: NamingStrategy = this.options.namingStrategy as NamingStrategy;
@@ -174,13 +213,17 @@ export class Connection {
       /// load tables with columns, events, unique and index
       for (const tableOption of tablesOptions) {
 
+         /// get subscriber to this tables
+         const subscriberOptions = DecoratorStore.getSubscriber(tableOption.target);
+
          /// create table
          const tableMetadata: TableMetadata = new TableMetadata({
             ...tableOption,
             connection: this,
-            name: (tableOption.target == Migration ? this.options.migrations?.tableName : namingStrategy.tableName(tableOption))
+            name: (tableOption.target == Migration ? this.options.migrations?.tableName : namingStrategy.tableName(tableOption)),
+            subscriber: subscriberOptions?.subscriber
          });
-         this.tables[tableOption.target.name] = tableMetadata;        
+         this.tables[tableOption.target.name] = tableMetadata;
 
          /// store primary key columns
          const primaryKeysColumns: string[] = [];
@@ -284,25 +327,6 @@ export class Connection {
             }));
          }
 
-         /// load table events
-         for (const eventOptions of DecoratorStore.getEvents(tableMetadata.inheritances as Function[])) {
-            const eventMetadata: EventMetadata = new EventMetadata({
-               ...eventOptions,
-               table: tableMetadata,
-            })
-
-            switch (eventOptions.type) {
-               case EventType.BeforeInsert: tableMetadata.beforeInsertEvents.push(eventMetadata); break;
-               case EventType.AfterInsert: tableMetadata.afterInsertEvents.push(eventMetadata); break;
-               case EventType.BeforeUpdate: tableMetadata.beforeUpdateEvents.push(eventMetadata); break;
-               case EventType.AfterUpdate: tableMetadata.afterUpdateEvents.push(eventMetadata); break;
-               case EventType.BeforeDelete: tableMetadata.beforeDeleteEvents.push(eventMetadata); break;
-               case EventType.AfterDelete: tableMetadata.afterDeleteEvents.push(eventMetadata); break;
-               case EventType.BeforeLoadPrimaryKey: tableMetadata.beforeLoadPrimaryKey.push(eventMetadata); break;
-               case EventType.AfterLoadPrimaryKey: tableMetadata.afterLoadPrimaryKey.push(eventMetadata); break;
-            }
-         }
-
          // validar as colunas
          for (const columnMetadata of Object.values(tableMetadata.columns)) {
             this.driver.validateColumnMetadatada(tableMetadata, columnMetadata);
@@ -397,9 +421,9 @@ export class Connection {
     * @param table 
     * @param queryExecutor 
     */
-   public getTableManager<T>(table: EntityParameter<T>): TableManager<T> {
+   public getTableManager<T>(table: TableParameter<T>): TableManager<T> {
 
-      const parameterTable: EntityParameter<T> = table
+      const parameterTable: TableParameter<T> = table
       if (typeof(table) == 'string') {
          table = this.tables[table as string];
       } else if (table instanceof Function) {
@@ -425,7 +449,7 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public async find<T>(table: EntityParameter<T>, findOptions?: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
+   public async find<T>(table: TableParameter<T>, findOptions?: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
       return this.getTableManager<T>(table).find(findOptions, queryExecutor);
    }
 
@@ -436,7 +460,7 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public async findOne<T>(table: EntityParameter<T>, findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T> {
+   public async findOne<T>(table: TableParameter<T>, findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T> {
       return this.getTableManager<T>(table).findOne(findOptions, queryExecutor);
    }
 
@@ -447,7 +471,7 @@ export class Connection {
     * @param saveOptions 
     * @returns 
     */
-   public async save<T>(table: EntityParameter<T>, object: TableValues<T>, saveOptions?: SaveOptions): Promise<any> {
+   public async save<T>(table: TableParameter<T>, object: TableValues<T>, saveOptions?: SaveOptions): Promise<any> {
       return this.getTableManager<T>(table).save(object, saveOptions);
    }
 
@@ -458,7 +482,7 @@ export class Connection {
     * @param queryExecutor 
     * @returns 
     */
-   public async delete<T>(table: EntityParameter<T>, object: any, queryExecutor?: QueryExecutor | Connection): Promise<boolean> {
+   public async delete<T>(table: TableParameter<T>, object: any, queryExecutor?: QueryExecutor | Connection): Promise<boolean> {
       return this.getTableManager<T>(table).delete(object, queryExecutor);
    }
 

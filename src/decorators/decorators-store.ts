@@ -1,7 +1,9 @@
+import { ConstructorTo } from "../common/types/constructor-to.type";
 import { IndexOptions, UniqueOptions } from "../metadata";
 import { ColumnOptions } from "../metadata/columns/column-options";
-import { EventOptions } from "../metadata/events/event-options";
+import { TableSubscriber } from "../metadata/events/table-subscriber";
 import { TableOptions } from "../metadata/tables/table-options";
+import { EventOptions } from "./event/event-options";
 
 export class DecoratorStore {
    private static tables: TableOptions[] = [];
@@ -35,11 +37,12 @@ export class DecoratorStore {
       return DecoratorStore.columns.filter((column) => targets.indexOf(column.target.constructor) >= 0);
    }
 
-   public static addEvent(event: EventOptions): void {
+   public static addSubscriber(event: EventOptions): void {
       DecoratorStore.events.push(event);
    }
-   public static getEvents(targets: Function[]): EventOptions[] {
-      return DecoratorStore.events.filter((event) => targets.indexOf(event.target.constructor) >= 0);
+   public static getSubscriber(target: Function): EventOptions | undefined {     
+      const [event] = DecoratorStore.events.filter((event) => target == event.target);
+      return event;
    }
 
    public static addUnique(unique: UniqueOptions): void {

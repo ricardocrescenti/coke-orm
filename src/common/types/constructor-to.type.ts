@@ -1,0 +1,1 @@
+export type ConstructorTo<T> = new() => T;
