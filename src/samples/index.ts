@@ -19,7 +19,7 @@ export async function test() {
       where: { id: 1 }
    });
 
-   city = await connection.getTableManager(CityModel).create({
+   city = await connection.getEntityManager(CityModel).create({
       name: 'Guaporé',
       code: '4309407',
       state: 'RS',
@@ -59,7 +59,7 @@ export async function test() {
    });
    console.log('find', cities);
    
-   city = await connection.getTableManager(CityModel).create({
+   city = await connection.getEntityManager(CityModel).create({
       name: 'Guaporé',
       code: '4309407',
       state: 'RS',
@@ -67,7 +67,7 @@ export async function test() {
    });
    await city.save(connection);
 
-   city = await connection.getTableManager(CityModel).create({
+   city = await connection.getEntityManager(CityModel).create({
       name: 'Guaporé 2',
       code: '4309408',
       state: 'RS',
@@ -75,7 +75,7 @@ export async function test() {
    });
    await city.save(connection);
 
-   city = await connection.getTableManager(CityModel).create({
+   city = await connection.getEntityManager(CityModel).create({
       name: 'Guaporé 3',
       code: '4309408',
       state: 'RS',
@@ -84,8 +84,8 @@ export async function test() {
    await city.save(connection);
    await city.delete(connection);
 
-   const sellerTableManager = connection.getTableManager(SellerModel);
-   let seller: SellerModel = sellerTableManager.create({
+   const sellerEntityManager = connection.getEntityManager(SellerModel);
+   let seller: SellerModel = sellerEntityManager.create({
       uuid: '1fecca37-3d8c-4ff7-8df6-cf7b496b6bcb',
       entity: {
          name: 'Ana Luiza Crescenti',
@@ -125,7 +125,7 @@ export async function test() {
       status: Status.active
    });
    await seller.save(connection);
-   seller = sellerTableManager.create({
+   seller = sellerEntityManager.create({
       uuid: '1fecca37-3d8c-4ff7-8df6-cf7b496b6bcb',
       entity: {
          name: 'Ana Luiza Crescenti',
@@ -177,9 +177,9 @@ export async function test() {
       comission: 10,
    });
    await seller.save(connection);
-   await sellerTableManager.save(seller);
+   await sellerEntityManager.save(seller);
 
-   seller.entity?.addresses?.push(connection.getTableManager(EntityAddressModel).create({
+   seller.entity?.addresses?.push(connection.getEntityManager(EntityAddressModel).create({
       contact: 'Ricardo',
       street: 'Rua Rodrigues Alves',
       number: '590',
@@ -192,7 +192,7 @@ export async function test() {
          country: 'BRA'
       }
    }));
-   seller.entity?.addresses?.push(connection.getTableManager(EntityAddressModel).create({
+   seller.entity?.addresses?.push(connection.getEntityManager(EntityAddressModel).create({
       contact: 'Dani',
       street: 'Rua Rodrigues Alves',
       number: '590',

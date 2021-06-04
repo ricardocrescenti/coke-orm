@@ -1,7 +1,7 @@
 export class IndexOptions {
    
    /**
-    * Class referenced to this table.
+    * Class referenced to this entity.
     */
    public readonly target: any;
 

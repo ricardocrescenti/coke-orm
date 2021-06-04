@@ -1,5 +1,5 @@
 import { QueryColumnBuilder } from './query-column-builder';
-import { TableMetadata } from '../../metadata';
+import { EntityMetadata } from '../../metadata';
 import { QueryManager } from '../query-manager';
 
 export class QueryAggregateColumnBuilder<T> extends QueryColumnBuilder<T> {
@@ -15,8 +15,8 @@ export class QueryAggregateColumnBuilder<T> extends QueryColumnBuilder<T> {
       this.cast = select.cast;
    }
 
-   getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, tableMetadata: TableMetadata): string {
-      return `${this.type}(${this.column.getExpression(mainQueryManager, queryManager, tableMetadata)})${this.cast ? `::${this.cast}` : ''}`;
+   getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, entityMetadata: EntityMetadata): string {
+      return `${this.type}(${this.column.getExpression(mainQueryManager, queryManager, entityMetadata)})${this.cast ? `::${this.cast}` : ''}`;
    }
 
 };

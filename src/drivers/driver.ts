@@ -1,13 +1,12 @@
 import { SimpleMap } from "../common/interfaces/map";
 import { Connection } from "../connection/connection";
-import { ColumnOptions } from "../metadata/columns/column-options";
-import { QueryExecutor } from "../query-executor/query-executor";
-import { TableSchema } from "../schema/table-schema";
+import { ColumnMetadata, ColumnOptions, ColumnOperation } from "../metadata";
+import { QueryRunner } from "../query-runner/query-runner";
+import { EntitySchema } from "../schema";
 import { DefaultColumnOptions } from "./options/default-column-options";
 import { QueryBuilderDriver } from "./query-builder-driver";
-import { ColumnOperation } from "../metadata/columns/column-operation";
-import { ColumnMetadata, TableMetadata } from "../metadata";
-import { InvalidColumnOption } from "../errors/invalid-column-options";
+import { EntityMetadata } from "../metadata";
+import { InvalidColumnOptionError } from "../errors";
 import { ConnectionOptions } from "../connection/connection-options";
 
 export abstract class Driver {
@@ -82,33 +81,33 @@ export abstract class Driver {
    /**
     * 
     */
-   public abstract beginTransaction(queryExecutor: QueryExecutor): Promise<void>;
+   public abstract beginTransaction(queryRunner: QueryRunner): Promise<void>;
 
    /**
     * 
     */
-   public abstract commitTransaction(queryExecutor: QueryExecutor): Promise<void>;
+   public abstract commitTransaction(queryRunner: QueryRunner): Promise<void>;
 
    /**
     * 
     */
-   public abstract rollbackTransaction(queryExecutor: QueryExecutor): Promise<void>;
+   public abstract rollbackTransaction(queryRunner: QueryRunner): Promise<void>;
 
    /**
     * 
     */
-   public abstract releaseQueryRunner(queryExecutor: QueryExecutor): Promise<void>;
+   public abstract releaseQueryRunner(queryRunner: QueryRunner): Promise<void>;
 
    /**
     * 
     * @param query 
     */
-   public abstract executeQuery(queryExecutor: QueryExecutor, query: string, params?: any[]): Promise<any>;
+   public abstract executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<any>;
 
    /**
     * 
     */
-   public abstract loadSchema(tablesToLoad?: string[]): Promise<SimpleMap<TableSchema>>;
+   public abstract loadSchema(entitiesToLoad?: string[]): Promise<SimpleMap<EntitySchema>>;
 
    /**
     * 
@@ -160,12 +159,12 @@ export abstract class Driver {
    /**
     * 
     */
-   public validateColumnMetadatada(table: TableMetadata, column: ColumnMetadata): void {
+   public validateColumnMetadatada(entityMetadata: EntityMetadata, column: ColumnMetadata): void {
 
       if (column.relation?.type == 'OneToMany') {
 
          if (column.propertyType.prototype != Array.prototype) {
-            throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table with a 'OneToMany' type relation must be an array.`);
+            throw new InvalidColumnOptionError(`The '${column.name}' column of the '${entityMetadata.name}' entity with a 'OneToMany' type relation must be an array.`);
          }
 
       } else {
@@ -174,17 +173,17 @@ export abstract class Driver {
 
             // check if type if informed
             if (!column.type) {
-               throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table does not have an informed type`);
+               throw new InvalidColumnOptionError(`The '${column.name}' column of the '${entityMetadata.name}' entity does not have an informed type`);
             }
 
             // check if type is valid
             if (this.supportedColumnsTypes.indexOf(column.type as string) < 0) {
-               throw new InvalidColumnOption(`The '${column.name}' column of the '${table.name}' table does not have an valid type (${column.type})`);
+               throw new InvalidColumnOptionError(`The '${column.name}' column of the '${entityMetadata.name}' entity does not have an valid type (${column.type})`);
             }
          }
 
          if (!this.connectionOptions.additional?.allowNullInUniqueKeyColumn && (column.uniques.length > 0 || column.indexs.some(index => index.unique)) && column.nullable) {
-            throw new InvalidColumnOption(`The '${column.propertyName}' property of the '${table.className}' entity has a unique key or unique index and is not mandatory, if one of the columns is null the record may be duplicated`);
+            throw new InvalidColumnOptionError(`The '${column.propertyName}' property of the '${entityMetadata.className}' entity has a unique key or unique index and is not mandatory, if one of the columns is null the record may be duplicated`);
          }
          
       }

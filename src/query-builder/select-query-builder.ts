@@ -1,5 +1,5 @@
 import { Connection } from "../connection/connection";
-import { TableMetadata } from "../metadata";
+import { EntityMetadata } from "../metadata";
 import { QueryBuilder } from "./query-builder";
 import { QueryManager } from "./query-manager";
 import { JoinType } from "./types/join-type";
@@ -13,7 +13,7 @@ import { QueryColumnBuilder } from "./column-builder/query-column-builder";
 export class SelectQueryBuilder<T> extends QueryBuilder<T> {
    private indentation: number = 0;
 
-   constructor(connection: Connection, table: QueryTable<T> | TableMetadata) {
+   constructor(connection: Connection, table: QueryTable<T> | EntityMetadata) {
       super(connection, table);
    }
 

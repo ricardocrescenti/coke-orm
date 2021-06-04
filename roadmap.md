@@ -19,9 +19,6 @@
 * **20** - [ ] Passar por todo o ORM validando e adicionando os comentários nos métodos
 * **23** - [ ] Estudar uma forma de gerar as triggers, procedures e views pelo ORM
 
-* - [ ] Criar validação para não deixar inserir 2x um subscriber para a mesma tabela
-* - [ ] Criar valiaçào para ver se os campos informados nas uniques e index estão informados na tabela
-
 ## Find
 
 * **22** - [ ] Ver para criar "rules" a nivel de linha, neste caso o cara pode adiconar um SQL ou uma condição JavaScript, permissões.

@@ -1,5 +1,5 @@
 import { Connection } from "../connection/connection";
-import { TableMetadata } from "../metadata";
+import { EntityMetadata } from "../metadata";
 import { QueryBuilder } from "./query-builder";
 import { QueryManager } from "./query-manager";
 import { QueryTable } from "./types/query-table";
@@ -9,9 +9,8 @@ export class DeleteQueryBuilder<T> extends QueryBuilder<T> {
 
    /**
     * 
-    * @param queryExecutor 
     */
-   constructor(connection: Connection, table: QueryTable<T> | TableMetadata) {
+   constructor(connection: Connection, table: QueryTable<T> | EntityMetadata) {
       super(connection, table);
    }
 

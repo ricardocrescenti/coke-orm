@@ -1,6 +1,6 @@
 import { QueryColumnBuilder } from "./query-column-builder";
 import { QueryManager } from "../query-manager";
-import { TableMetadata } from "../../metadata/tables/table-metadata";
+import { EntityMetadata } from "../../metadata";
 
 export class QueryJsonColumnBuilder<T> extends QueryColumnBuilder<T> {
 
@@ -11,9 +11,9 @@ export class QueryJsonColumnBuilder<T> extends QueryColumnBuilder<T> {
       this.jsonColumns = select.jsonColumns;
    }
    
-   getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, tableMetadata: TableMetadata): string {
+   getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, entityMetadata: EntityMetadata): string {
       return `json_build_object(${this.jsonColumns.map(column => {
-         return `'${column.alias}', ${column.getExpression(mainQueryManager, queryManager, tableMetadata)}`;
+         return `'${column.alias}', ${column.getExpression(mainQueryManager, queryManager, entityMetadata)}`;
       }).join(', ')})`
    }
 

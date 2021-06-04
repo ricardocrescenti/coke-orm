@@ -7,12 +7,12 @@ import { ManyToOne } from "./columns/many-to-one";
 import { OneToMany } from "./columns/one-to-many";
 import { OneToOne } from "./columns/one-to-one";
 import { PrimaryColumn } from "./columns/primary-column";
-import { Table } from "./tables/table";
+import { Entity } from "./entity/entity";
 import { Unique } from "./unique/unique";
 import { UpdatedAtColumn } from "./columns/updated-at-column";
 
 export {
-   Table,
+   Entity,
    Column,
    PrimaryColumn,
    ManyToOne,

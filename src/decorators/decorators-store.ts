@@ -1,11 +1,9 @@
-import { SubscriberAlreadyInformedError } from "../errors/subscriber-already-informed.error";
-import { IndexOptions, UniqueOptions } from "../metadata";
-import { ColumnOptions } from "../metadata/columns/column-options";
-import { TableOptions } from "../metadata/tables/table-options";
+import { SubscriberAlreadyInformedError } from "../errors";
+import { EntityOptions, ColumnOptions, IndexOptions, UniqueOptions } from "../metadata";
 import { SubscriberOptions } from "./event/subscriber-options";
 
-export class DecoratorStore {
-   private static tables: TableOptions[] = [];
+export class DecoratorsStore {
+   private static entities: EntityOptions[] = [];
    private static columns: ColumnOptions[] = [];
    private static events: SubscriberOptions[] = [];
    private static uniques: UniqueOptions[] = [];
@@ -13,27 +11,27 @@ export class DecoratorStore {
 
    private constructor() {}
 
-   public static addTable(table: TableOptions): void {
-      this.tables.push(table);
+   public static addEntity(entity: EntityOptions): void {
+      this.entities.push(entity);
    }
-   public static getTable(requestedTable: Function | string): TableOptions | null {
-      const selectedTables: TableOptions[] = this.tables.filter((table) => {
-         return table.target.constructor == requestedTable;
+   public static getEntity(requestedEntity: Function | string): EntityOptions | null {
+      const selectedEntities: EntityOptions[] = this.entities.filter((entity) => {
+         return entity.target.constructor == requestedEntity;
       });
-      return (selectedTables.length > 0 ? selectedTables[0] : null);
+      return (selectedEntities.length > 0 ? selectedEntities[0] : null);
    }
-   public static getTables(requestedTables?: Function[]): TableOptions[] {
-      return Object.values(this.tables).filter((table) => !requestedTables || requestedTables.indexOf(table.target) >= 0);
+   public static getEntities(requestedEntities?: Function[]): EntityOptions[] {
+      return Object.values(this.entities).filter((entity) => !requestedEntities || requestedEntities.indexOf(entity.target) >= 0);
    }
 
    public static addColumn(column: ColumnOptions): void {
-      DecoratorStore.columns.push(column);
+      DecoratorsStore.columns.push(column);
    }
    public static getColumn(targets: Function[], columnProperyName: string): ColumnOptions | undefined {
-      return DecoratorStore.columns.find((column) => targets.indexOf(column.target.constructor) >= 0 && column.propertyName == columnProperyName);
+      return DecoratorsStore.columns.find((column) => targets.indexOf(column.target.constructor) >= 0 && column.propertyName == columnProperyName);
    }
    public static getColumns(targets: Function[]): ColumnOptions[] {
-      return DecoratorStore.columns.filter((column) => targets.indexOf(column.target.constructor) >= 0);
+      return DecoratorsStore.columns.filter((column) => targets.indexOf(column.target.constructor) >= 0);
    }
 
    public static addSubscriber(subscriber: SubscriberOptions): void {
@@ -42,25 +40,25 @@ export class DecoratorStore {
          throw new SubscriberAlreadyInformedError(subscriber);
       }
 
-      DecoratorStore.events.push(subscriber);
+      DecoratorsStore.events.push(subscriber);
    }
    public static getSubscriber(target: Function): SubscriberOptions | undefined {     
-      const [event] = DecoratorStore.events.filter((event) => target == event.target);
+      const [event] = DecoratorsStore.events.filter((event) => target == event.target);
       return event;
    }
 
    public static addUnique(unique: UniqueOptions): void {
-      DecoratorStore.uniques.push(unique);
+      DecoratorsStore.uniques.push(unique);
    }
    public static getUniques(targets: Function[]): UniqueOptions[] {
-      return DecoratorStore.uniques.filter((unique) => targets.indexOf(unique.target) >= 0);
+      return DecoratorsStore.uniques.filter((unique) => targets.indexOf(unique.target) >= 0);
    }
 
    public static addIndex(index: IndexOptions): void {
-      DecoratorStore.indexs.push(index);
+      DecoratorsStore.indexs.push(index);
    }
    public static getIndexs(targets: Function[]): IndexOptions[] {
-      return DecoratorStore.indexs.filter((index) => targets.indexOf(index.target) >= 0);
+      return DecoratorsStore.indexs.filter((index) => targets.indexOf(index.target) >= 0);
    }
 
 }

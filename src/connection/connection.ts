@@ -1,19 +1,17 @@
 const path = require('path');
 const fs = require('fs');
 import * as glob from "glob";
-import { number } from "yargs";
-import { DatabaseDriver } from "../common/enum/driver-type";
+import { DatabaseDriver } from "../drivers/enum/database-driver.type";
 import { SimpleMap } from "../common/interfaces/map";
 import { ConstructorTo } from "../common/types/constructor-to.type";
-import { TableParameter } from "../common/types/table-parameter.type";
-import { TransactionProcess } from "../common/types/transaction-process";
-import { DecoratorStore } from "../decorators/decorators-store";
+import { EntityReferenceParameter } from "../common/types/entity-reference-parameter.type";
+import { TransactionProcess } from "./types/transaction-process";
+import { DecoratorsStore } from "../decorators/decorators-store";
 import { PostgresDriver } from "../drivers/databases/postgres/postgres-driver";
 import { Driver } from "../drivers/driver";
 import { DefaultColumnOptions } from "../drivers/options/default-column-options";
-import { AlreadyConnectedError, ColumnMetadataNotLocated, ReferencedColumnMetadataNotLocated, ReferencedTableMetadataNotLocated, TableHasNoPrimaryKey, TableMetadataNotLocated } from "../errors";
-import { ColumnMetadata, ColumnOptions, ForeignKeyMetadata, ForeignKeyOptions, IndexMetadata, TableEvents, TableMetadata, TableOptions, UniqueMetadata, UniqueOptions } from "../metadata";
-import { PrimaryKeyMetadata } from "../metadata/primary-key/primary-key-metadata";
+import { ConnectionAlreadyConnectedError, ColumnMetadataNotLocatedError, ReferencedColumnMetadataNotLocatedError, ReferencedEntityMetadataNotLocatedError, EntityHasNoPrimaryKeyError, EntityMetadataNotLocatedError } from "../errors";
+import { ColumnMetadata, ColumnOptions, IndexMetadata, EntitySubscriberInterface, ForeignKeyMetadata, ForeignKeyOptions, PrimaryKeyMetadata, EntityMetadata, EntityOptions, UniqueMetadata, UniqueOptions } from "../metadata";
 import { MigrationInterface } from "../migration/migration.interface";
 import { Migration } from "../migration/migration.model";
 import { NamingStrategy } from "../naming-strategy/naming-strategy";
@@ -22,12 +20,9 @@ import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
 import { SelectQueryBuilder } from "../query-builder/select-query-builder";
 import { QueryTable } from "../query-builder/types/query-table";
 import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
-import { QueryExecutor } from "../query-executor/query-executor";
-import { TableSchema } from "../schema/table-schema";
-import { FindOptions } from "../table-manager/options/find-options";
-import { SaveOptions } from "../table-manager/options/save-options";
-import { TableManager } from "../table-manager/table-manager";
-import { TableValues } from "../table-manager/types/table-values";
+import { QueryRunner } from "../query-runner/query-runner";
+import { EntitySchema } from "../schema";
+import { FindOptions, SaveOptions, EntityManager, EntityValues } from "../manager";
 import { OrmUtils } from "../utils/orm-utils";
 import { ConnectionOptions } from "./connection-options";
 
@@ -61,22 +56,22 @@ export class Connection {
    /**
     * 
     */
-   public readonly tables: SimpleMap<TableMetadata> = {};
+   public readonly entities: SimpleMap<EntityMetadata> = {};
 
    /**
     * 
     */
-   public readonly subscribers: SimpleMap<ConstructorTo<TableEvents<any>>> = {};
+   public readonly subscribers: SimpleMap<ConstructorTo<EntitySubscriberInterface<any>>> = {};
 
    /**
     * 
     */
-   private tableManagers: SimpleMap<TableManager<any>> = {};
+   private entityManagers: SimpleMap<EntityManager<any>> = {};
 
    /**
     * 
     */
-   public readonly activeQueryExecutors: QueryExecutor[] = [];
+   public readonly activeQueryRunners: QueryRunner[] = [];
 
    /**
     * 
@@ -94,12 +89,12 @@ export class Connection {
     */
    public async connect(): Promise<boolean> {
       if (this.isConnected) {
-         throw new AlreadyConnectedError();
+         throw new ConnectionAlreadyConnectedError();
       }
 
       /// create query executor to verify that the connection was made successfully
-      const queryExecutor: QueryExecutor = await this.createQueryExecutor();
-      await queryExecutor.release();
+      const queryRunner: QueryRunner = await this.createQueryRunner();
+      await queryRunner.release();
 
       this._isConnected = true;
 
@@ -125,7 +120,7 @@ export class Connection {
     * 
     */
    public async disconnect(): Promise<void> {
-      for (const queryRunner of this.activeQueryExecutors) {
+      for (const queryRunner of this.activeQueryRunners) {
          await queryRunner.release();
       }
       this._isConnected = false;
@@ -204,59 +199,59 @@ export class Connection {
 
       const subscribersToLoad: Function[] = this.loadSubscribers();
 
-      const tablesOptions: TableOptions[] = DecoratorStore.getTables(entitiesToLoad);
+      const entitiesOptions: EntityOptions[] = DecoratorsStore.getEntities(entitiesToLoad);
       const namingStrategy: NamingStrategy = this.options.namingStrategy as NamingStrategy;
 
-      const tableRelations: SimpleMap<SimpleMap<ColumnMetadata>> = new SimpleMap<SimpleMap<ColumnMetadata>>();
+      const entitiesRelations: SimpleMap<SimpleMap<ColumnMetadata>> = new SimpleMap<SimpleMap<ColumnMetadata>>();
 
-      /// load tables with columns, events, unique and index
-      for (const tableOption of tablesOptions) {
+      /// load entities with columns, events, unique and index
+      for (const entityOptions of entitiesOptions) {
 
-         /// get subscriber to this tables
-         const subscriberOptions = DecoratorStore.getSubscriber(tableOption.target);
+         /// get subscriber to this entity
+         const subscriberOptions = DecoratorsStore.getSubscriber(entityOptions.target);
 
-         /// create table
-         const tableMetadata: TableMetadata = new TableMetadata({
-            ...tableOption,
+         /// create entity metadata
+         const entityMetadata: EntityMetadata = new EntityMetadata({
+            ...entityOptions,
             connection: this,
-            name: (tableOption.target == Migration ? this.options.migrations?.tableName : namingStrategy.tableName(tableOption)),
+            name: (entityOptions.target == Migration ? this.options.migrations?.tableName : namingStrategy.tableName(entityOptions)),
             subscriber: subscriberOptions?.subscriber
          });
-         this.tables[tableOption.target.name] = tableMetadata;
+         this.entities[entityOptions.target.name] = entityMetadata;
 
          /// store primary key columns
          const primaryKeysColumns: string[] = [];
 
-         /// load table columns
-         for (const columnOption of DecoratorStore.getColumns(tableMetadata.inheritances as Function[])) {
+         /// load entity columns
+         for (const columnOption of DecoratorsStore.getColumns(entityMetadata.inheritances as Function[])) {
    
             const defaultColumnOptions = this.driver.detectColumnDefaults(columnOption);
 
             /// if the column has relation, the data from the referenced column will be obtained to be used in this column of 
-            /// the table, this data will only be used if the types are not reported directly in this column
+            /// the entity, this data will only be used if the types are not reported directly in this column
             let referencedColumnOptions: ColumnOptions | undefined;
             let referencedDefaultColumnOptions: DefaultColumnOptions | undefined;
             if (columnOption.relation?.type == 'ManyToOne' || columnOption.relation?.type == 'OneToOne') {
 
-               const referencedTableOptions: TableOptions | undefined = tablesOptions.find((table) => table.className == columnOption.relation?.referencedTable)
-               if (!referencedTableOptions) {
-                  throw new ReferencedTableMetadataNotLocated(tableMetadata.className, columnOption.relation.referencedTable);
+               const referencedEntityOptions: EntityOptions | undefined = entitiesOptions.find((entity) => entity.className == columnOption.relation?.referencedEntity)
+               if (!referencedEntityOptions) {
+                  throw new ReferencedEntityMetadataNotLocatedError(entityMetadata.className, columnOption.relation.referencedEntity);
                }
 
-               referencedColumnOptions = DecoratorStore.getColumn(referencedTableOptions.inheritances, columnOption.relation.referencedColumn);
+               referencedColumnOptions = DecoratorsStore.getColumn(referencedEntityOptions.inheritances, columnOption.relation.referencedColumn);
                if (!referencedColumnOptions) {
-                  throw new ReferencedColumnMetadataNotLocated(tableMetadata.className, columnOption.relation.referencedTable, columnOption.relation.referencedColumn);
+                  throw new ReferencedColumnMetadataNotLocatedError(entityMetadata.className, columnOption.relation.referencedEntity, columnOption.relation.referencedColumn);
                }
 
                referencedDefaultColumnOptions = this.driver.detectColumnDefaults(referencedColumnOptions);
             
             }
 
-            /// create table column
+            /// create entity column
             const columnMetadata: ColumnMetadata = new ColumnMetadata({
                ...columnOption,
-               table: tableMetadata,
-               name: columnOption.name ?? namingStrategy.columnName(tableMetadata, columnOption),
+               entity: entityMetadata,
+               name: columnOption.name ?? namingStrategy.columnName(entityMetadata, columnOption),
                type: columnOption.type ?? referencedColumnOptions?.type ?? referencedDefaultColumnOptions?.type ?? defaultColumnOptions?.type,
                length: columnOption.length ?? referencedColumnOptions?.length ?? referencedDefaultColumnOptions?.length ?? defaultColumnOptions?.length,
                precision: columnOption.precision ?? referencedColumnOptions?.precision ?? referencedDefaultColumnOptions?.precision ?? defaultColumnOptions?.precision,
@@ -265,138 +260,138 @@ export class Connection {
                relation: undefined
             });
 
-            tableMetadata.columns[columnMetadata.propertyName] = columnMetadata;
+            entityMetadata.columns[columnMetadata.propertyName] = columnMetadata;
 
             /// check if the column is primary key
             if (columnMetadata.primary) {
                primaryKeysColumns.push(columnMetadata.propertyName);
             }
    
-            /// check if the column has a relation, to process all foreign keys after loading all tables
+            /// check if the column has a relation, to process all foreign keys after loading all entities
             if (columnOption.relation) {
 
                const foreignKeyMetadata: ForeignKeyMetadata = new ForeignKeyMetadata({
                   ...columnOption.relation as any,
-                  table: tableMetadata, 
+                  entity: entityMetadata, 
                   column: columnMetadata, 
-                  name: namingStrategy.foreignKeyName(tableMetadata, columnMetadata, columnOption.relation as ForeignKeyOptions)
+                  name: namingStrategy.foreignKeyName(entityMetadata, columnMetadata, columnOption.relation as ForeignKeyOptions)
                });
                Object.assign(columnMetadata, {
                   relation: foreignKeyMetadata
                });
                
-               if (!tableRelations[tableMetadata.className]) {
-                  tableRelations[tableMetadata.className] = new SimpleMap<ColumnMetadata>();
+               if (!entitiesRelations[entityMetadata.className]) {
+                  entitiesRelations[entityMetadata.className] = new SimpleMap<ColumnMetadata>();
                }
 
-               tableRelations[tableMetadata.className][columnMetadata.propertyName] = columnMetadata;
+               entitiesRelations[entityMetadata.className][columnMetadata.propertyName] = columnMetadata;
 
             }
             
          }
 
-         /// create table primary key
+         /// create entity primary key
          if (primaryKeysColumns.length == 0) {
-            throw new TableHasNoPrimaryKey(tableMetadata.className);
+            throw new EntityHasNoPrimaryKeyError(entityMetadata.className);
          }
 
-         Object.assign(tableMetadata, {
+         Object.assign(entityMetadata, {
             primaryKey: new PrimaryKeyMetadata({
-               table: tableMetadata,
-               name: namingStrategy.primaryKeyName(tableMetadata, primaryKeysColumns),
+               entity: entityMetadata,
+               name: namingStrategy.primaryKeyName(entityMetadata, primaryKeysColumns),
                columns: primaryKeysColumns
             })
          })
 
          /// load tabela uniques
-         for (const uniqueOptions of DecoratorStore.getUniques(tableMetadata.inheritances)) {
-            tableMetadata.uniques.push(new UniqueMetadata({
+         for (const uniqueOptions of DecoratorsStore.getUniques(entityMetadata.inheritances)) {
+            entityMetadata.uniques.push(new UniqueMetadata({
                ...uniqueOptions,
-               table: tableMetadata,
-               name: namingStrategy.uniqueName(tableMetadata, uniqueOptions)
+               entity: entityMetadata,
+               name: namingStrategy.uniqueName(entityMetadata, uniqueOptions)
             }));
          }
 
-         /// load table indexs
-         for (const indexOptions of DecoratorStore.getIndexs(tableMetadata.inheritances)) {
-            tableMetadata.indexs.push(new IndexMetadata({
+         /// load entity indexs
+         for (const indexOptions of DecoratorsStore.getIndexs(entityMetadata.inheritances)) {
+            entityMetadata.indexs.push(new IndexMetadata({
                ...indexOptions,
-               table: tableMetadata,
-               name: namingStrategy.indexName(tableMetadata, indexOptions)
+               entity: entityMetadata,
+               name: namingStrategy.indexName(entityMetadata, indexOptions)
             }));
          }
 
          // validar as colunas
-         for (const columnMetadata of Object.values(tableMetadata.columns)) {
-            this.driver.validateColumnMetadatada(tableMetadata, columnMetadata);
+         for (const columnMetadata of Object.values(entityMetadata.columns)) {
+            this.driver.validateColumnMetadatada(entityMetadata, columnMetadata);
          }
 
       }
 
       /// load foreign keys
-      for (const tableClassName of Object.keys(tableRelations)) {
-         const sourceTableMetadata: TableMetadata = this.tables[tableClassName];
+      for (const entityClassName of Object.keys(entitiesRelations)) {
+         const sourceEntityMetadata: EntityMetadata = this.entities[entityClassName];
 
-         for (const columnPropertyName of Object.keys(tableRelations[tableClassName])) {
-               const sourceColumnMetadata: ColumnMetadata = tableRelations[tableClassName][columnPropertyName];
+         for (const columnPropertyName of Object.keys(entitiesRelations[entityClassName])) {
+               const sourceColumnMetadata: ColumnMetadata = entitiesRelations[entityClassName][columnPropertyName];
 
-               const referencedTable: string = sourceColumnMetadata.relation?.referencedTable as string;
-               const referencedTableMetadata = this.tables[referencedTable];
+               const referencedEntity: string = sourceColumnMetadata.relation?.referencedEntity as string;
+               const referencedEntityMetadata = this.entities[referencedEntity];
 
-               if (!referencedTableMetadata) {
-                  throw new TableMetadataNotLocated(referencedTable);
+               if (!referencedEntityMetadata) {
+                  throw new EntityMetadataNotLocatedError(referencedEntity);
                }
 
                const referencedColumnName: string = sourceColumnMetadata.relation?.referencedColumn as string;
-               const referencedColumnMetadata: ColumnMetadata = referencedTableMetadata.columns[referencedColumnName];
+               const referencedColumnMetadata: ColumnMetadata = referencedEntityMetadata.columns[referencedColumnName];
 
                if (!referencedColumnMetadata) {
-                  throw new ColumnMetadataNotLocated(referencedTable, referencedColumnName);
+                  throw new ColumnMetadataNotLocatedError(referencedEntity, referencedColumnName);
                }
 
                if (sourceColumnMetadata.relation?.type == 'OneToOne' || sourceColumnMetadata.relation?.type == 'ManyToOne') {
                   
-                  sourceTableMetadata.foreignKeys.push(sourceColumnMetadata.relation);
+                  sourceEntityMetadata.foreignKeys.push(sourceColumnMetadata.relation);
 
                   if (sourceColumnMetadata.relation?.type == 'OneToOne') {
 
-                     if (((sourceTableMetadata.primaryKey?.columns?.length ?? 0) != 1 || sourceTableMetadata.columns[sourceTableMetadata.primaryKey?.columns[0] as string].name != sourceColumnMetadata.name) &&
-                        sourceTableMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == sourceColumnMetadata.name).length == 0 &&
-                        sourceTableMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == sourceColumnMetadata.name).length == 0) {
+                     if (((sourceEntityMetadata.primaryKey?.columns?.length ?? 0) != 1 || sourceEntityMetadata.columns[sourceEntityMetadata.primaryKey?.columns[0] as string].name != sourceColumnMetadata.name) &&
+                        sourceEntityMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == sourceColumnMetadata.name).length == 0 &&
+                        sourceEntityMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == sourceColumnMetadata.name).length == 0) {
 
                         const options: UniqueOptions = {
-                           target: sourceTableMetadata.target,
+                           target: sourceEntityMetadata.target,
                            columns: [sourceColumnMetadata.propertyName],
                         };
             
                         const unique: UniqueMetadata = new UniqueMetadata({
                            ...options,
-                           table: sourceTableMetadata,
-                           name: this.options.namingStrategy?.uniqueName(sourceTableMetadata, options)
+                           entity: sourceEntityMetadata,
+                           name: this.options.namingStrategy?.uniqueName(sourceEntityMetadata, options)
                         });
             
-                        sourceTableMetadata.uniques.push(unique);
+                        sourceEntityMetadata.uniques.push(unique);
             
                      }
                      
                   }
 
-                  if (((referencedTableMetadata.primaryKey?.columns?.length ?? 0) != 1 || referencedTableMetadata.columns[referencedTableMetadata.primaryKey?.columns[0] as string].name != referencedColumnMetadata.name) &&
-                     referencedTableMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == referencedColumnMetadata.name).length == 0 &&
-                     referencedTableMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == referencedColumnMetadata.name).length == 0) {
+                  if (((referencedEntityMetadata.primaryKey?.columns?.length ?? 0) != 1 || referencedEntityMetadata.columns[referencedEntityMetadata.primaryKey?.columns[0] as string].name != referencedColumnMetadata.name) &&
+                     referencedEntityMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == referencedColumnMetadata.name).length == 0 &&
+                     referencedEntityMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == referencedColumnMetadata.name).length == 0) {
 
                      const options: UniqueOptions = {
-                        target: referencedTableMetadata.target,
+                        target: referencedEntityMetadata.target,
                         columns: [referencedColumnMetadata.propertyName],
                      };
          
                      const unique: UniqueMetadata = new UniqueMetadata({
                         ...options,
-                        table: referencedTableMetadata,
-                        name: this.options.namingStrategy?.uniqueName(referencedTableMetadata, options)
+                        entity: referencedEntityMetadata,
+                        name: this.options.namingStrategy?.uniqueName(referencedEntityMetadata, options)
                      });
          
-                     referencedTableMetadata.uniques.push(unique);
+                     referencedEntityMetadata.uniques.push(unique);
          
                   }
                   
@@ -411,114 +406,109 @@ export class Connection {
    /**
     * 
     */
-   public createQueryExecutor(): Promise<QueryExecutor> {  
-      return QueryExecutor.create(this);
+   public createQueryRunner(): Promise<QueryRunner> {  
+      return QueryRunner.create(this);
    }
 
    /**
     * 
-    * @param table 
-    * @param queryExecutor 
+    * @param entity
     */
-   public getTableManager<T>(table: TableParameter<T>): TableManager<T> {
+   public getEntityManager<T>(entity: EntityReferenceParameter<T>): EntityManager<T> {
 
-      const parameterTable: TableParameter<T> = table
-      if (typeof(table) == 'string') {
-         table = this.tables[table as string];
-      } else if (table instanceof Function) {
-         table = this.tables[table.name];
+      const parameterEntity: EntityReferenceParameter<T> = entity
+      if (typeof(entity) == 'string') {
+         entity = this.entities[entity as string];
+      } else if (entity instanceof Function) {
+         entity = this.entities[entity.name];
       }
 
-      if (!table) {
-         throw new TableMetadataNotLocated((parameterTable as any)?.name ?? parameterTable);
+      if (!entity) {
+         throw new EntityMetadataNotLocatedError((parameterEntity as any)?.name ?? parameterEntity);
       }
       
-      if (!this.tableManagers[table.className]) {
-         this.tableManagers[table.className] = new TableManager<typeof table.target>(table);
+      if (!this.entityManagers[entity.className]) {
+         this.entityManagers[entity.className] = new EntityManager<typeof entity.target>(entity);
       }
 
-      return this.tableManagers[table.className];
+      return this.entityManagers[entity.className];
       
    }
 
    /**
     * 
-    * @param table 
+    * @param entity 
     * @param findOptions 
-    * @param queryExecutor 
+    * @param queryRunner 
     * @returns 
     */
-   public async find<T>(table: TableParameter<T>, findOptions?: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T[]> {
-      return this.getTableManager<T>(table).find(findOptions, queryExecutor);
+   public async find<T>(entity: EntityReferenceParameter<T>, findOptions?: FindOptions<T>, queryRunner?: QueryRunner | Connection): Promise<T[]> {
+      return this.getEntityManager<T>(entity).find(findOptions, queryRunner);
    }
 
    /**
     * 
-    * @param table 
+    * @param entity 
     * @param findOptions 
-    * @param queryExecutor 
+    * @param queryRunner 
     * @returns 
     */
-   public async findOne<T>(table: TableParameter<T>, findOptions: FindOptions<T>, queryExecutor?: QueryExecutor | Connection): Promise<T> {
-      return this.getTableManager<T>(table).findOne(findOptions, queryExecutor);
+   public async findOne<T>(entity: EntityReferenceParameter<T>, findOptions: FindOptions<T>, queryRunner?: QueryRunner | Connection): Promise<T> {
+      return this.getEntityManager<T>(entity).findOne(findOptions, queryRunner);
    }
 
    /**
     * 
-    * @param table 
+    * @param entity 
     * @param object 
     * @param saveOptions 
     * @returns 
     */
-   public async save<T>(table: TableParameter<T>, object: TableValues<T>, saveOptions?: SaveOptions): Promise<any> {
-      return this.getTableManager<T>(table).save(object, saveOptions);
+   public async save<T>(entity: EntityReferenceParameter<T>, object: EntityValues<T>, saveOptions?: SaveOptions): Promise<any> {
+      return this.getEntityManager<T>(entity).save(object, saveOptions);
    }
 
    /**
     * 
-    * @param table 
+    * @param entity 
     * @param object 
-    * @param queryExecutor 
+    * @param queryRunner 
     * @returns 
     */
-   public async delete<T>(table: TableParameter<T>, object: any, queryExecutor?: QueryExecutor | Connection): Promise<boolean> {
-      return this.getTableManager<T>(table).delete(object, queryExecutor);
+   public async delete<T>(entity: EntityReferenceParameter<T>, object: any, queryRunner?: QueryRunner | Connection): Promise<boolean> {
+      return this.getEntityManager<T>(entity).delete(object, queryRunner);
    }
 
    /**
     * 
-    * @param queryExecutor 
     * @returns 
     */
-   public createSelectQuery<T>(table: QueryTable<T> | TableMetadata): SelectQueryBuilder<T> {
-      return new SelectQueryBuilder<T>(this, table);
+   public createSelectQuery<T>(entity: QueryTable<T> | EntityMetadata): SelectQueryBuilder<T> {
+      return new SelectQueryBuilder<T>(this, entity);
    }
 
    /**
     * 
-    * @param queryExecutor 
     * @returns 
     */
-   public createInsertQuery<T>(table: QueryTable<T> | TableMetadata): InsertQueryBuilder<T> {
-      return new InsertQueryBuilder<T>(this, table);
+   public createInsertQuery<T>(entity: QueryTable<T> | EntityMetadata): InsertQueryBuilder<T> {
+      return new InsertQueryBuilder<T>(this, entity);
    }
 
    /**
     * 
-    * @param queryExecutor 
     * @returns 
     */
-   public createUpdateQuery<T>(table: QueryTable<T> | TableMetadata): UpdateQueryBuilder<T> {
-      return new UpdateQueryBuilder<T>(this, table);
+   public createUpdateQuery<T>(entity: QueryTable<T> | EntityMetadata): UpdateQueryBuilder<T> {
+      return new UpdateQueryBuilder<T>(this, entity);
    }
 
    /**
     * 
-    * @param queryExecutor 
     * @returns 
     */
-   public createDeleteQuery<T>(table: QueryTable<T> | TableMetadata): DeleteQueryBuilder<T> {
-      return new DeleteQueryBuilder<T>(this, table);
+   public createDeleteQuery<T>(entity: QueryTable<T> | EntityMetadata): DeleteQueryBuilder<T> {
+      return new DeleteQueryBuilder<T>(this, entity);
    }
 
    /**
@@ -528,11 +518,11 @@ export class Connection {
     * @param queryRunner 
     */
    public async query(query: string, params?: any[]) {
-      const queryExecutor: QueryExecutor = await this.createQueryExecutor();
+      const queryRunner: QueryRunner = await this.createQueryRunner();
       try {
-          return await queryExecutor.query(query, params);
+          return await queryRunner.query(query, params);
       } finally {
-         await queryExecutor.release();
+         await queryRunner.release();
       }
    }
 
@@ -543,24 +533,24 @@ export class Connection {
    public async transaction<T = any>(transactionProcess: TransactionProcess<T>): Promise<T> {
 
 
-      const queryExecutor: QueryExecutor = await this.createQueryExecutor();
+      const queryRunner: QueryRunner = await this.createQueryRunner();
 
       try {
 
-         await queryExecutor.beginTransaction();
-         return await transactionProcess(queryExecutor);
+         await queryRunner.beginTransaction();
+         return await transactionProcess(queryRunner);
          
       } catch (error) {
 
-         await queryExecutor.rollbackTransaction();
+         await queryRunner.rollbackTransaction();
          throw error;
 
       } finally {
 
-         if (queryExecutor.inTransaction) {
-            await queryExecutor.commitTransaction();
+         if (queryRunner.inTransaction) {
+            await queryRunner.commitTransaction();
          }
-         await queryExecutor.release();
+         await queryRunner.release();
       }
    }
 
@@ -577,20 +567,20 @@ export class Connection {
       
       /// create a query executor to execute the function in transaction, if the
       // function throws an error, the transaction will be canceled
-      const queryExecutor: QueryExecutor = await this.connection.createQueryExecutor(); 
+      const queryRunner: QueryRunner = await this.connection.createQueryRunner(); 
       try {
 
-         await queryExecutor.beginTransaction();
+         await queryRunner.beginTransaction();
 
          for (const sql of sqlsMigrations) {
-            await queryExecutor.query(sql);
+            await queryRunner.query(sql);
          }
 
-         await queryExecutor.commitTransaction();
+         await queryRunner.commitTransaction();
       
       } catch (error) {
 
-         await queryExecutor.rollbackTransaction();
+         await queryRunner.rollbackTransaction();
          throw error;
 
       }
@@ -603,9 +593,9 @@ export class Connection {
    public async loadPendingMigrations(): Promise<MigrationInterface[]> {
       const migrations: MigrationInterface[] = [];
 
-      const migrationTableName: string = this.tables['Migration'].name as string;
-      const tablesSchema: SimpleMap<TableSchema> = await this.driver.loadSchema([migrationTableName]);
-      const performedMigrations: Migration[] = (tablesSchema[migrationTableName] != null ? await this.find(Migration) : []);
+      const migrationTableName: string = this.entities['Migration'].name as string;
+      const entitiesSchema: SimpleMap<EntitySchema> = await this.driver.loadSchema([migrationTableName]);
+      const performedMigrations: Migration[] = (entitiesSchema[migrationTableName] != null ? await this.find(Migration) : []);
 
       const migrationsPath = path.join(OrmUtils.rootPath(this.connection.options), this.options.migrations?.directory, '*.js');
       const filesPath: string[] = glob.sync(migrationsPath);
@@ -634,24 +624,24 @@ export class Connection {
       const migrations: MigrationInterface[] = await this.loadPendingMigrations();
       if (migrations.length > 0) {
 
-         const queryExecutor: QueryExecutor = await this.createQueryExecutor();
+         const queryRunner: QueryRunner = await this.createQueryRunner();
          try {
             
             if (this.options.migrations?.transactionMode == 'all') {
-               await queryExecutor.beginTransaction();
+               await queryRunner.beginTransaction();
             }
 
             for (const migration of migrations) {
 
                if (this.options.migrations?.transactionMode == 'each') {
-                  await queryExecutor.beginTransaction();
+                  await queryRunner.beginTransaction();
                }
 
                const instance = new (migration as any)();
-               await instance.up(queryExecutor);
+               await instance.up(queryRunner);
 
                const migrationCreationDate: string = (instance.constructor.name as string).substring(instance.constructor.name.length - 18, instance.constructor.name.length)
-               await this.getTableManager(Migration).save({
+               await this.getEntityManager(Migration).save({
                   name: instance.constructor.name,
                   createdAt: new Date(
                      Number.parseInt(migrationCreationDate.substring(0, 4)),
@@ -663,23 +653,23 @@ export class Connection {
                      Number.parseInt(migrationCreationDate.substring(14, 18)),
                   )
                }, {
-                  queryExecutor: queryExecutor
+                  queryRunner: queryRunner
                });
                
                if (this.options.migrations?.transactionMode == 'each') {
-                  await queryExecutor.commitTransaction();
+                  await queryRunner.commitTransaction();
                }
 
             }
 
             if (this.options.migrations?.transactionMode == 'all') {
-               await queryExecutor.commitTransaction();
+               await queryRunner.commitTransaction();
             }
 
          } catch (error) {
 
-            if (queryExecutor.inTransaction) {
-               await queryExecutor.rollbackTransaction();
+            if (queryRunner.inTransaction) {
+               await queryRunner.rollbackTransaction();
             }
             throw error;
 

@@ -1,7 +1,5 @@
-import { ColumnOptions } from "../../metadata/columns/column-options";
-import { ForeignKeyOptions } from "../../metadata/foreign-key/foreign-key-options";
-import { ColumnOperation } from "../../metadata/columns/column-operation";
-import { DecoratorStore } from "../decorators-store";
+import { ColumnOptions, ForeignKeyOptions } from "../../metadata";
+import { DecoratorsStore } from "../decorators-store";
 
 export function CreatedAtColumn(options?: Omit<ColumnOptions<any, ForeignKeyOptions>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'operation'>): PropertyDecorator {
   return function (target: any, propertyKey: any) {
@@ -13,7 +11,7 @@ export function CreatedAtColumn(options?: Omit<ColumnOptions<any, ForeignKeyOpti
 			nullable: options?.nullable ?? false,
 			operation: 'CreatedAt'
 		});
-		DecoratorStore.addColumn(column);
+		DecoratorsStore.addColumn(column);
     
   };
 }

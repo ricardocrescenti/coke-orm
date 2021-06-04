@@ -1,6 +1,5 @@
-import { ColumnOptions } from "../../metadata/columns/column-options";
-import { ForeignKeyOptions } from "../../metadata/foreign-key/foreign-key-options";
-import { DecoratorStore } from "../decorators-store";
+import { ColumnOptions, ForeignKeyOptions } from "../../metadata";
+import { DecoratorsStore } from "../decorators-store";
 
 export function OneToMany<T>(options?: Pick<ColumnOptions<T, Omit<ForeignKeyOptions, 'target' | 'type' | 'onUpdate' | 'onDelete'>>, 'relation' | 'roles'>) {
    return function (target: Object, propertyKey: any) {
@@ -15,7 +14,7 @@ export function OneToMany<T>(options?: Pick<ColumnOptions<T, Omit<ForeignKeyOpti
 				type: 'OneToMany'
 			}
       });
-      DecoratorStore.addColumn(column);
+      DecoratorsStore.addColumn(column);
       
    };
 }

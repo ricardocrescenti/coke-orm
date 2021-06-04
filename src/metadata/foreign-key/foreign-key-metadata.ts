@@ -1,5 +1,5 @@
-import { ColumnMetadata } from "../columns/column-metadata";
-import { TableMetadata } from "../tables/table-metadata";
+import { ColumnMetadata } from "../column";
+import { EntityMetadata } from "../entity";
 import { ForeignKeyOptions } from "./foreign-key-options";
 
 export class ForeignKeyMetadata extends ForeignKeyOptions {
@@ -7,7 +7,7 @@ export class ForeignKeyMetadata extends ForeignKeyOptions {
    /**
     * 
     */
-   public readonly table: TableMetadata;
+   public readonly entity: EntityMetadata;
 
    /**
     * 
@@ -38,24 +38,24 @@ export class ForeignKeyMetadata extends ForeignKeyOptions {
    /**
     * 
     */
-   public get referencedTableManager() {
-      return this.table.connection.getTableManager(this.referencedTable);
+   public get referencedEntityManager() {
+      return this.entity.connection.getEntityManager(this.referencedEntity);
    }
 
    constructor(options: ForeignKeyMetadata) {
       super(options);
-      this.table = options.table;
+      this.entity = options.entity;
       this.column = options.column;
       
       this.column.foreignKeys.push(this);
    }
 
-   public getReferencedTableMetadata(): TableMetadata {
-      return this.table.connection.tables[this.referencedTable];
+   public getReferencedEntityMetadata(): EntityMetadata {
+      return this.entity.connection.entities[this.referencedEntity];
    }
 
    public getReferencedColumnMetadata(): ColumnMetadata {
-      return this.getReferencedTableMetadata().getColumn(this.referencedColumn);
+      return this.getReferencedEntityMetadata().getColumn(this.referencedColumn);
    }
 
 }

@@ -1,15 +1,13 @@
 import { ForeignKeyAction } from "./foreign-key-action";
 import { ForeignKeyType } from "./foreign-key-type";
 
-export type ObjectType<T> = { new (): T }|Function;
-
 /**
  * Describes all relation's options.
  */
 export class ForeignKeyOptions {
    
     /**
-     * Class referenced to this table.
+     * Class referenced to this entity.
      */
     public readonly target: any;
 
@@ -26,7 +24,7 @@ export class ForeignKeyOptions {
     /**
      * Class referenced to this field
      */
-    public readonly referencedTable: string;
+    public readonly referencedEntity: string;
 
     /**
      * Name of the class field referenced to this field
@@ -64,7 +62,7 @@ export class ForeignKeyOptions {
         this.target = options.target;
         this.name = options.name;
         this.type = options.type;
-        this.referencedTable = options.referencedTable;
+        this.referencedEntity = options.referencedEntity;
         this.referencedColumn = options.referencedColumn;
         this.cascade = options.cascade;
         this.onDelete = options.onDelete ?? 'NO ACTION';

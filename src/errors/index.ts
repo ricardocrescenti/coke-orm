@@ -1,25 +1,35 @@
-import { AlreadyConnectedError } from "./already-connected-error";
-import { ColumnMetadataNotLocated } from "./column_metadata_not_located";
-import { ConnectionAlreadyExistsError } from "./connection-already-exists";
-import { InvalidColumnOption } from "./invalid-column-options";
-import { InvalidGenerateStrategy } from "./invalid-generate-strategy";
-import { InvalidQueryBuilder } from "./invalid-query-builder";
-import { QueryExecutionError } from "./query-execution-error";
-import { ReferencedColumnMetadataNotLocated } from "./referenced_column_metadata_not_located";
-import { ReferencedTableMetadataNotLocated } from "./referenced_table_metadata_not_located";
-import { TableHasNoPrimaryKey } from "./table-has-no-primary-key";
-import { TableMetadataNotLocated } from "./table_metadata_not_located";
+import { ColumnMetadataNotLocatedError } from "./column_metadata_not_located.error";
+import { ConfigFileNotFoundError } from "./config-file-not-found.error";
+import { ConnectionAlreadyConnectedError } from "./connection-already-connected.error";
+import { ConnectionAlreadyExistsError } from "./connection-already-exists.error";
+import { ConnectionNameNotFoundError } from "./connection-name-not-found.error";
+import { EntityHasNoPrimaryKeyError } from "./entity-has-no-primary-key.error";
+import { EntityMetadataNotLocatedError } from "./entity_metadata_not_located.error";
+import { InvalidColumnOptionError } from "./invalid-column-options.error";
+import { InvalidGenerateStrategyError } from "./invalid-generate-strategy.error";
+import { InvalidQueryBuilderError } from "./invalid-query-builder.error";
+import { InvalidWhereOperatorError } from "./invalid-where-operator.error";
+import { NonExistentObjectOfRelationError } from "./non-existent-object-of-relation.error";
+import { QueryExecutionError } from "./query-execution.error";
+import { ReferencedColumnMetadataNotLocatedError } from "./referenced_column_metadata_not_located.error";
+import { ReferencedEntityMetadataNotLocatedError } from "./referenced_entity_metadata_not_located.error";
+import { SubscriberAlreadyInformedError } from "./subscriber-already-informed.error";
 
 export {
-   AlreadyConnectedError,
-   ColumnMetadataNotLocated,
+   ColumnMetadataNotLocatedError,
+   ConfigFileNotFoundError,
+   ConnectionAlreadyConnectedError,
    ConnectionAlreadyExistsError,
-   InvalidColumnOption,
-   InvalidGenerateStrategy,
-   InvalidQueryBuilder,
+   ConnectionNameNotFoundError,
+   EntityHasNoPrimaryKeyError,
+   EntityMetadataNotLocatedError,
+   InvalidColumnOptionError,
+   InvalidGenerateStrategyError,
+   InvalidQueryBuilderError,
+   InvalidWhereOperatorError,
+   NonExistentObjectOfRelationError,
    QueryExecutionError,
-   ReferencedColumnMetadataNotLocated,
-   ReferencedTableMetadataNotLocated,
-   TableMetadataNotLocated,
-   TableHasNoPrimaryKey
+   ReferencedColumnMetadataNotLocatedError,
+   ReferencedEntityMetadataNotLocatedError,
+   SubscriberAlreadyInformedError
 }

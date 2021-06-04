@@ -1,11 +1,11 @@
 import { ConstructorTo } from "../../common/types/constructor-to.type";
-import { TableSubscriber } from "../../metadata/events/table-subscriber";
-import { CokeModel } from "../../table-manager/coke-model";
+import { EntitySubscriberInterface } from "../../metadata";
+import { CokeModel } from "../../manager";
 
 export class SubscriberOptions {
 
    public readonly target: Function;
-   public readonly subscriber: ConstructorTo<TableSubscriber<CokeModel>>;
+   public readonly subscriber: ConstructorTo<EntitySubscriberInterface<CokeModel>>;
 
    constructor(options: SubscriberOptions) {
       this.target = options.target;

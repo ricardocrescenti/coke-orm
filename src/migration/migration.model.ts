@@ -1,8 +1,8 @@
-import { Column, PrimaryColumn, Table } from "../decorators";
-import { Generate } from "../metadata/add-ons/generate";
-import { CokeModel } from "../table-manager/coke-model";
+import { Column, PrimaryColumn, Entity } from "../decorators";
+import { Generate } from "../metadata";
+import { CokeModel } from "../manager";
 
-@Table()
+@Entity()
 export class Migration extends CokeModel {
 
     @PrimaryColumn({ 

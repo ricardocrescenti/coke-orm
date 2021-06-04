@@ -1,1 +1,1 @@
-export type ForeignKeyType = 'OneToMany'|'ManyToOne'|'OneToOne';
+export type ForeignKeyType = 'OneToMany' | 'ManyToOne' | 'OneToOne';

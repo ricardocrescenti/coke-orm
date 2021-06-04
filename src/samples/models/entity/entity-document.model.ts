@@ -1,12 +1,12 @@
-import { Column, ManyToOne, Table, Unique } from "../../../decorators";
+import { Column, ManyToOne, Entity, Unique } from "../../../decorators";
 import { PatternModel } from "../pattern.model";
 import { EntityModel } from "./entity.model";
 
-@Table({ name: 'entities_documents' })
+@Entity({ name: 'entities_documents' })
 @Unique({ columns: ['entity', 'type'] })
 export class EntityDocumentModel extends PatternModel {
 
-	@ManyToOne({ relation: { referencedTable: 'EntityModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' } })
+	@ManyToOne({ relation: { referencedEntity: 'EntityModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' } })
 	entity?: EntityModel;
 
 	@Column()

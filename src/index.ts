@@ -1,5 +1,5 @@
-import { QueryExecutor } from "./query-executor/query-executor";
+import { QueryRunner } from "./query-runner/query-runner";
 
 export {
-   QueryExecutor
+   QueryRunner
 }

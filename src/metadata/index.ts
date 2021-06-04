@@ -1,19 +1,14 @@
-import { ColumnMetadata } from "./columns/column-metadata";
-import { ColumnOperation } from "./columns/column-operation";
-import { ColumnOptions } from "./columns/column-options";
-import { TableSubscriber } from "./events/table-subscriber";
-import { ForeignKeyAction } from "./foreign-key/foreign-key-action";
-import { ForeignKeyMetadata } from "./foreign-key/foreign-key-metadata";
-import { ForeignKeyOptions } from "./foreign-key/foreign-key-options";
-import { ForeignKeyType } from "./foreign-key/foreign-key-type";
-import { IndexMetadata } from "./index/index-metadata";
-import { IndexOptions } from "./index/index-options";
-import { TableMetadata } from "./tables/table-metadata";
-import { TableOptions } from "./tables/table-options";
-import { UniqueMetadata } from "./unique/unique-metadata";
-import { UniqueOptions } from "./unique/unique-options";
+import { Generate } from "./add-ons";
+import { ColumnMetadata, ColumnOperation, ColumnOptions } from "./column";
+import { DeleteEvent, EntitySubscriberInterface, InsertEvent, LoadEvent, TransactionCommitEvent, TransactionRollbackEvent, UpdateEvent } from "./event";
+import { ForeignKeyAction, ForeignKeyMetadata, ForeignKeyOptions, ForeignKeyType } from "./foreign-key";
+import { IndexMetadata, IndexOptions } from "./index/index";
+import { PrimaryKeyMetadata, PrimaryKeyOptions } from "./primary-key";
+import { EntityMetadata, EntityOptions } from "./entity";
+import { UniqueMetadata, UniqueOptions } from "./unique";
 
 export  {
+   Generate,
    ColumnMetadata,
    ColumnOperation,
    ColumnOptions,
@@ -23,9 +18,17 @@ export  {
    ForeignKeyType,
    IndexMetadata,
    IndexOptions,
-   TableMetadata,
-   TableOptions,
+   PrimaryKeyMetadata,
+   PrimaryKeyOptions,
+   EntityMetadata,
+   EntityOptions,
    UniqueMetadata,
    UniqueOptions,
-   TableSubscriber as TableEvents
+   EntitySubscriberInterface,
+   DeleteEvent,
+   InsertEvent,
+   LoadEvent,
+   TransactionCommitEvent,
+   TransactionRollbackEvent,
+   UpdateEvent
 }

@@ -2,7 +2,7 @@ import { QueryColumnBuilder } from './query-column-builder';
 import { QueryOrder } from '../types/query-order';
 import { QueryJsonColumnBuilder } from './query-json-column-builder';
 import { QueryManager } from '../query-manager';
-import { TableMetadata } from '../../metadata/tables/table-metadata';
+import { EntityMetadata } from '../../metadata';
 
 export class QueryJsonAggColumnBuilder<T> extends QueryColumnBuilder<T> {
 
@@ -15,9 +15,9 @@ export class QueryJsonAggColumnBuilder<T> extends QueryColumnBuilder<T> {
       this.orderBy = select.orderBy
    }
    
-   getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, tableMetadata: TableMetadata): string {
+   getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, entityMetadata: EntityMetadata): string {
       const orderBy: string = queryManager.mountOrderByExpression(mainQueryManager, this.orderBy);
-      return `json_agg(${this.jsonColumn.getExpression(mainQueryManager, queryManager, tableMetadata)}${orderBy.length > 0 ? ' ' + orderBy : ''})`;
+      return `json_agg(${this.jsonColumn.getExpression(mainQueryManager, queryManager, entityMetadata)}${orderBy.length > 0 ? ' ' + orderBy : ''})`;
    }
 
 }

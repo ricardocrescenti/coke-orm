@@ -1,14 +1,5 @@
-import { ColumnMetadata } from "../metadata/columns/column-metadata";
-import { ColumnOptions } from "../metadata/columns/column-options";
-import { ForeignKeyMetadata } from "../metadata/foreign-key/foreign-key-metadata";
-import { IndexMetadata } from "../metadata/index/index-metadata";
-import { TableMetadata } from "../metadata/tables/table-metadata";
-import { UniqueMetadata } from "../metadata/unique/unique-metadata";
-import { ColumnSchema } from "../schema/column-schema";
-import { ForeignKeySchema } from "../schema/foreign-key-schema";
-import { IndexSchema } from "../schema/index-schema";
-import { TableSchema } from "../schema/table-schema";
-import { UniqueSchema } from "../schema/unique-schema";
+import { EntityMetadata, ColumnMetadata, ColumnOptions, ForeignKeyMetadata, IndexMetadata, UniqueMetadata } from "../metadata";
+import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, UniqueSchema } from "../schema";
 import { Driver } from "./driver";
 
 export abstract class QueryBuilderDriver {
@@ -52,20 +43,18 @@ export abstract class QueryBuilderDriver {
 
    /**
     * 
-    * @param tableMetadata 
+    * @param entityMetadata 
     */
-   public abstract createTableFromMetadata(tableMetadata: TableMetadata): string;
+   public abstract createTableFromMetadata(entityMetadata: EntityMetadata): string;
    
    /**
     * 
-    * @param tableMetadata 
     * @param columnMetadata 
     */
    public abstract createColumnFromMetadata(columnMetadata: ColumnMetadata): string;
 
    /**
     * 
-    * @param tableMetadata 
     * @param columnMetadata 
     * @param columnSchema 
     */
@@ -73,70 +62,66 @@ export abstract class QueryBuilderDriver {
    
    /**
     * 
-    * @param tableMetadata
+    * @param entityMetadata
     */
-   public abstract createPrimaryKeyFromMetadata(tableMetadata: TableMetadata, alterTable: boolean): string;
+   public abstract createPrimaryKeyFromMetadata(entityMetadata: EntityMetadata, alterTable: boolean): string;
    
    /**
     * 
-    * @param tableMetadata 
     * @param indexMetadata 
     */
    public abstract createIndexFromMetadata(indexMetadata: IndexMetadata): string;
    
    /**
     * 
-    * @param tableMetadata 
     * @param uniqueMetadata 
     */
    public abstract createUniqueFromMetadata(uniqueMetadata: UniqueMetadata, alterTable: boolean): string;
    
    /**
     * 
-    * @param tableMetadata 
     * @param foreignKeyMetadata 
     */
    public abstract createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata): string;
    
    /**
     * 
-    * @param tableMetadata 
     */
-   public abstract deleteTableFromSchema(tableSchema: TableSchema): string;
+   public abstract deleteTableFromSchema(entitySchema: EntitySchema): string;
    
    /**
     * 
-    * @param tableMetadata 
+    * @param entityMetadata 
     * @param columnMetadata 
     */
-   public abstract deleteColumnFromSchema(tableMetadata: TableMetadata, columnMetadata: ColumnSchema): string;
+   public abstract deleteColumnFromSchema(entityMetadata: EntityMetadata, columnMetadata: ColumnSchema): string;
    
    /**
     * 
-    * @param tableMetadata
+    * @param entityMetadata
     */
-   public abstract deletePrimaryKeyFromSchema(tableMetadata: TableMetadata): string;
+   public abstract deletePrimaryKeyFromSchema(entityMetadata: EntityMetadata): string;
    
    /**
     * 
-    * @param tableMetadata 
+    * @param entityMetadata 
     * @param indexSchema 
     */
-   public abstract deleteIndexFromSchema(tableMetadata: TableMetadata, indexSchema: IndexSchema): string;
+   public abstract deleteIndexFromSchema(entityMetadata: EntityMetadata, indexSchema: IndexSchema): string;
    
    /**
     * 
-    * @param tableMetadata 
+    * @param entityMetadata 
     * @param uniqueSchema 
     */
-   public abstract deleteUniqueFromSchema(tableMetadata: TableMetadata, uniqueSchema: UniqueSchema): string;
+   public abstract deleteUniqueFromSchema(entityMetadata: EntityMetadata, uniqueSchema: UniqueSchema): string;
    
    /**
     * 
-    * @param tableMetadata 
+    * @param entityMetadata 
     * @param foreignKeySchema 
     */
-   public abstract deleteForeignKeyFromSchema(tableMetadata: TableMetadata, foreignKeySchema: ForeignKeySchema): string;
+   public abstract deleteForeignKeyFromSchema(entityMetadata: EntityMetadata, foreignKeySchema: ForeignKeySchema): string;
    
    /**
     * 

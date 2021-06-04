@@ -1,24 +1,15 @@
 import { Driver } from "../../driver";
 import { SimpleMap } from "../../../common/interfaces/map";
 import { DefaultColumnOptions } from "../../options/default-column-options";
-import { QueryExecutor } from "../../../query-executor/query-executor";
+import { QueryRunner } from "../../../query-runner/query-runner";
 import { Connection } from "../../../connection/connection";
-import { TableSchema } from "../../../schema/table-schema";
-import { ColumnSchema } from "../../../schema/column-schema";
-import { PrimaryKeySchema } from "../../../schema/primary-key-schema";
-import { ForeignKeySchema } from "../../../schema/foreign-key-schema";
-import { IndexSchema } from "../../../schema/index-schema";
-import { UniqueSchema } from "../../../schema/unique-schema";
+import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, PrimaryKeySchema, UniqueSchema } from "../../../schema";
 import { QueryBuilderDriver } from "../../query-builder-driver";
 import { PostgresQueryBuilderDriver } from "./postgres-query-builder-driver";
-import { ForeignKeyMetadata } from "../../../metadata/foreign-key/foreign-key-metadata";
-import { UniqueMetadata } from "../../../metadata/unique/unique-metadata";
-import { IndexMetadata } from "../../../metadata/index/index-metadata";
-import { InvalidColumnOption } from "../../../errors/invalid-column-options";
-import { ColumnOperation } from "../../../metadata/columns/column-operation";
-import { ColumnMetadata } from "../../../metadata/columns/column-metadata";
-import { TableMetadata } from "../../../metadata/tables/table-metadata";
-import { Generate } from "../../../metadata/add-ons/generate";
+import { ForeignKeyMetadata } from "../../../metadata/foreign-key";
+import { ColumnMetadata, ColumnOperation, IndexMetadata, UniqueMetadata, EntityMetadata } from "../../../metadata";
+import { InvalidColumnOptionError } from "../../../errors";
+import { Generate } from "../../../metadata";
 
 export class PostgresDriver extends Driver {
 
@@ -55,29 +46,29 @@ export class PostgresDriver extends Driver {
       return new PostgresQueryBuilderDriver(this);
    }
    
-   public async beginTransaction(queryExecutor: QueryExecutor): Promise<void> {
-      await queryExecutor.query(`BEGIN TRANSACTION`);
+   public async beginTransaction(queryRunner: QueryRunner): Promise<void> {
+      await queryRunner.query(`BEGIN TRANSACTION`);
    }
 
-   public async commitTransaction(queryExecutor: QueryExecutor): Promise<void> {
-      await queryExecutor.query(`COMMIT TRANSACTION`);
+   public async commitTransaction(queryRunner: QueryRunner): Promise<void> {
+      await queryRunner.query(`COMMIT TRANSACTION`);
    }
 
-   public async rollbackTransaction(queryExecutor: QueryExecutor): Promise<void> {
-      await queryExecutor.query(`ROLLBACK TRANSACTION`);
+   public async rollbackTransaction(queryRunner: QueryRunner): Promise<void> {
+      await queryRunner.query(`ROLLBACK TRANSACTION`);
    }
    
-   public async releaseQueryRunner(queryExecutor: QueryExecutor): Promise<void> {
-      await queryExecutor.client.release();
+   public async releaseQueryRunner(queryRunner: QueryRunner): Promise<void> {
+      await queryRunner.client.release();
    }
    
    public async disconnect(): Promise<void> {
       await this.client.end();
    }
 
-   public async executeQuery(queryExecutor: QueryExecutor, query: string, params?: any[]): Promise<any> {
+   public async executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<any> {
       return new Promise((resolve, reject) => {
-         queryExecutor.client.query(query, params, (error: any, result: any) => {
+         queryRunner.client.query(query, params, (error: any, result: any) => {
              
             if (error) {
                return reject(error);
@@ -88,8 +79,8 @@ export class PostgresDriver extends Driver {
      });
    }
    
-   public async loadSchema(tablesToLoad?: string[]): Promise<SimpleMap<TableSchema>> {
-      const tables: SimpleMap<TableSchema> = new SimpleMap<TableSchema>();
+   public async loadSchema(entitiesToLoad?: string[]): Promise<SimpleMap<EntitySchema>> {
+      const tablesSchema: SimpleMap<EntitySchema> = new SimpleMap<EntitySchema>();
 
       console.time('schema query');
 
@@ -141,7 +132,7 @@ export class PostgresDriver extends Driver {
             ORDER BY c.table_schema, c.table_name) c on (c.table_schema = t.table_schema and c.table_name = t.table_name)
          
          WHERE t.table_schema = '${this.connection.options.schema ?? 'public'}'
-         ${(tablesToLoad ?? []).length > 0 ? `AND t.table_name in ('${tablesToLoad?.join(`','`)}')` : ''}
+         ${(entitiesToLoad ?? []).length > 0 ? `AND t.table_name in ('${entitiesToLoad?.join(`','`)}')` : ''}
          ORDER BY t.table_name`);
       
       console.timeLog('schema query');
@@ -259,7 +250,7 @@ export class PostgresDriver extends Driver {
                }
             }
 
-            tables[table.table_name] = new TableSchema({
+            tablesSchema[table.table_name] = new EntitySchema({
                name: table.table_name,
                columns: columns,
                schema: table.table_schema
@@ -270,7 +261,7 @@ export class PostgresDriver extends Driver {
 
       }
 
-      return tables;
+      return tablesSchema;
    }
 
    private async loadExtensions(): Promise<string[]> {
@@ -321,16 +312,16 @@ export class PostgresDriver extends Driver {
 
       //const columnsVarifyHaveUnique: any = {};
       
-      for (const tableMetadata of Object.values(this.connection.tables)) {
+      for (const entityMetadata of Object.values(this.connection.entities)) {
 
-         const tableSchema: TableSchema = tablesSchema[tableMetadata.name as string];
-         if (!tableSchema) {
+         const entitySchema: EntitySchema = tablesSchema[entityMetadata.name as string];
+         if (!entitySchema) {
 
-            // create new table
-            sqlMigrationsCreateTable.push(this.connection.driver.queryBuilder.createTableFromMetadata(tableMetadata));
+            // create new entity
+            sqlMigrationsCreateTable.push(this.connection.driver.queryBuilder.createTableFromMetadata(entityMetadata));
 
-            // get all the columns that need to create sequence to create sequences.
-            for (const columnMetadata of Object.values(tableMetadata.columns).filter(columnMetadata => columnMetadata.default instanceof Generate)) {
+            // get all the columns that need to create sequence
+            for (const columnMetadata of Object.values(entityMetadata.columns).filter(columnMetadata => columnMetadata.default instanceof Generate)) {
 
                if (columnMetadata.default.strategy == 'sequence') {
                
@@ -351,16 +342,16 @@ export class PostgresDriver extends Driver {
 
             // schema columns that have not been checked, this information is 
             // used to detect the columns that must be deleted
-            const pendingColumnsSchema: string[] = Object.keys(tableSchema.columns);
+            const pendingColumnsSchema: string[] = Object.keys(entitySchema.columns);
 
             // check column diferences
-            for (const columnName in tableMetadata.columns) {
-               const columnMetadata: ColumnMetadata = tableMetadata.getColumn(columnName);
+            for (const columnName in entityMetadata.columns) {
+               const columnMetadata: ColumnMetadata = entityMetadata.getColumn(columnName);
                if (columnMetadata.relation && columnMetadata.relation.type == 'OneToMany') {
                   continue;
                }
 
-               const columnSchema = tableSchema.columns[columnMetadata.name as string];
+               const columnSchema = entitySchema.columns[columnMetadata.name as string];
 
                if (!columnSchema) {
 
@@ -371,7 +362,7 @@ export class PostgresDriver extends Driver {
 
                   if (columnMetadata.type != columnSchema.type && !this.allowChangeColumnType(columnSchema.type, columnMetadata.type as string)) {
 
-                     sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.deleteColumnFromSchema(tableMetadata, columnSchema));
+                     sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.deleteColumnFromSchema(entityMetadata, columnSchema));
                      sqlMigrationsCreateColumns.push(this.connection.driver.queryBuilder.createColumnFromMetadata(columnMetadata));
                      
                   } else if ((columnMetadata.type != columnSchema.type) ||
@@ -429,46 +420,46 @@ export class PostgresDriver extends Driver {
             // delete columns
             if (this.connection.options.migrations?.deleteColumns) {
                for (const columnName of pendingColumnsSchema) {
-                  const columnSchema = tableSchema.columns[columnName];
+                  const columnSchema = entitySchema.columns[columnName];
 
                   // delete the foreign keys related to this field
                   for (const foreignKeyName in columnSchema.foreignKeys) {
-                     sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]));
+                     sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(entityMetadata, entitySchema.foreignKeys[foreignKeyName]));
                      deletedForeignKeys.push(foreignKeyName);
                   }
 
                   // delete the uniques related to this field
                   for (const uniqueName in columnSchema.uniques) {
-                     sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]));
+                     sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.deleteUniqueFromSchema(entityMetadata, entitySchema.uniques[uniqueName]));
                      deletedUniques.push(uniqueName);
                   }
 
                   // delete the indexs related to this field
                   for (const indexName in columnSchema.indexs) {
-                     sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]));
+                     sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.deleteIndexFromSchema(entityMetadata, entitySchema.indexs[indexName]));
                      deletedIndex.push(indexName);
                   }
 
-                  sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.deleteColumnFromSchema(tableMetadata, columnSchema));
+                  sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.deleteColumnFromSchema(entityMetadata, columnSchema));
                }
             }
 
             // check primary key
-            if (tableMetadata.primaryKey && !tableSchema.primaryKey) {
-               sqlMigrationsCreatePrimaryKeys.push(this.connection.driver.queryBuilder.createPrimaryKeyFromMetadata(tableMetadata, true));
-            } else if (!tableMetadata.primaryKey && tableSchema.primaryKey) {
-               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.deletePrimaryKeyFromSchema(tableMetadata));
-            } else if (tableMetadata.primaryKey && tableSchema.primaryKey && (tableMetadata.primaryKey.columns.length != tableSchema.primaryKey.columns.length || tableMetadata.primaryKey.columns.every((columnMetadata) => (tableSchema.primaryKey?.columns?.indexOf(tableMetadata.columns[columnMetadata].name as string) ?? -1)))) {
-               sqlMigrationsCreatePrimaryKeys.push(this.connection.driver.queryBuilder.createPrimaryKeyFromMetadata(tableMetadata, true));
-               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.deletePrimaryKeyFromSchema(tableMetadata));
+            if (entityMetadata.primaryKey && !entitySchema.primaryKey) {
+               sqlMigrationsCreatePrimaryKeys.push(this.connection.driver.queryBuilder.createPrimaryKeyFromMetadata(entityMetadata, true));
+            } else if (!entityMetadata.primaryKey && entitySchema.primaryKey) {
+               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.deletePrimaryKeyFromSchema(entityMetadata));
+            } else if (entityMetadata.primaryKey && entitySchema.primaryKey && (entityMetadata.primaryKey.columns.length != entitySchema.primaryKey.columns.length || entityMetadata.primaryKey.columns.every((columnMetadata) => (entitySchema.primaryKey?.columns?.indexOf(entityMetadata.columns[columnMetadata].name as string) ?? -1)))) {
+               sqlMigrationsCreatePrimaryKeys.push(this.connection.driver.queryBuilder.createPrimaryKeyFromMetadata(entityMetadata, true));
+               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.deletePrimaryKeyFromSchema(entityMetadata));
             }
 
             // check uniques
-            const pendingUniquesSchema: string[] = Object.keys(tableSchema.uniques);
-            const uniques: UniqueMetadata[] = (tableMetadata.uniques ?? []);
+            const pendingUniquesSchema: string[] = Object.keys(entitySchema.uniques);
+            const uniques: UniqueMetadata[] = (entityMetadata.uniques ?? []);
             for (let i = 0; i < uniques.length; i++) {
                const uniqueMetadata: UniqueMetadata = uniques[i];
-               const uniqueSchema: UniqueSchema = tableSchema.uniques[uniqueMetadata.name as string];
+               const uniqueSchema: UniqueSchema = entitySchema.uniques[uniqueMetadata.name as string];
                
                if (!uniqueSchema || deletedUniques.indexOf(uniqueSchema.name) >= 0) {
                   sqlMigrationsCreateUniques.push(this.connection.driver.queryBuilder.createUniqueFromMetadata(uniqueMetadata, true));
@@ -481,21 +472,21 @@ export class PostgresDriver extends Driver {
    
             // delete uniques
             for (const uniqueName of pendingUniquesSchema) {
-               sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.deleteUniqueFromSchema(tableMetadata, tableSchema.uniques[uniqueName]))
+               sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.deleteUniqueFromSchema(entityMetadata, entitySchema.uniques[uniqueName]))
             }
 
          }
 
          // check foreign keys
-         const pendingForeignKeysSchema: string[] = Object.keys(tableSchema?.foreignKeys ?? []);
-         const foreignKeys: ForeignKeyMetadata[] = (tableMetadata.foreignKeys ?? []);
+         const pendingForeignKeysSchema: string[] = Object.keys(entitySchema?.foreignKeys ?? []);
+         const foreignKeys: ForeignKeyMetadata[] = (entityMetadata.foreignKeys ?? []);
          for (let i = 0; i < foreignKeys.length; i++) {
             const foreignKeyMetadata: ForeignKeyMetadata = foreignKeys[i];
-            const foreignKeySchema: ForeignKeySchema = tableSchema?.foreignKeys[foreignKeyMetadata.name as string];
+            const foreignKeySchema: ForeignKeySchema = entitySchema?.foreignKeys[foreignKeyMetadata.name as string];
 
             if (!foreignKeySchema || foreignKeyMetadata.onUpdate != foreignKeySchema.onUpdate || foreignKeyMetadata.onDelete != foreignKeySchema.onDelete || deletedForeignKeys.indexOf(foreignKeySchema.name) >= 0) {
                if (foreignKeySchema) {
-                  sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, foreignKeySchema));
+                  sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(entityMetadata, foreignKeySchema));
                }
                sqlMigrationsCreateForeignKeys.push(this.connection.driver.queryBuilder.createForeignKeyFromMetadata(foreignKeyMetadata));
             }
@@ -507,15 +498,15 @@ export class PostgresDriver extends Driver {
 
          // delete foreign keys
          for (const foreignKeyName of pendingForeignKeysSchema) {
-            sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(tableMetadata, tableSchema.foreignKeys[foreignKeyName]))
+            sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(entityMetadata, entitySchema.foreignKeys[foreignKeyName]))
          }
 
          // check indexs
-         const pendingIndexsSchema: string[] = Object.keys(tableSchema?.indexs ?? []);
-         const indexs: IndexMetadata[] = (tableMetadata.indexs ?? []);
+         const pendingIndexsSchema: string[] = Object.keys(entitySchema?.indexs ?? []);
+         const indexs: IndexMetadata[] = (entityMetadata.indexs ?? []);
          for (let i = 0; i < indexs.length; i++) {
             const indexMetadata: IndexMetadata = indexs[i];
-            const indexSchema: IndexSchema = tableSchema?.indexs[indexMetadata.name as string];
+            const indexSchema: IndexSchema = entitySchema?.indexs[indexMetadata.name as string];
             
             if (!indexSchema || deletedIndex.indexOf(indexSchema.name) >= 0) {
                sqlMigrationsCreateIndexs.push(this.connection.driver.queryBuilder.createIndexFromMetadata(indexMetadata));
@@ -528,7 +519,7 @@ export class PostgresDriver extends Driver {
 
          // delete indexs
          for (const indexName of pendingIndexsSchema) {
-            sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.deleteIndexFromSchema(tableMetadata, tableSchema.indexs[indexName]))
+            sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.deleteIndexFromSchema(entityMetadata, entitySchema.indexs[indexName]))
          }
 
       }
@@ -798,11 +789,11 @@ export class PostgresDriver extends Driver {
       ]);
    }
    
-   public validateColumnMetadatada(table: TableMetadata, column: ColumnMetadata): void {
-      super.validateColumnMetadatada(table, column);
+   public validateColumnMetadatada(entityMetadata: EntityMetadata, columnMetadata: ColumnMetadata): void {
+      super.validateColumnMetadatada(entityMetadata, columnMetadata);
       
-      if ((column.name?.length ?? 0) > 63) {
-         throw new InvalidColumnOption(`The '${column.name}' column of the '${column.table.name}' table cannot be longer than 63 characters.`);
+      if ((columnMetadata.name?.length ?? 0) > 63) {
+         throw new InvalidColumnOptionError(`The '${columnMetadata.name}' column of the '${columnMetadata.entity.name}' entity cannot be longer than 63 characters.`);
       }
    }
 

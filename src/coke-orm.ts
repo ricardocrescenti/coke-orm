@@ -3,10 +3,7 @@ const fs = require('fs');
 import { ConnectionOptions } from "./connection/connection-options";
 import { SimpleMap } from  "./common/interfaces/map";
 import { Connection } from "./connection/connection";
-import { ConnectionAlreadyExistsError } from "./errors/connection-already-exists";
-import { ConfigFileNotFoundError } from "./errors/config-file-not-found";
-import { OrmUtils } from "./utils/orm-utils";
-import { ConnectionNameNotFoundError } from "./errors/connection-name-not-found";
+import { ConfigFileNotFoundError, ConnectionAlreadyExistsError, ConnectionNameNotFoundError } from "./errors";
 
 export class CokeORM {
 

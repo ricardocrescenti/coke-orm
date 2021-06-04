@@ -1,7 +1,7 @@
-import { Column, Table } from "../../../decorators";
+import { Column, Entity } from "../../../decorators";
 import { PatternModel } from "../pattern.model";
 
-@Table({ name: 'files' })
+@Entity({ name: 'files' })
 export class FileModel extends PatternModel {
 
 	/**

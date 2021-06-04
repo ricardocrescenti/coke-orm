@@ -1,6 +1,5 @@
-import { ColumnOptions } from "../../metadata/columns/column-options";
-import { ColumnOperation } from "../../metadata/columns/column-operation";
-import { DecoratorStore } from "../decorators-store";
+import { ColumnOptions } from "../../metadata";
+import { DecoratorsStore } from "../decorators-store";
 
 export function UpdatedAtColumn(options?: Omit<ColumnOptions<any>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'primary' | 'operation'>): PropertyDecorator {
   return function (target: any, propertyKey: any) {   
@@ -12,7 +11,7 @@ export function UpdatedAtColumn(options?: Omit<ColumnOptions<any>, 'target' | 'p
 			nullable: options?.nullable ?? false,
 			operation: 'UpdatedAt'
 		});
-		DecoratorStore.addColumn(column);
+		DecoratorsStore.addColumn(column);
 
     
   };

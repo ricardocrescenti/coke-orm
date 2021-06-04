@@ -41,12 +41,12 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
 export class ${name} implements MigrationInterface {
 
-	public async up(queryExecutor: QueryExecutor): Promise<void> {
-		${(upQueries ?? []).map(upQuery => `await queryExecutor.query(\`${upQuery}\`);`).join('\n		')}
+	public async up(queryRunner: QueryRunner): Promise<void> {
+		${(upQueries ?? []).map(upQuery => `await queryRunner.query(\`${upQuery}\`);`).join('\n		')}
 	}
 
-	public async down(queryExecutor: QueryExecutor): Promise<void> {
-		${(downQueries ?? []).map(upQuery => `await queryExecutor.query(\`${upQuery}\`);`).join('\n		')}
+	public async down(queryRunner: QueryRunner): Promise<void> {
+		${(downQueries ?? []).map(upQuery => `await queryRunner.query(\`${upQuery}\`);`).join('\n		')}
 	}
 	
 }`;

@@ -1,7 +1,7 @@
-import { Column, Table, Unique } from "../../../decorators";
+import { Column, Entity, Unique } from "../../../decorators";
 import { PatternModel } from "../pattern.model";
 
-@Table({ name: 'cities' })
+@Entity({ name: 'cities' })
 @Unique({ columns: ['name', 'state', 'country'] })
 @Unique({ columns: ['code', 'state', 'country'] })
 export class CityModel extends PatternModel {

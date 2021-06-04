@@ -1,1 +1,0 @@
-export type TableValues<T> = { [P in keyof T]?: T | TableValues<T[P]>; } | { [key: string]: any; }

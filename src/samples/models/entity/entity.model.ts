@@ -1,13 +1,13 @@
 import { Connection } from "../../../connection/connection";
-import { Column, ManyToOne, OneToMany, Table } from "../../../decorators";
-import { QueryExecutor } from "../../../query-executor/query-executor";
+import { Column, ManyToOne, OneToMany, Entity } from "../../../decorators";
+import { QueryRunner } from "../../../query-runner/query-runner";
 import { FileModel } from "../file/file.model";
 import { PatternModel } from "../pattern.model";
 import { EntityAddressModel } from "./entity-address.model";
 import { EntityDocumentModel } from "./entity-document.model";
 import { EntityPhoneModel } from "./entity-phone.model";
 
-@Table({ name: 'entities' })
+@Entity({ name: 'entities' })
 export class EntityModel extends PatternModel {
 
 	@Column()
@@ -25,7 +25,7 @@ export class EntityModel extends PatternModel {
 	@Column({ default: 201 }) //, enum: [TimezoneType]
 	timezone?: number;//TimezoneType;
 
-	@OneToMany({ relation: { referencedTable: 'EntityPhoneModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
+	@OneToMany({ relation: { referencedEntity: 'EntityPhoneModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
 	phones?: Array<EntityPhoneModel>;
 
 	@Column({ nullable: true })
@@ -34,35 +34,35 @@ export class EntityModel extends PatternModel {
 	@Column({ nullable: true })//, enum: [PersonGender]
 	gender?: number;//PersonGender;
 
-	@OneToMany({ relation: { referencedTable: 'EntityDocumentModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
+	@OneToMany({ relation: { referencedEntity: 'EntityDocumentModel', referencedColumn: 'entity', cascade: ['insert', 'update'] } })
 	documents?: Array<EntityDocumentModel>;
 
-	@OneToMany({ relation: { referencedTable: 'EntityAddressModel', referencedColumn: 'entity', cascade: ['insert', 'update','remove'] } })
+	@OneToMany({ relation: { referencedEntity: 'EntityAddressModel', referencedColumn: 'entity', cascade: ['insert', 'update','remove'] } })
 	addresses?: Array<EntityAddressModel>;
 
-	@ManyToOne({ nullable: true, relation: { referencedTable: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
+	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
 	photo?: FileModel;
 
 	constructor(object: any = null) {
 		super(object);
 	}
 
-	public async loadPrimaryKey(queryExecutor: QueryExecutor | Connection, requester: any = null): Promise<boolean> {
+	public async loadPrimaryKey(queryRunner: QueryRunner | Connection, requester: any = null): Promise<boolean> {
 
 		if (requester) {
-			await requester.loadPrimaryKey(queryExecutor, requester);
-			return this.loadReferenceByParent(queryExecutor, null, requester);
+			await requester.loadPrimaryKey(queryRunner, requester);
+			return this.loadReferenceByParent(queryRunner, null, requester);
 		}
-		return super.loadPrimaryKey(queryExecutor, requester);
+		return super.loadPrimaryKey(queryRunner, requester);
 
 	}
 
-	private async loadReferenceByParent(queryExecutor: QueryExecutor | Connection, teste: any, parent: PatternModel): Promise<boolean> {
+	private async loadReferenceByParent(queryRunner: QueryRunner | Connection, teste: any, parent: PatternModel): Promise<boolean> {
 		
 		if (parent?.id) {
-			const result = await queryExecutor.query(`
+			const result = await queryRunner.query(`
 				select e.id, e.uuid
-				from ${queryExecutor.getTableManager(parent.constructor.name).tableMetadata.name} p
+				from ${queryRunner.getEntityManager(parent.constructor.name).entityMetadata.name} p
 				inner join entities e on (e.id = p.entity_id)
 				where p.id = ${parent.id}
 			`);
@@ -73,7 +73,7 @@ export class EntityModel extends PatternModel {
 			}
 		}
 
-		return this.loadPrimaryKey(queryExecutor, null);
+		return this.loadPrimaryKey(queryRunner, null);
 
 	}
 

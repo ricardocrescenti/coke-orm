@@ -1,16 +1,7 @@
-import { InvalidGenerateStrategy } from "../../../errors";
-import { Generate } from "../../../metadata/add-ons/generate";
-import { ColumnMetadata } from "../../../metadata/columns/column-metadata";
-import { ColumnOptions } from "../../../metadata/columns/column-options";
-import { ForeignKeyMetadata } from "../../../metadata/foreign-key/foreign-key-metadata";
-import { IndexMetadata } from "../../../metadata/index/index-metadata";
-import { TableMetadata } from "../../../metadata/tables/table-metadata";
-import { UniqueMetadata } from "../../../metadata/unique/unique-metadata";
-import { ColumnSchema } from "../../../schema/column-schema";
-import { ForeignKeySchema } from "../../../schema/foreign-key-schema";
-import { IndexSchema } from "../../../schema/index-schema";
-import { TableSchema } from "../../../schema/table-schema";
-import { UniqueSchema } from "../../../schema/unique-schema";
+import { InvalidGenerateStrategyError } from "../../../errors";
+import { Generate } from "../../../metadata";
+import { ColumnMetadata, ColumnOptions, ForeignKeyMetadata, IndexMetadata, EntityMetadata, UniqueMetadata } from "../../../metadata";
+import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, UniqueSchema } from "../../../schema";
 import { QueryBuilderDriver } from "../../query-builder-driver";
 
 export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
@@ -36,9 +27,9 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 
          const generate: Generate = columnMetadata.default;
          switch (generate.strategy) {
-            case 'sequence': return `nextval('${columnMetadata.table.connection.options.namingStrategy?.sequenceName(columnMetadata)}'::regclass)`;
+            case 'sequence': return `nextval('${columnMetadata.entity.connection.options.namingStrategy?.sequenceName(columnMetadata)}'::regclass)`;
             case 'uuid': return `uuid_generate_v4()`;
-            default: throw new InvalidGenerateStrategy(columnMetadata);
+            default: throw new InvalidGenerateStrategyError(columnMetadata);
          }
 
       }
@@ -51,19 +42,19 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
    }
 
    public createSequenceFromMetadata(columnMetadata: ColumnMetadata): string {
-      return `CREATE SEQUENCE ${columnMetadata.table.connection.options.namingStrategy?.sequenceName(columnMetadata)};`;
+      return `CREATE SEQUENCE ${columnMetadata.entity.connection.options.namingStrategy?.sequenceName(columnMetadata)};`;
    }
 
    public associateSequenceFromMetadata(columnMetadata: ColumnMetadata): string {
-      return `ALTER SEQUENCE "${columnMetadata.table.connection.options.schema ?? 'public'}"."${columnMetadata.table.connection.options.namingStrategy?.sequenceName(columnMetadata)}" OWNED BY "${columnMetadata.table.connection.options.schema ?? 'public'}"."${columnMetadata.table.name}"."${columnMetadata.name}";`
+      return `ALTER SEQUENCE "${columnMetadata.entity.connection.options.schema ?? 'public'}"."${columnMetadata.entity.connection.options.namingStrategy?.sequenceName(columnMetadata)}" OWNED BY "${columnMetadata.entity.connection.options.schema ?? 'public'}"."${columnMetadata.entity.name}"."${columnMetadata.name}";`
    }
 
-   public createTableFromMetadata(tableMetadata: TableMetadata): string {      
+   public createTableFromMetadata(entityMetadata: EntityMetadata): string {      
       const columns: string[] = [];
       const constraints: string[] = [];
 
-      for (const columnName in tableMetadata.columns) {
-         const column: ColumnMetadata = tableMetadata.getColumn(columnName);
+      for (const columnName in entityMetadata.columns) {
+         const column: ColumnMetadata = entityMetadata.getColumn(columnName);
          if (column.relation && column.relation.type == 'OneToMany') {
             continue;
          }
@@ -73,24 +64,24 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
          columns.push(`"${column.name}" ${this.generateColumnTypeSQL(column)}${notNull}${defaultValue}`);
       }
 
-      if (tableMetadata.primaryKey) {
-         constraints.push(this.createPrimaryKeyFromMetadata(tableMetadata, false));
+      if (entityMetadata.primaryKey) {
+         constraints.push(this.createPrimaryKeyFromMetadata(entityMetadata, false));
       }
 
-      for (const unique of tableMetadata.uniques) {
+      for (const unique of entityMetadata.uniques) {
          constraints.push(this.createUniqueFromMetadata(unique, false));
       }
 
-      return `CREATE TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" (${columns.join(', ')}${constraints.length > 0 ? `, ${constraints.join(', ')}` : ''});`;
+      return `CREATE TABLE "${entityMetadata.connection.options.schema ?? 'public'}"."${entityMetadata.name}" (${columns.join(', ')}${constraints.length > 0 ? `, ${constraints.join(', ')}` : ''});`;
    }
    
    public createColumnFromMetadata(columnMetadata: ColumnMetadata): string {
-      return `ALTER TABLE "${columnMetadata.table.connection.options.schema ?? 'public'}"."${columnMetadata.table.name}" ADD COLUMN "${columnMetadata.name}" ${this.generateColumnTypeSQL(columnMetadata)}${!columnMetadata.nullable ? ' NOT NULL' : ''}${columnMetadata.default ? ` DEFAULT ${(columnMetadata.default.value ?? columnMetadata.default)}` : ''};`
+      return `ALTER TABLE "${columnMetadata.entity.connection.options.schema ?? 'public'}"."${columnMetadata.entity.name}" ADD COLUMN "${columnMetadata.name}" ${this.generateColumnTypeSQL(columnMetadata)}${!columnMetadata.nullable ? ' NOT NULL' : ''}${columnMetadata.default ? ` DEFAULT ${(columnMetadata.default.value ?? columnMetadata.default)}` : ''};`
    }
 
    public alterColumnFromMatadata(columnMetadata: ColumnMetadata, columnSchema: ColumnSchema): string[] {
       const sqls: string[] = [];
-      const alterTable = `ALTER TABLE "${columnMetadata.table.connection.options.schema ?? 'public'}"."${columnMetadata.table.name}" ALTER`;
+      const alterTable = `ALTER TABLE "${columnMetadata.entity.connection.options.schema ?? 'public'}"."${columnMetadata.entity.name}" ALTER`;
 
       if ((columnMetadata.type != columnSchema.type) ||
          (columnMetadata.length != null && columnMetadata.length != columnSchema.length) || 
@@ -122,61 +113,61 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
       return sqls;
    }
 
-   public createPrimaryKeyFromMetadata(tableMetadata: TableMetadata, alterTable: boolean): string {
-      const columnsName: string[] = tableMetadata.primaryKey?.columns?.map((column) => tableMetadata.columns[column].name as string) ?? [];
-      const constraint: string = `CONSTRAINT "${tableMetadata.primaryKey?.name}" PRIMARY KEY("${columnsName.join('", "')}")`;
+   public createPrimaryKeyFromMetadata(entityMetadata: EntityMetadata, alterTable: boolean): string {
+      const columnsName: string[] = entityMetadata.primaryKey?.columns?.map((column) => entityMetadata.columns[column].name as string) ?? [];
+      const constraint: string = `CONSTRAINT "${entityMetadata.primaryKey?.name}" PRIMARY KEY("${columnsName.join('", "')}")`;
 
       if (alterTable) {
-         return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" ADD ${constraint};`;
+         return `ALTER TABLE "${entityMetadata.connection.options.schema ?? 'public'}"."${entityMetadata.name}" ADD ${constraint};`;
       }
       return constraint;
    }
 
    public createIndexFromMetadata(indexMetadata: IndexMetadata): string {
-      const columnsName: string[] = indexMetadata.columns.map(columnPropertyName => indexMetadata.table.columns[columnPropertyName].name as string);
-      return `CREATE INDEX "${indexMetadata.name}" ON "${indexMetadata.table.connection.options.schema ?? 'public'}"."${indexMetadata.table.name}" USING btree ("${columnsName.join('" ASC NULLS LAST, "')}" ASC NULLS LAST);`
+      const columnsName: string[] = indexMetadata.columns.map(columnPropertyName => indexMetadata.entity.columns[columnPropertyName].name as string);
+      return `CREATE INDEX "${indexMetadata.name}" ON "${indexMetadata.entity.connection.options.schema ?? 'public'}"."${indexMetadata.entity.name}" USING btree ("${columnsName.join('" ASC NULLS LAST, "')}" ASC NULLS LAST);`
    }
 
    public createUniqueFromMetadata(uniqueMetadata: UniqueMetadata, alterTable: boolean): string {
-      const columnsName: string[] = uniqueMetadata.columns.map(columnPropertyName => uniqueMetadata.table.columns[columnPropertyName].name as string);
+      const columnsName: string[] = uniqueMetadata.columns.map(columnPropertyName => uniqueMetadata.entity.columns[columnPropertyName].name as string);
       const constraint: string = `CONSTRAINT "${uniqueMetadata.name}" UNIQUE ("${columnsName.join('", "')}")`;
 
       if (alterTable) {
-         return `ALTER TABLE "${uniqueMetadata.table.connection.options.schema ?? 'public'}"."${uniqueMetadata.table.name}" ADD ${constraint};`;
+         return `ALTER TABLE "${uniqueMetadata.entity.connection.options.schema ?? 'public'}"."${uniqueMetadata.entity.name}" ADD ${constraint};`;
       }
       return constraint;
    }
 
    public createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata): string {
-      const referencedTableMetadata: TableMetadata = foreignKeyMetadata.getReferencedTableMetadata();
+      const referencedEntityMetadata: EntityMetadata = foreignKeyMetadata.getReferencedEntityMetadata();
       const referencedColumnMetadata: ColumnMetadata = foreignKeyMetadata.getReferencedColumnMetadata();
 
-      const constraint: string = `CONSTRAINT "${foreignKeyMetadata.name}" FOREIGN KEY ("${foreignKeyMetadata.column.name}") REFERENCES "${referencedTableMetadata.connection.options.schema ?? 'public'}"."${referencedTableMetadata.name}" ("${referencedColumnMetadata.name}") MATCH SIMPLE ON UPDATE ${foreignKeyMetadata.onUpdate ?? 'NO ACTION'} ON DELETE ${foreignKeyMetadata.onDelete ?? 'NO ACTION'}`;
-      return `ALTER TABLE "${foreignKeyMetadata.table.connection.options.schema ?? 'public'}"."${foreignKeyMetadata.table.name}" ADD ${constraint};`;
+      const constraint: string = `CONSTRAINT "${foreignKeyMetadata.name}" FOREIGN KEY ("${foreignKeyMetadata.column.name}") REFERENCES "${referencedEntityMetadata.connection.options.schema ?? 'public'}"."${referencedEntityMetadata.name}" ("${referencedColumnMetadata.name}") MATCH SIMPLE ON UPDATE ${foreignKeyMetadata.onUpdate ?? 'NO ACTION'} ON DELETE ${foreignKeyMetadata.onDelete ?? 'NO ACTION'}`;
+      return `ALTER TABLE "${foreignKeyMetadata.entity.connection.options.schema ?? 'public'}"."${foreignKeyMetadata.entity.name}" ADD ${constraint};`;
    }
 
-   public deleteTableFromSchema(tableSchema: TableSchema): string {
-      return `DROP TABLE "${tableSchema.schema ?? 'public'}"."${tableSchema.name}";`;
+   public deleteTableFromSchema(entitySchema: EntitySchema): string {
+      return `DROP TABLE "${entitySchema.schema ?? 'public'}"."${entitySchema.name}";`;
    }
 
-   public deleteColumnFromSchema(tableMetadata: TableMetadata, columnMetadata: ColumnSchema): string {
-      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" DROP COLUMN "${columnMetadata.name}";`
+   public deleteColumnFromSchema(entityMetadata: EntityMetadata, columnMetadata: ColumnSchema): string {
+      return `ALTER TABLE "${entityMetadata.connection.options.schema ?? 'public'}"."${entityMetadata.name}" DROP COLUMN "${columnMetadata.name}";`
    }
 
-   public deletePrimaryKeyFromSchema(tableMetadata: TableMetadata): string {
-      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" DROP CONSTRAINT "${tableMetadata.primaryKey?.name}";`
+   public deletePrimaryKeyFromSchema(entityMetadata: EntityMetadata): string {
+      return `ALTER TABLE "${entityMetadata.connection.options.schema ?? 'public'}"."${entityMetadata.name}" DROP CONSTRAINT "${entityMetadata.primaryKey?.name}";`
    }
 
-   public deleteIndexFromSchema(tableMetadata: TableMetadata, indexSchema: IndexSchema): string {
+   public deleteIndexFromSchema(entityMetadata: EntityMetadata, indexSchema: IndexSchema): string {
       return `DROP INDEX "${indexSchema.name}";`;
    }
 
-   public deleteUniqueFromSchema(tableMetadata: TableMetadata, uniqueSchema: UniqueSchema): string {
-      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" DROP CONSTRAINT "${uniqueSchema.name}";`;
+   public deleteUniqueFromSchema(entityMetadata: EntityMetadata, uniqueSchema: UniqueSchema): string {
+      return `ALTER TABLE "${entityMetadata.connection.options.schema ?? 'public'}"."${entityMetadata.name}" DROP CONSTRAINT "${uniqueSchema.name}";`;
    }
 
-   public deleteForeignKeyFromSchema(tableMetadata: TableMetadata, foreignKeySchema: ForeignKeySchema): string {
-      return `ALTER TABLE "${tableMetadata.connection.options.schema ?? 'public'}"."${tableMetadata.name}" DROP CONSTRAINT "${foreignKeySchema.name}";`;
+   public deleteForeignKeyFromSchema(entityMetadata: EntityMetadata, foreignKeySchema: ForeignKeySchema): string {
+      return `ALTER TABLE "${entityMetadata.connection.options.schema ?? 'public'}"."${entityMetadata.name}" DROP CONSTRAINT "${foreignKeySchema.name}";`;
    }
 
    public deleteSequenceFromName(sequenceName: string): string {

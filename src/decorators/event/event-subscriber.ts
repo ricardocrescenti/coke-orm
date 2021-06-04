@@ -1,13 +1,13 @@
 import { ConstructorTo } from "../../common/types/constructor-to.type";
-import { TableSubscriber } from "../../metadata/events/table-subscriber";
-import { CokeModel } from "../../table-manager/coke-model";
-import { DecoratorStore } from "../decorators-store";
+import { EntitySubscriberInterface } from "../../metadata";
+import { CokeModel } from "../../manager";
+import { DecoratorsStore } from "../decorators-store";
 
-export function EventsSubscriber(tableConstructor: ConstructorTo<CokeModel>): ClassDecorator {
+export function EventsSubscriber(entity: ConstructorTo<CokeModel>): ClassDecorator {
    return function (target: Function) {
-      DecoratorStore.addSubscriber({
-         target: tableConstructor,
-         subscriber: target as ConstructorTo<TableSubscriber<any>>
+      DecoratorsStore.addSubscriber({
+         target: entity,
+         subscriber: target as ConstructorTo<EntitySubscriberInterface<any>>
       });
    };
 }

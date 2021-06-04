@@ -1,17 +1,17 @@
-import { QueryExecutor } from "../query-executor/query-executor";
+import { QueryRunner } from "../query-runner/query-runner";
 
 export interface MigrationInterface {
 
     /**
     * 
-    * @param queryExecutor 
+    * @param queryRunner 
     */
-    up(queryExecutor: QueryExecutor): Promise<void>;
+    up(queryRunner: QueryRunner): Promise<void>;
 
     /**
     * 
-    * @param queryExecutor 
+    * @param queryRunner 
     */
-    down(queryExecutor: QueryExecutor): Promise<void>;
+    down(queryRunner: QueryRunner): Promise<void>;
 
 }

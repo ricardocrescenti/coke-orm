@@ -1,5 +1,3 @@
-import { ColumnSchema } from "./column-schema";
-
 export abstract class ConstraintSchema {
 
    public readonly name: string;
@@ -7,6 +5,5 @@ export abstract class ConstraintSchema {
 
    constructor(constraint: Omit<ConstraintSchema, "columns">) {
       this.name = constraint.name;
-      //this.type = constraint.type;
    }
 }

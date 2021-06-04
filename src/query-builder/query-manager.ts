@@ -19,8 +19,8 @@ import { Operator } from "./operators/operator";
 import { Between } from "./operators/between";
 import { Raw } from "./operators/raw";
 import { IsNull } from "./operators/is-null";
-import { ColumnMetadata, ForeignKeyMetadata, TableMetadata } from "../metadata";
-import { InvalidWhereOperatorError } from "../errors/invalid-where-operator-error";
+import { ColumnMetadata, ForeignKeyMetadata, EntityMetadata } from "../metadata";
+import { InvalidWhereOperatorError } from "../errors";
 import { QueryColumnBuilder } from "./column-builder/query-column-builder";
 import { QueryDatabaseColumnBuilder } from "./column-builder/query-database-column-builder";
 
@@ -45,7 +45,7 @@ export class QueryManager<T> {
 
    public schema?: string;
    
-   public tableMetadata?: TableMetadata;
+   public entityMetadata?: EntityMetadata;
 
    public table?: QueryTable<T>;
 
@@ -79,7 +79,7 @@ export class QueryManager<T> {
    public mountSelectExpression(mainQueryManager: QueryManager<any>): string {
       if (this.hasSelect()) {
          return `select ${(this.columns ?? []).map(column => {
-            return column.getExpressionWithAlias(mainQueryManager, this, this.tableMetadata);
+            return column.getExpressionWithAlias(mainQueryManager, this, this.entityMetadata);
          }).join(', ')}`;
       }
       return '';
@@ -178,13 +178,13 @@ export class QueryManager<T> {
       }
 
       for (const whereCondition of whereConditions) {
-         expressions.push(this.decodeWhereCondition(mainQueryManager, whereCondition, this.tableMetadata));
+         expressions.push(this.decodeWhereCondition(mainQueryManager, whereCondition, this.entityMetadata));
       }
       
       expressions = expressions.filter(expression => expression.length > 0);
       return (expressions.length > 0 ? `(${expressions.join(' or ')})` : '');
    }
-   private decodeWhereCondition(mainQueryManager: QueryManager<any>, whereCondition: QueryWhere<any>, tableMetadata?: TableMetadata, jsonObjectsName?: string[]): string {
+   private decodeWhereCondition(mainQueryManager: QueryManager<any>, whereCondition: QueryWhere<any>, entityMetadata?: EntityMetadata, jsonObjectsName?: string[]): string {
       let expressions: string[] = [];
 
       for (const key in whereCondition) {
@@ -192,7 +192,7 @@ export class QueryManager<T> {
          if (key == 'RAW') {
             
             const rawOperator = (whereCondition as any)[key];
-            expressions.push(this.decodeWhereOperators(mainQueryManager, new QueryDatabaseColumnBuilder({ column: rawOperator.condition }), { RAW: rawOperator.params }, tableMetadata));
+            expressions.push(this.decodeWhereOperators(mainQueryManager, new QueryDatabaseColumnBuilder({ column: rawOperator.condition }), { RAW: rawOperator.params }, entityMetadata));
          
          } else if (key == 'AND') {
             
@@ -201,22 +201,22 @@ export class QueryManager<T> {
          
          } else {
 
-            const relationMetadata: ForeignKeyMetadata | undefined = tableMetadata?.columns[key]?.relation;
+            const relationMetadata: ForeignKeyMetadata | undefined = entityMetadata?.columns[key]?.relation;
             if (relationMetadata) {
 
-               const relationTableMetadata: TableMetadata = relationMetadata.getReferencedTableMetadata();
+               const relationEntityMetadata: EntityMetadata = relationMetadata.getReferencedEntityMetadata();
                
                let relationJsonObjectsName: string[];
                if (!jsonObjectsName) {
                   relationJsonObjectsName = [
-                     `${relationMetadata.column.propertyName}_${relationMetadata.referencedTable}`,
+                     `${relationMetadata.column.propertyName}_${relationMetadata.referencedEntity}`,
                      relationMetadata.column.propertyName];
                } else {
                   relationJsonObjectsName = [...jsonObjectsName];
                   relationJsonObjectsName.push(key);
                }
 
-               expressions.push(this.decodeWhereCondition(mainQueryManager, (whereCondition as any)[key], relationTableMetadata, relationJsonObjectsName));
+               expressions.push(this.decodeWhereCondition(mainQueryManager, (whereCondition as any)[key], relationEntityMetadata, relationJsonObjectsName));
 
             } else {
                
@@ -244,7 +244,7 @@ export class QueryManager<T> {
 
                }
 
-               expressions.push(this.decodeWhereOperators(mainQueryManager, queryColumn, (whereCondition as any)[key], tableMetadata));
+               expressions.push(this.decodeWhereOperators(mainQueryManager, queryColumn, (whereCondition as any)[key], entityMetadata));
             
             }
 
@@ -255,7 +255,7 @@ export class QueryManager<T> {
       expressions = expressions.filter(expression => expression.length > 0);
       return (expressions.length > 0 ? `(${expressions.join(' and ')})` : '');
    }
-   private decodeWhereOperators(mainQueryManager: QueryManager<any>, queryColumn: QueryColumnBuilder<T>, operators: any, tableMetadata?: TableMetadata): string {
+   private decodeWhereOperators(mainQueryManager: QueryManager<any>, queryColumn: QueryColumnBuilder<T>, operators: any, entityMetadata?: EntityMetadata): string {
       let expressions: string[] = [];
 
       if (!(operators instanceof Object) || (operators instanceof Date)) {
@@ -268,7 +268,7 @@ export class QueryManager<T> {
             throw new InvalidWhereOperatorError(key);
          }
          
-         const operator: Operator = new (constructor as any)(queryColumn.getExpression(mainQueryManager, this, this.tableMetadata), operators[key]);
+         const operator: Operator = new (constructor as any)(queryColumn.getExpression(mainQueryManager, this, this.entityMetadata), operators[key]);
          operator.registerParameters(mainQueryManager);
          
          expressions.push(operator.getExpression());
@@ -285,7 +285,7 @@ export class QueryManager<T> {
    }
    public mountGroupByExpression(mainQueryManager: QueryManager<any>): string {
       if (this.hasGroupBy()) {
-         return `group by ` + this.groupBy?.map(groupBy => groupBy.getExpression(mainQueryManager, this, this.tableMetadata)).join(', ');
+         return `group by ` + this.groupBy?.map(groupBy => groupBy.getExpression(mainQueryManager, this, this.entityMetadata)).join(', ');
       }
       return '';
    }
@@ -302,21 +302,21 @@ export class QueryManager<T> {
 
       if (this.hasOrderBy(orderBy)) {
          orderBy = orderBy as QueryOrder<T>;
-         const expression = `order by ` + this.getOrderByColumn(mainQueryManager, this.tableMetadata, this.table, orderBy);
+         const expression = `order by ` + this.getOrderByColumn(mainQueryManager, this.entityMetadata, this.table, orderBy);
          return expression;
       }
       return '';
    }
-   private getOrderByColumn(mainQueryManager: QueryManager<any>, tableMetadata: TableMetadata | undefined, table: QueryTable<T> | undefined, orderBy: QueryOrder<T> | undefined, jsonObjectsName?: string[]): string {
+   private getOrderByColumn(mainQueryManager: QueryManager<any>, entityMetadata: EntityMetadata | undefined, table: QueryTable<T> | undefined, orderBy: QueryOrder<T> | undefined, jsonObjectsName?: string[]): string {
       return Object.keys(orderBy ?? []).map(columnName => {
 
-         const relationMetadata: ForeignKeyMetadata | undefined = tableMetadata?.columns[columnName].relation;
+         const relationMetadata: ForeignKeyMetadata | undefined = entityMetadata?.columns[columnName].relation;
          if (relationMetadata) {
 
-            const referencedTableMetadata = tableMetadata?.connection.tables[relationMetadata.referencedTable];
-            return this.getOrderByColumn(mainQueryManager, referencedTableMetadata, { 
-               table: referencedTableMetadata?.name as string,
-               alias: ((jsonObjectsName ?? []).length == 0 ? `${relationMetadata.column.propertyName}_${referencedTableMetadata?.className}` : table?.alias ?? table?.table) as string
+            const referencedEntityMetadata = entityMetadata?.connection.entities[relationMetadata.referencedEntity];
+            return this.getOrderByColumn(mainQueryManager, referencedEntityMetadata, { 
+               table: referencedEntityMetadata?.name as string,
+               alias: ((jsonObjectsName ?? []).length == 0 ? `${relationMetadata.column.propertyName}_${referencedEntityMetadata?.className}` : table?.alias ?? table?.table) as string
              }, (orderBy as any)[columnName], (jsonObjectsName ?? [])?.concat([relationMetadata.column.propertyName]));
 
          } else {
@@ -325,7 +325,7 @@ export class QueryManager<T> {
                table: (table?.alias ?? table?.table) as string,
                jsonObjectsName: jsonObjectsName,
                column: columnName
-            }).getExpression(mainQueryManager, this, tableMetadata as TableMetadata);
+            }).getExpression(mainQueryManager, this, entityMetadata as EntityMetadata);
             return `${columnDatebaseName} ${(orderBy as any)[columnName] ?? 'ASC'}`;
 
          }
@@ -397,9 +397,9 @@ export class QueryManager<T> {
          let columnName: string = key;
          let value: any = (values as any)[key];
 
-         if (this.tableMetadata) {
+         if (this.entityMetadata) {
             
-            const columnMetadata: ColumnMetadata = this.tableMetadata.columns[key];
+            const columnMetadata: ColumnMetadata = this.entityMetadata.columns[key];
             if (!columnMetadata || (columnMetadata.relation && columnMetadata.relation?.type == 'OneToMany')) {
                continue;
             }

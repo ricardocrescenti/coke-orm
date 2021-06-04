@@ -1,6 +1,6 @@
 import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, Unique, UpdatedAtColumn } from "../../decorators";
-import { Generate } from "../../metadata/add-ons/generate";
-import { CokeModel } from "../../table-manager/coke-model";
+import { Generate } from "../../metadata";
+import { CokeModel } from "../../manager";
 
 @Unique({ columns: ['uuid'] })
 export abstract class PatternModel extends CokeModel {

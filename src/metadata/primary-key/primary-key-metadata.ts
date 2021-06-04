@@ -1,4 +1,4 @@
-import { TableMetadata } from "..";
+import { EntityMetadata } from "..";
 import { PrimaryKeyOptions } from "./primary-key-options";
 
 export class PrimaryKeyMetadata extends PrimaryKeyOptions {
@@ -6,11 +6,11 @@ export class PrimaryKeyMetadata extends PrimaryKeyOptions {
    /**
     * 
     */
-   public readonly table: TableMetadata;
+   public readonly entity: EntityMetadata;
 
    constructor(options: PrimaryKeyMetadata) {
       super(options);
-      this.table = options.table;
+      this.entity = options.entity;
    }
 
 }

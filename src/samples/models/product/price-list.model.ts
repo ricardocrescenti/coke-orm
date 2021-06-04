@@ -1,7 +1,7 @@
-import { Column, ManyToOne, Table } from "../../../decorators";
+import { Column, ManyToOne, Entity } from "../../../decorators";
 import { PatternModel } from "../pattern.model";
 
-@Table({ name: 'prices_lists' })
+@Entity({ name: 'prices_lists' })
 export class PriceListModel extends PatternModel {
 
 	@Column()
@@ -10,7 +10,7 @@ export class PriceListModel extends PatternModel {
 	@Column({ nullable: true })
 	description?: string;
 
-	@ManyToOne({ relation: { referencedTable: 'PriceListModel', referencedColumn: 'id', onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
+	@ManyToOne({ relation: { referencedEntity: 'PriceListModel', referencedColumn: 'id', onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
 	parent?: PriceListModel;
 
 	@Column()

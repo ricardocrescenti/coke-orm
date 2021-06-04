@@ -1,0 +1,1 @@
+export type EntityValues<T> = { [P in keyof T]?: T | EntityValues<T[P]>; } | { [key: string]: any; }

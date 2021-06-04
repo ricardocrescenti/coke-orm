@@ -1,4 +1,4 @@
-import { TableMetadata } from "../../metadata";
+import { EntityMetadata } from "../../metadata";
 import { QueryManager } from "../query-manager";
 
 export abstract class QueryColumnBuilder<T> {
@@ -9,10 +9,10 @@ export abstract class QueryColumnBuilder<T> {
       this.alias = select.alias;
    }
 
-   abstract getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, tableMetadata?: TableMetadata): string;
+   abstract getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, entityMetadata?: EntityMetadata): string;
    
-   public getExpressionWithAlias(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, tableMetadata?: TableMetadata): string {
-      return `${this.getExpression(mainQueryManager, queryManager, tableMetadata)} as "${this.alias}"`;
+   public getExpressionWithAlias(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, entityMetadata?: EntityMetadata): string {
+      return `${this.getExpression(mainQueryManager, queryManager, entityMetadata)} as "${this.alias}"`;
    }
 
 }

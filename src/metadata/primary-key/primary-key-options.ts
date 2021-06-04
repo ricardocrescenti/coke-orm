@@ -1,5 +1,3 @@
-import { ColumnMetadata } from "..";
-
 export class PrimaryKeyOptions {
 
    /**

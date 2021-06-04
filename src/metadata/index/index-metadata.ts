@@ -1,5 +1,4 @@
-import { ColumnMetadata } from "..";
-import { TableMetadata } from "../tables/table-metadata";
+import { EntityMetadata } from "../entity";
 import { IndexOptions } from "./index-options";
 
 export class IndexMetadata extends IndexOptions {
@@ -7,21 +6,21 @@ export class IndexMetadata extends IndexOptions {
    /**
     * 
     */
-   public readonly table: TableMetadata;
+   public readonly entity: EntityMetadata;
 
    constructor(options: IndexMetadata) {
       super(options);
-      this.table = options.table;
+      this.entity = options.entity;
 
-      // if (this.table.connection.options.additional?.addVirtualDeletionColumnToUniquesAndIndexes) {
-      //    const virtualDeletionColumnMetadata: ColumnMetadata | undefined = this.table.getVirtualDeletionColumn();
+      // if (this.entity.connection.options.additional?.addVirtualDeletionColumnToUniquesAndIndexes) {
+      //    const virtualDeletionColumnMetadata: ColumnMetadata | undefined = this.entity.getVirtualDeletionColumn();
       //    if (virtualDeletionColumnMetadata) {
       //       this.columns.unshift(virtualDeletionColumnMetadata.propertyName);
       //    }
       // }
 
       for (const columnPropertyName of this.columns) {
-         this.table.columns[columnPropertyName].indexs.push(this);
+         this.entity.columns[columnPropertyName].indexs.push(this);
       }
    }
 

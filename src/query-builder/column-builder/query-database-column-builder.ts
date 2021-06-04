@@ -1,8 +1,8 @@
 import { QueryColumnBuilder } from './query-column-builder';
 import { QueryManager } from '../query-manager';
-import { TableMetadata } from '../../metadata/tables/table-metadata';
+import { EntityMetadata } from '../../metadata';
 import { QueryJoin } from './query-relation-builder';
-import { ColumnMetadata } from '../../metadata/columns/column-metadata';
+import { ColumnMetadata } from '../../metadata';
 
 export class QueryDatabaseColumnBuilder<T> extends QueryColumnBuilder<T> {
 
@@ -19,8 +19,8 @@ export class QueryDatabaseColumnBuilder<T> extends QueryColumnBuilder<T> {
       this.relation = select.relation;
    }
    
-   getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, tableMetadata: TableMetadata): string {
-      const columnMetadata: ColumnMetadata | undefined = tableMetadata?.columns[this.column as string];
+   getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, entityMetadata: EntityMetadata): string {
+      const columnMetadata: ColumnMetadata | undefined = entityMetadata?.columns[this.column as string];
 
       const alias = (this.table ?? queryManager.table?.alias ?? queryManager.table?.table);
       const columnDatebaseName = (this.relation ? this.column : (columnMetadata?.name ?? this.column));

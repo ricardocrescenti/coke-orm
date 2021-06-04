@@ -1,5 +1,5 @@
-import { ColumnOptions } from "../../metadata/columns/column-options";
-import { DecoratorStore } from "../decorators-store";
+import { ColumnOptions } from "../../metadata";
+import { DecoratorsStore } from "../decorators-store";
 
 export function PrimaryColumn(options?: Omit<ColumnOptions<any>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'primary' | 'nullable' | 'operation'>): PropertyDecorator {
 	return function (target: any, propertyKey: any) {
@@ -11,7 +11,7 @@ export function PrimaryColumn(options?: Omit<ColumnOptions<any>, 'target' | 'pro
 			primary: true,
 			nullable: false
 		});
-		DecoratorStore.addColumn(column);
+		DecoratorsStore.addColumn(column);
 		
 	};
 }

@@ -1,11 +1,9 @@
 import { Connection } from "../connection/connection";
 import { PostgresDriver } from "../drivers/databases/postgres/postgres-driver";
-import { ColumnMetadata } from "../metadata/columns/column-metadata";
-import { TableMetadata } from "../metadata/tables/table-metadata";
-import { QueryExecutor } from "../query-executor/query-executor";
+import { EntityMetadata } from "../metadata";
+import { QueryRunner } from "../query-runner/query-runner";
 import { QueryManager } from "./query-manager";
 import { QueryTable } from "./types/query-table";
-import { QueryValues } from "./types/query-values";
 
 export abstract class QueryBuilder<T> {
 
@@ -21,9 +19,8 @@ export abstract class QueryBuilder<T> {
 
    /**
     * 
-    * @param queryExecutor 
     */
-   constructor(connection: Connection, table: QueryTable<T> | TableMetadata) {
+   constructor(connection: Connection, table: QueryTable<T> | EntityMetadata) {
       this.connection = connection;
       this.queryManager = new QueryManager<T>();
 
@@ -31,8 +28,8 @@ export abstract class QueryBuilder<T> {
          this.queryManager.schema = this.connection.options.schema ?? 'public';
       }
 
-      if (table instanceof TableMetadata) {
-         this.queryManager.tableMetadata = table;
+      if (table instanceof EntityMetadata) {
+         this.queryManager.entityMetadata = table;
          table = {
             table: table.name as string,
             alias: table.className
@@ -66,12 +63,12 @@ export abstract class QueryBuilder<T> {
     * 
     * @returns 
     */
-   public async execute(queryExecutor?: QueryExecutor | Connection): Promise<any> {
+   public async execute(queryRunner?: QueryRunner | Connection): Promise<any> {
       const query: string = this.getQuery();
       const params: string[] = this.getParams();
 
-      if (queryExecutor) {
-         return queryExecutor.query(query, params);
+      if (queryRunner) {
+         return queryRunner.query(query, params);
       } else {
          return this.connection.query(query, params);
       }

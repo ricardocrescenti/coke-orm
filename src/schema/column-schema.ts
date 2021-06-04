@@ -1,5 +1,4 @@
 import { SimpleMap } from "../common/interfaces/map";
-import { ConstraintSchema } from "./constraint-schema";
 import { ForeignKeySchema } from "./foreign-key-schema";
 import { IndexSchema } from "./index-schema";
 import { PrimaryKeySchema } from "./primary-key-schema";
