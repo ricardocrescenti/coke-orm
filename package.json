@@ -1,6 +1,6 @@
 {
   "name": "@ricardocrescenti/coke-orm",
-  "version": "0.1.5",
+  "version": "0.1.0",
   "description": "",
   "license": "BSD-3-Clause",
   "author": {
@@ -18,7 +18,7 @@
     "build": "tsc"
   },
   "bin": {
-    "coke-orm": "cli.js"
+    "coke-orm": "./lib/cli.js"
   },
   "repository": {
     "type": "git",
