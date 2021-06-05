@@ -7,6 +7,9 @@
     "name": "Ricardo Crescenti",
     "email": "ricardo.crescenti@gmail.com"
   },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/@ricardocrescenti"
+  },
   "main": "./index.js",
   "types": "lib/index.d.js",
   "scripts": {
