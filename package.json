@@ -1,6 +1,6 @@
 {
   "name": "@ricardocrescenti/coke-orm",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "",
   "license": "BSD-3-Clause",
   "author": {
@@ -13,7 +13,8 @@
   "main": "./index.js",
   "types": "lib/index.d.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prebuild": "rimraf lib",
+    "build": "tsc"
   },
   "bin": {
     "cokeorm": "./cli.js"
