@@ -1,5 +1,6 @@
 .github
 .vscode
+lib/samples
 src
 coke-orm.config.json
 roadmap.md
