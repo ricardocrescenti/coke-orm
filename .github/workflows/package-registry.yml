@@ -3,7 +3,7 @@ name: Deploy GitHub Package Registry
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   publish:
