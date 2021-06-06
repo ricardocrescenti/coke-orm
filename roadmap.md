@@ -21,17 +21,17 @@
 
 ## Find
 
-* **22** - [ ] Ver para criar "rules" a nivel de linha, neste caso o cara pode adiconar um SQL ou uma condição JavaScript, permissões.
-* **99** - [ ] Carregar as relações com base na necessidade das condiçoes e ordenação.
+* **01** - [ ] Ver para criar "rules" a nivel de linha, neste caso o cara pode adiconar um SQL ou uma condição JavaScript, permissões.
+* **02** - [ ] Carregar as relações com base na necessidade das condiçoes e ordenação.
    - No TableManager.find adicionar as relações automáticamente
    - No QueryBuild validar se falta alguma relação para o caso do cliente montar a query manualmente 
 
 ## Save
 
-* **21** - [ ] Criar um saveOptions, aonde o cara poderá adicionar os eventos: beforeSave, afterSave, beforeLoadPrimaryKey, afterLoadPrimaryKey especificos para uma função
+* **01** - [ ] Criar um saveOptions, aonde o cara poderá adicionar os eventos: beforeSave, afterSave, beforeLoadPrimaryKey, afterLoadPrimaryKey especificos para uma função
 
 ## Cli
 
-* **05** - [x] Comandos: migrations(generate,create,run)
-* **06** - [x] Gerar as migrations em arquivos
-- 
+* **01** - [x] Comandos: migrations(generate,create,run)
+* **02** - [x] Gerar as migrations em arquivos
+- **03** - [ ] Comando init para criar o arquivo de configuração e pedir alguns dados iniciais

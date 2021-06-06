@@ -1,7 +1,5 @@
 import yargs from "yargs";
-import { MigrationCreateCommand } from "./commands/migration-create";
-import { MigrationGenerateCommand } from "./commands/migration-generate";
-import { MigrationRunCommand } from "./commands/migration-run";
+import { MigrationCreateCommand, MigrationGenerateCommand, MigrationRunCommand } from "./cli/commands";
 
 require("yargonaut")
    .style("blue")
