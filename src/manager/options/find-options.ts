@@ -28,11 +28,14 @@ export class FindOptions<T> {
 
       if (!orderBy) {
 
-         orderBy = entityMetadata.orderBy ?? {};
+         orderBy = entityMetadata.orderBy;
          if (!orderBy) {
+
+            orderBy = {};
             for (const columnPropertyName of entityMetadata.primaryKey?.columns as string[]) {
                orderBy[columnPropertyName] = 'ASC';         
             }
+
          }
 
       }

@@ -92,7 +92,23 @@ export class EntityManager<T> {
     * @param findOptions 
     * @returns 
     */
-   public async find(findOptions?: FindOptions<T>, queryRunner?: QueryRunner | Connection): Promise<T[]> {
+   public async findOne(findOptions: FindOptions<T>, queryRunner?: QueryRunner | Connection, runEventAfterLoad = true): Promise<T> {
+      
+      const [result]: any = await this.find({ 
+         ...findOptions,
+         limit: 1
+      }, queryRunner, runEventAfterLoad);
+      
+      return result;
+   
+   }
+
+   /**
+    * 
+    * @param findOptions 
+    * @returns 
+    */
+   public async find(findOptions?: FindOptions<T>, queryRunner?: QueryRunner | Connection, runEventAfterLoad = true): Promise<T[]> {
 
       /// create the query
       const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions, 0);
@@ -102,8 +118,8 @@ export class EntityManager<T> {
 
       if (result.rows.length > 0) {
 
-      /// create the entity-related subscriber to run the events
-         const subscriber: EntitySubscriberInterface<T> | undefined = this.createEntitySubscriber();
+         /// create the entity-related subscriber to run the events
+         const subscriber: EntitySubscriberInterface<T> | undefined = (runEventAfterLoad ? this.createEntitySubscriber() : undefined);
 
          /// transform the query result into its specific classes
          for (let i = 0; i < result.rows.length; i++) {
@@ -124,23 +140,6 @@ export class EntityManager<T> {
       }
 
       return [];
-   }
-
-   /**
-    * 
-    * @param findOptions 
-    * @returns 
-    */
-   public async findOne(findOptions: FindOptions<T>, queryRunner?: QueryRunner | Connection): Promise<T> {
-      
-      const [result]: any = await this.find({ 
-         ...findOptions,
-         limit: 1,
-         orderBy: (findOptions.orderBy ?? this.entityMetadata.orderBy)
-      }, queryRunner);
-      
-      return result;
-   
    }
 
    /**

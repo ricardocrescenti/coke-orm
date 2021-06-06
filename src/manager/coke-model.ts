@@ -401,7 +401,8 @@ export abstract class CokeModel {
          const where: QueryWhere<this> | undefined = entityManager.createWhereFromColumns(objectToDelete, entityManager.entityMetadata.primaryKey?.columns ?? []);
 
          /// create the entity-related subscriber to run the events
-         const subscriber: EntitySubscriberInterface<this> | undefined = entityManager.createEntitySubscriber()
+         const subscriber: EntitySubscriberInterface<this> | undefined = entityManager.createEntitySubscriber();
+         const hasTransactionEvents: boolean = (subscriber?.afterTransactionCommit || subscriber?.beforeTransactionCommit || subscriber?.afterTransactionRollback || subscriber?.beforeTransactionRollback ? true : false);
 
          /// load the object saved in the database to pass the events before and after saving
          let databaseData: this | undefined = undefined;
@@ -450,6 +451,39 @@ export abstract class CokeModel {
                manager: entityManager,
                databaseEntity: databaseData as this
             });
+         }
+         
+         /// run transaction events if have any informed
+         if (hasTransactionEvents) {
+
+            /// create the event object that will be passed to events
+            const event: TransactionCommitEvent<any> | TransactionRollbackEvent<any> = {
+               connection: queryRunner.connection,
+               queryRunner: queryRunner,
+               manager: entityManager,
+               databaseEntity: databaseData
+            }
+
+            /// events related to transaction commit
+            if (subscriber?.beforeTransactionCommit) {
+               const beforeTransactionCommit = subscriber.beforeTransactionCommit;
+               queryRunner.beforeTransactionCommit.push(() => beforeTransactionCommit(event));
+            }
+            if (subscriber?.afterTransactionCommit) {
+               const afterTransactionCommit = subscriber.afterTransactionCommit;
+               queryRunner.afterTransactionCommit.push(() => afterTransactionCommit(event));
+            }
+            
+            /// events related to transaction rollback
+            if (subscriber?.beforeTransactionRollback) {
+               const beforeTransactionRollback = subscriber.beforeTransactionRollback;
+               queryRunner.beforeTransactionRollback.push(() => beforeTransactionRollback(event));
+            }
+            if (subscriber?.afterTransactionRollback) {
+               const afterTransactionRollback = subscriber.afterTransactionRollback;
+               queryRunner.afterTransactionRollback.push(() => afterTransactionRollback(event));
+            }
+
          }
 
          return true;
@@ -512,7 +546,7 @@ export abstract class CokeModel {
             select: primaryKeys,
             where: where,
             orderBy: orderBy
-         }, queryRunner);
+         }, queryRunner, false);
 
          /// If the requested object exists in the database, the primary keys will
          /// be loaded into the current object
