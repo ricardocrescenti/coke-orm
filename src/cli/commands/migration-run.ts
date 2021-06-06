@@ -1,5 +1,5 @@
 import * as yargs from "yargs";
-import { CokeORM } from "../../connection/coke-orm";
+import { CokeORM } from "../../coke-orm";
 import { Connection } from "../../connection";
 
 export class MigrationRunCommand implements yargs.CommandModule {

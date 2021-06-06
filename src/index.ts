@@ -1,4 +1,4 @@
-import { CokeORM } from "./connection/coke-orm";
+import { CokeORM } from "./coke-orm";
 
 export {
    CokeORM

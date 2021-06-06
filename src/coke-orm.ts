@@ -1,8 +1,8 @@
 const path = require('path');
 const fs = require('fs');
-import { Connection, ConnectionOptions } from ".";
-import { SimpleMap } from  "../common";
-import { ConfigFileNotFoundError, ConnectionAlreadyExistsError, ConnectionNameNotFoundError } from "../errors";
+import { Connection, ConnectionOptions } from "./connection";
+import { SimpleMap } from  "./common";
+import { ConfigFileNotFoundError, ConnectionAlreadyExistsError, ConnectionNameNotFoundError } from "./errors";
 
 export class CokeORM {
 

@@ -1,4 +1,4 @@
-import { CokeORM } from "../connection/coke-orm";
+import { CokeORM } from "../coke-orm";
 import { Connection } from "../connection";
 import { Status } from "./enums/status.enum";
 import { CityModel } from "./models/entity/city.model";

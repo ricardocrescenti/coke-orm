@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 import * as yargs from "yargs";
-import { CokeORM } from "../../connection/coke-orm";
+import { CokeORM } from "../../coke-orm";
 import { ConnectionOptions } from "../../connection";
 import { OrmUtils } from "../../utils";
 
