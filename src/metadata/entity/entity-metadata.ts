@@ -1,14 +1,14 @@
 import { ColumnMetadata } from "../column";
-import { SimpleMap } from "../../common/interfaces/map";
+import { SimpleMap } from "../../common";
 import { EntityOptions } from "./entity-options";
 import { ForeignKeyMetadata } from "../foreign-key";
 import { UniqueMetadata } from "../unique";
 import { IndexMetadata } from "../index/index";
 import { PrimaryKeyMetadata } from "../primary-key";
-import { Connection } from "../../connection/connection";
+import { Connection } from "../../connection";
 import { ColumnMetadataNotLocatedError } from "../../errors";
 import { EntitySubscriberInterface } from "../event";
-import { ConstructorTo } from "../../common/types/constructor-to.type";
+import { ConstructorTo } from "../../common";
 
 export class EntityMetadata extends EntityOptions {
 

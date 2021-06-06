@@ -1,6 +1,6 @@
-import { ConstructorTo } from "../../common/types/constructor-to.type";
-import { QueryOrder } from "../../query-builder/types/query-order";
-import { MetadataUtils } from "../../utils/metadata-utils";
+import { ConstructorTo } from "../../common";
+import { QueryOrder } from "../../query-builder";
+import { MetadataUtils } from "../../utils";
 
 export class EntityOptions<T = any> {
    

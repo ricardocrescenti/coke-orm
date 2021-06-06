@@ -1,6 +1,5 @@
 import { ForeignKeyMetadata, EntityMetadata } from "../../metadata";
-import { QueryOrder } from "../../query-builder/types/query-order";
-import { QueryWhere } from "../../query-builder/types/query-where";
+import { QueryOrder, QueryWhere } from "../../query-builder";
 import { FindSelect } from "../types/find-select";
 
 export class FindOptions<T> {

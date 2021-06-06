@@ -1,5 +1,5 @@
-import { QueryRunner } from "./query-runner/query-runner";
+import { CokeORM } from "./connection/coke-orm";
 
 export {
-   QueryRunner
+   CokeORM
 }

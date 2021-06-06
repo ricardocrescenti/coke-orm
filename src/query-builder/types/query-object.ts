@@ -1,0 +1,1 @@
+export type QueryObject<T> = { [P in keyof T]?: any; } | { [key: string]: any; }

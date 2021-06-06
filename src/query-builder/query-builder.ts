@@ -1,9 +1,8 @@
-import { Connection } from "../connection/connection";
-import { PostgresDriver } from "../drivers/databases/postgres/postgres-driver";
+import { Connection, QueryRunner } from "../connection";
+import { PostgresDriver } from "../drivers";
 import { EntityMetadata } from "../metadata";
-import { QueryRunner } from "../query-runner/query-runner";
 import { QueryManager } from "./query-manager";
-import { QueryTable } from "./types/query-table";
+import { QueryTable } from "./types";
 
 export abstract class QueryBuilder<T> {
 

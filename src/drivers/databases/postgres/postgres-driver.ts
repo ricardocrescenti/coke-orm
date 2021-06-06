@@ -1,12 +1,12 @@
 import { Driver } from "../../driver";
-import { SimpleMap } from "../../../common/interfaces/map";
+import { SimpleMap } from "../../../common";
 import { DefaultColumnOptions } from "../../options/default-column-options";
-import { QueryRunner } from "../../../query-runner/query-runner";
-import { Connection } from "../../../connection/connection";
+import { QueryRunner } from "../../../connection";
+import { Connection } from "../../../connection";
 import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, PrimaryKeySchema, UniqueSchema } from "../../../schema";
 import { QueryBuilderDriver } from "../../query-builder-driver";
 import { PostgresQueryBuilderDriver } from "./postgres-query-builder-driver";
-import { ForeignKeyMetadata } from "../../../metadata/foreign-key";
+import { ForeignKeyMetadata } from "../../../metadata";
 import { ColumnMetadata, ColumnOperation, IndexMetadata, UniqueMetadata, EntityMetadata } from "../../../metadata";
 import { InvalidColumnOptionError } from "../../../errors";
 import { Generate } from "../../../metadata";

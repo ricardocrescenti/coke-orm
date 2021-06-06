@@ -1,9 +1,8 @@
-import { Connection } from "../connection/connection";
+import { Connection } from "../connection";
 import { EntityMetadata } from "../metadata";
 import { QueryBuilder } from "./query-builder";
 import { QueryManager } from "./query-manager";
-import { QueryTable } from "./types/query-table";
-import { QueryValues } from "./types/query-values";
+import { QueryTable, QueryObject } from "./types";
 
 export class InsertQueryBuilder<T> extends QueryBuilder<T> {
 
@@ -14,7 +13,7 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
       super(connection, table);
    }
 
-   public values(values: QueryValues<T>): this {
+   public values(values: QueryObject<T>): this {
       this.queryManager.values = this.queryManager.getObjectValues(values);
       return this;
    }

@@ -1,6 +1,6 @@
-import { Connection } from "../../../connection/connection";
+import { Connection } from "../../../connection";
 import { Column, ManyToOne, OneToMany, Entity } from "../../../decorators";
-import { QueryRunner } from "../../../query-runner/query-runner";
+import { QueryRunner } from "../../../connection";
 import { FileModel } from "../file/file.model";
 import { PatternModel } from "../pattern.model";
 import { EntityAddressModel } from "./entity-address.model";

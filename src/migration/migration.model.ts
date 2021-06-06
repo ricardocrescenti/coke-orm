@@ -3,7 +3,7 @@ import { Generate } from "../metadata";
 import { CokeModel } from "../manager";
 
 @Entity()
-export class Migration extends CokeModel {
+export class MigrationModel extends CokeModel {
 
     @PrimaryColumn({ 
         default: new Generate({ strategy: 'sequence' }) 

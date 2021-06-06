@@ -10,6 +10,8 @@ import { PrimaryColumn } from "./columns/primary-column";
 import { Entity } from "./entity/entity";
 import { Unique } from "./unique/unique";
 import { UpdatedAtColumn } from "./columns/updated-at-column";
+import { SubscriberOptions } from "./event/subscriber-options";
+import { DecoratorsStore } from "./decorators-store";
 
 export {
    Entity,
@@ -23,5 +25,7 @@ export {
    DeletedAtColumn,
    Unique,
    Index,
-   EventsSubscriber
+   EventsSubscriber,
+   SubscriberOptions,
+   DecoratorsStore
 }

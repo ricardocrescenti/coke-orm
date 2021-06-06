@@ -1,12 +1,9 @@
-import { Connection } from "../connection/connection";
+import { Connection } from "../connection";
 import { NonExistentObjectOfRelationError } from "../errors";
 import { ColumnMetadata, ForeignKeyMetadata, EntityMetadata } from "../metadata";
 import { EntitySubscriberInterface, TransactionCommitEvent, TransactionRollbackEvent } from "../metadata";
-import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
-import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
-import { QueryWhere } from "../query-builder/types/query-where";
-import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
-import { QueryRunner } from "../query-runner/query-runner";
+import { DeleteQueryBuilder, InsertQueryBuilder, QueryWhere, UpdateQueryBuilder } from "../query-builder";
+import { QueryRunner } from "../connection";
 import { SaveOptions } from "./options/save-options";
 import { EntityManager } from "./entity-manager";
 

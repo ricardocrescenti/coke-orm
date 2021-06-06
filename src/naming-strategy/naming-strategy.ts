@@ -1,5 +1,5 @@
 import { ColumnMetadata, ColumnOptions, ForeignKeyOptions, IndexOptions, EntityMetadata, EntityOptions, UniqueOptions } from "../metadata";
-import { StringUtils } from "../utils/string-utils";
+import { StringUtils } from "../utils";
 
 export class NamingStrategy {
 

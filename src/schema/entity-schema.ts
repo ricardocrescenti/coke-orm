@@ -1,5 +1,5 @@
 import { ColumnSchema } from "./column-schema";
-import { SimpleMap } from "../common/interfaces/map";
+import { SimpleMap } from "../common";
 import { ForeignKeySchema } from "./foreign-key-schema";
 import { IndexSchema } from "./index-schema";
 import { UniqueSchema } from "./unique-schema";

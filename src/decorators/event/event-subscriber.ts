@@ -1,4 +1,4 @@
-import { ConstructorTo } from "../../common/types/constructor-to.type";
+import { ConstructorTo } from "../../common";
 import { EntitySubscriberInterface } from "../../metadata";
 import { CokeModel } from "../../manager";
 import { DecoratorsStore } from "../decorators-store";

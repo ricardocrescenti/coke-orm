@@ -1,5 +1,5 @@
 import { QueryColumnBuilder } from './query-column-builder';
-import { QueryOrder } from '../types/query-order';
+import { QueryOrder } from '../types';
 import { QueryJsonColumnBuilder } from './query-json-column-builder';
 import { QueryManager } from '../query-manager';
 import { EntityMetadata } from '../../metadata';

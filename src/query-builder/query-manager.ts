@@ -1,28 +1,8 @@
-import { QueryJoin } from "./column-builder/query-relation-builder";
-import { QueryOrder } from "./types/query-order";
-import { QueryTable } from "./types/query-table";
-import { QueryValues } from "./types/query-values";
-import { QueryWhere } from "./types/query-where";
-import { Equal } from "./operators/equal";
-import { GreaterThan } from "./operators/greater-than";
-import { GreaterThanOrEqual } from "./operators/greater-than-or-equal";
-import { ILike } from "./operators/ilike";
-import { In } from "./operators/in";
-import { LassThan } from "./operators/less-than";
-import { LassThanOrEqual } from "./operators/less-than-or-equal";
-import { Like } from "./operators/like";
-import { NotEqual } from "./operators/not-equal";
-import { NotILike } from "./operators/not-ilike";
-import { NotIn } from "./operators/not-in";
-import { NotLike } from "./operators/not-like";
-import { Operator } from "./operators/operator";
-import { Between } from "./operators/between";
-import { Raw } from "./operators/raw";
-import { IsNull } from "./operators/is-null";
+import { QueryRelationBuilder, QueryColumnBuilder, QueryDatabaseColumnBuilder } from "./column-builder";
+import { QueryOrder, QueryTable, QueryObject, QueryWhere } from "./types";
+import { Equal, GreaterThan, GreaterThanOrEqual, ILike, In, LassThan, LassThanOrEqual, Like, NotEqual, NotILike, NotIn, NotLike, Operator, Between, Raw, IsNull } from "./operators";
 import { ColumnMetadata, ForeignKeyMetadata, EntityMetadata } from "../metadata";
 import { InvalidWhereOperatorError } from "../errors";
-import { QueryColumnBuilder } from "./column-builder/query-column-builder";
-import { QueryDatabaseColumnBuilder } from "./column-builder/query-database-column-builder";
 
 export class QueryManager<T> {
    private static operatorsConstructor: { [p: string]: Function } = {
@@ -51,9 +31,9 @@ export class QueryManager<T> {
 
    public columns?: QueryColumnBuilder<T>[];
 
-   public joins?: QueryJoin<T>[];
+   public joins?: QueryRelationBuilder<T>[];
 
-   public values?: QueryValues<T>;
+   public values?: QueryObject<T>;
 
    // public virtualDeletionColumn?: string;
 
@@ -386,7 +366,7 @@ export class QueryManager<T> {
     * 
     * @param values 
     */
-    public getObjectValues(values: QueryValues<T>): any {
+    public getObjectValues(values: QueryObject<T>): any {
       if (!values) {
          return;
       }

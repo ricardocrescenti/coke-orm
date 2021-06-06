@@ -1,7 +1,7 @@
 import { QueryColumnBuilder } from './query-column-builder';
 import { QueryManager } from '../query-manager';
 import { EntityMetadata } from '../../metadata';
-import { QueryJoin } from './query-relation-builder';
+import { QueryRelationBuilder } from './query-relation-builder';
 import { ColumnMetadata } from '../../metadata';
 
 export class QueryDatabaseColumnBuilder<T> extends QueryColumnBuilder<T> {
@@ -9,7 +9,7 @@ export class QueryDatabaseColumnBuilder<T> extends QueryColumnBuilder<T> {
    public table?: string;
    public jsonObjectsName?: string[];
    public column: string;
-   public relation?: QueryJoin<T>;
+   public relation?: QueryRelationBuilder<T>;
 
    constructor(select: Omit<QueryDatabaseColumnBuilder<T>, 'expression' | 'getExpression' | 'getExpressionWithAlias'>) {
       super(select);

@@ -1,5 +1,5 @@
-import { EntityReferenceParameter } from "../common/types/entity-reference-parameter.type";
-import { Connection } from "../connection/connection";
+import { EntityReferenceParameter } from ".";
+import { Connection } from ".";
 import { EntityManager } from "../manager";
 
 export class QueryRunner {

@@ -1,26 +1,17 @@
-import { SimpleMap } from "../common/interfaces/map";
-import { Connection } from "../connection/connection";
+import { SimpleMap } from "../common";
+import { Connection } from "../connection";
 import { ColumnMetadata, EntitySubscriberInterface, ForeignKeyMetadata, EntityMetadata } from "../metadata";
-import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
+import { DeleteQueryBuilder, InsertQueryBuilder, SelectQueryBuilder, UpdateQueryBuilder, QueryWhere } from "../query-builder";
 import { FindOptions } from "./options/find-options";
-import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
-import { SelectQueryBuilder } from "../query-builder/select-query-builder";
-import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
-import { QueryWhere, QueryWhereColumn } from "../query-builder/types/query-where";
-import { QueryJoin } from "../query-builder/column-builder/query-relation-builder";
+import { QueryRelationBuilder, QueryColumnBuilder, QueryDatabaseColumnBuilder, QueryJsonAggColumnBuilder, QueryJsonColumnBuilder, QueryWhereColumnBuilder, QueryAggregateColumnBuilder } from "../query-builder";
 import { FindSelect } from "./types/find-select";
 import { EntityValues } from "./types/entity-values";
 import { CokeModel } from "./coke-model";
 import { SaveOptions } from "./options/save-options";
-import { StringUtils } from "../utils/string-utils";
-import { OrmUtils } from "../utils/orm-utils";
-import { QueryColumnBuilder } from "../query-builder/column-builder/query-column-builder";
-import { QueryDatabaseColumnBuilder } from "../query-builder/column-builder/query-database-column-builder";
-import { QueryJsonAggColumnBuilder } from "../query-builder/column-builder/query-json-agg-column-builder";
-import { QueryJsonColumnBuilder } from "../query-builder/column-builder/query-json-column-builder";
-import { QueryWhereColumnBuilder } from "../query-builder/column-builder/query-where-column-builder";
-import { QueryAggregateColumnBuilder } from "../query-builder/column-builder/query-aggregate-column-builder";
-import { QueryRunner } from "../query-runner/query-runner";
+import { StringUtils } from "../utils";
+import { OrmUtils } from "../utils";
+import { QueryRunner } from "../connection";
+import { ColumnMetadataNotLocatedError, DuplicateColumnInQuery } from "../errors";
 
 export class EntityManager<T> {
 
@@ -193,7 +184,7 @@ export class EntityManager<T> {
 
       /// extract the `SelectQueryBuilder` from the related columns to generate
       /// the `left join` in the main entity
-      const queryJoins: QueryJoin<T>[] = this.loadQueryJoins(queryColumns);
+      const queryJoins: QueryRelationBuilder<T>[] = this.loadQueryJoins(queryColumns);
 
       /// if the entity has a column with 'DeletedAt' operation, a filter will be 
       /// added to 'findOptions.where' so as not to get the deleted rows
@@ -296,12 +287,12 @@ export class EntityManager<T> {
          const columnData: [string, FindSelect] = (typeof columnStructure == 'string' ? [columnStructure, []] : columnStructure) as [string, FindSelect];         
          const columnMetadata: ColumnMetadata = this.entityMetadata.columns[columnData[0]];
 
-         if (!this.entityMetadata.columns[columnData[0]]) {
-            throw new Error('Coluna inválida');
+         if (!columnMetadata) {
+            throw new ColumnMetadataNotLocatedError(this.entityMetadata.className, columnData[0]);
          }
 
          if (queryColumns[columnData[0]]) {
-            throw new Error('Coluna informada em duplicidade no select');
+            throw new DuplicateColumnInQuery(columnMetadata);
          }
 
          /// If the column has roles restrictions, it will only appear in the 
@@ -324,7 +315,7 @@ export class EntityManager<T> {
                   table: relationAlias,
                   column: columnMetadata.propertyName,
                   alias: columnMetadata.propertyName,
-                  relation: new QueryJoin<any>({
+                  relation: new QueryRelationBuilder<any>({
                      type: 'left',
                      table: relationQuery,
                      alias: relationAlias,
@@ -340,7 +331,7 @@ export class EntityManager<T> {
                   table: relationAlias,
                   column: columnMetadata.propertyName,
                   alias: columnMetadata.propertyName,
-                  relation: new QueryJoin<any>({
+                  relation: new QueryRelationBuilder<any>({
                      type: ((findOptions.where as any ?? {})[columnMetadata.propertyName] ? 'inner' : 'left'),
                      table: relationQuery,
                      alias: relationAlias,
@@ -521,13 +512,13 @@ export class EntityManager<T> {
     * @param queryColumns 
     * @returns 
     */
-   private loadQueryJoins(queryColumns: QueryColumnBuilder<T>[]): QueryJoin<T>[] {
+   private loadQueryJoins(queryColumns: QueryColumnBuilder<T>[]): QueryRelationBuilder<T>[] {
 
       return queryColumns
          .filter((queryColumn) => queryColumn instanceof QueryDatabaseColumnBuilder && queryColumn.relation)
          .map((queryColumn) => {
 
-            return new QueryJoin<T>({
+            return new QueryRelationBuilder<T>({
                type: (queryColumn as QueryDatabaseColumnBuilder<T>).relation?.type,
                table: (queryColumn as QueryDatabaseColumnBuilder<T>).relation?.table,
                alias: (queryColumn as QueryDatabaseColumnBuilder<T>).relation?.alias,
@@ -551,7 +542,7 @@ export class EntityManager<T> {
          return undefined;
       }
 
-      const where: QueryWhereColumn<any> = {};
+      const where: QueryWhere<any> = {};
       for (const column of columns) {
 
          if (valuesKeys.indexOf(column) < 0) {

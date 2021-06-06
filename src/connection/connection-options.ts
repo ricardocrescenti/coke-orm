@@ -1,5 +1,5 @@
-import { DatabaseDriver } from "../drivers/enum/database-driver.type";
-import { NamingStrategy } from "../naming-strategy/naming-strategy";
+import { DatabaseDriver } from "../drivers";
+import { NamingStrategy } from "../naming-strategy";
 import { MigrationOptions } from "./migration-options";
 import { PoolOptions } from "./pool-options";
 import { AdditionalOptions } from "./additional-options";

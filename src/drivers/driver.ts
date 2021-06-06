@@ -1,13 +1,12 @@
-import { SimpleMap } from "../common/interfaces/map";
-import { Connection } from "../connection/connection";
+import { SimpleMap } from "../common";
+import { Connection, ConnectionOptions } from "../connection";
 import { ColumnMetadata, ColumnOptions, ColumnOperation } from "../metadata";
-import { QueryRunner } from "../query-runner/query-runner";
+import { QueryRunner } from "../connection";
 import { EntitySchema } from "../schema";
 import { DefaultColumnOptions } from "./options/default-column-options";
 import { QueryBuilderDriver } from "./query-builder-driver";
 import { EntityMetadata } from "../metadata";
 import { InvalidColumnOptionError } from "../errors";
-import { ConnectionOptions } from "../connection/connection-options";
 
 export abstract class Driver {
 

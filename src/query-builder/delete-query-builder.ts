@@ -1,9 +1,8 @@
-import { Connection } from "../connection/connection";
+import { Connection } from "../connection";
 import { EntityMetadata } from "../metadata";
 import { QueryBuilder } from "./query-builder";
 import { QueryManager } from "./query-manager";
-import { QueryTable } from "./types/query-table";
-import { QueryWhere } from "./types/query-where";
+import { QueryTable, QueryWhere } from "./types";
 
 export class DeleteQueryBuilder<T> extends QueryBuilder<T> {
 

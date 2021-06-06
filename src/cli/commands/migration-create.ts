@@ -1,9 +1,9 @@
 const path = require('path');
 const fs = require('fs');
 import * as yargs from "yargs";
-import { CokeORM } from "../coke-orm";
-import { ConnectionOptions } from "../connection/connection-options";
-import { OrmUtils } from "../utils/orm-utils";
+import { CokeORM } from "../../connection/coke-orm";
+import { ConnectionOptions } from "../../connection";
+import { OrmUtils } from "../../utils";
 
 export class MigrationCreateCommand implements yargs.CommandModule {
 
@@ -37,7 +37,8 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 	}
 
 	public static getTemplace(name: string, upQueries?: string[], downQueries?: string[]) {
-		return `import { MigrationInterface, QueryExecutor } from "cokeorm";
+		return `import { MigrationInterface } from "@ricardocrescenti/coke-orm/migration";
+import { QueryRunner } from "@ricardocrescenti/coke-orm/query";
 
 export class ${name} implements MigrationInterface {
 

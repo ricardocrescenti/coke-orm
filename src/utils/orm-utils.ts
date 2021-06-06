@@ -1,4 +1,4 @@
-import { ConnectionOptions } from "../connection/connection-options";
+import { ConnectionOptions } from "../connection";
 
 const path = require('path');
 

@@ -1,14 +1,9 @@
-import { Connection } from "../connection/connection";
+import { Connection } from "../connection";
 import { EntityMetadata } from "../metadata";
 import { QueryBuilder } from "./query-builder";
 import { QueryManager } from "./query-manager";
-import { JoinType } from "./types/join-type";
-import { QueryJoin } from "./column-builder/query-relation-builder";
-import { QueryOrder } from "./types/query-order";
-import { QueryTable } from "./types/query-table";
-import { QueryWhere } from "./types/query-where";
-import { QueryDatabaseColumnBuilder } from "./column-builder/query-database-column-builder";
-import { QueryColumnBuilder } from "./column-builder/query-column-builder";
+import { JoinType, QueryOrder, QueryTable, QueryWhere } from "./types";
+import { QueryRelationBuilder, QueryDatabaseColumnBuilder, QueryColumnBuilder } from "./column-builder";
 
 export class SelectQueryBuilder<T> extends QueryBuilder<T> {
    private indentation: number = 0;
@@ -28,9 +23,9 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
    }   
 
    public join(type: JoinType, table: string, alias: string, condition: ''): this;
-   public join(join: QueryJoin<T>): this;
-   public join(join: QueryJoin<T>[]): this;
-   public join(join: JoinType | QueryJoin<T> | QueryJoin<T>[], table?: string, alias?: string, condition?: ''): this {
+   public join(join: QueryRelationBuilder<T>): this;
+   public join(join: QueryRelationBuilder<T>[]): this;
+   public join(join: JoinType | QueryRelationBuilder<T> | QueryRelationBuilder<T>[], table?: string, alias?: string, condition?: ''): this {
       if (!join) {
          return this;
       }
@@ -41,7 +36,7 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
             table: table,
             alias: alias,
             condition: condition
-         } as QueryJoin<T>;
+         } as QueryRelationBuilder<T>;
       }
       this.queryManager.joins = Array.isArray(join) ? join : [join];
       return this;

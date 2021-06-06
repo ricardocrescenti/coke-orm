@@ -1,5 +1,5 @@
-import { MigrationInterface } from "../../migration/migration.interface";
-import { QueryRunner } from "../../query-runner/query-runner";
+import { MigrationInterface } from "../../migration";
+import { QueryRunner } from "../../connection";
 
 export class changes202105110821150621 implements MigrationInterface {
 

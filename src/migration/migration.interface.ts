@@ -1,4 +1,4 @@
-import { QueryRunner } from "../query-runner/query-runner";
+import { QueryRunner } from "../connection";
 
 export interface MigrationInterface {
 

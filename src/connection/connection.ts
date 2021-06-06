@@ -1,30 +1,21 @@
 const path = require('path');
 const fs = require('fs');
 import * as glob from "glob";
-import { DatabaseDriver } from "../drivers/enum/database-driver.type";
-import { SimpleMap } from "../common/interfaces/map";
-import { ConstructorTo } from "../common/types/constructor-to.type";
-import { EntityReferenceParameter } from "../common/types/entity-reference-parameter.type";
+import { Driver, PostgresDriver, DatabaseDriver, DefaultColumnOptions } from "../drivers";
+import { SimpleMap, ConstructorTo } from "../common";
 import { TransactionProcess } from "./types/transaction-process";
-import { DecoratorsStore } from "../decorators/decorators-store";
-import { PostgresDriver } from "../drivers/databases/postgres/postgres-driver";
-import { Driver } from "../drivers/driver";
-import { DefaultColumnOptions } from "../drivers/options/default-column-options";
+import { DecoratorsStore } from "../decorators";
 import { ConnectionAlreadyConnectedError, ColumnMetadataNotLocatedError, ReferencedColumnMetadataNotLocatedError, ReferencedEntityMetadataNotLocatedError, EntityHasNoPrimaryKeyError, EntityMetadataNotLocatedError } from "../errors";
 import { ColumnMetadata, ColumnOptions, IndexMetadata, EntitySubscriberInterface, ForeignKeyMetadata, ForeignKeyOptions, PrimaryKeyMetadata, EntityMetadata, EntityOptions, UniqueMetadata, UniqueOptions } from "../metadata";
-import { MigrationInterface } from "../migration/migration.interface";
-import { Migration } from "../migration/migration.model";
-import { NamingStrategy } from "../naming-strategy/naming-strategy";
-import { DeleteQueryBuilder } from "../query-builder/delete-query-builder";
-import { InsertQueryBuilder } from "../query-builder/insert-query-builder";
-import { SelectQueryBuilder } from "../query-builder/select-query-builder";
-import { QueryTable } from "../query-builder/types/query-table";
-import { UpdateQueryBuilder } from "../query-builder/update-query-builder";
-import { QueryRunner } from "../query-runner/query-runner";
+import { MigrationInterface, MigrationModel } from "../migration";
+import { NamingStrategy } from "../naming-strategy";
+import { DeleteQueryBuilder, InsertQueryBuilder, SelectQueryBuilder, QueryTable, UpdateQueryBuilder } from "../query-builder";
+import { QueryRunner } from "../connection";
 import { EntitySchema } from "../schema";
 import { FindOptions, SaveOptions, EntityManager, EntityValues } from "../manager";
-import { OrmUtils } from "../utils/orm-utils";
+import { OrmUtils } from "../utils";
 import { ConnectionOptions } from "./connection-options";
+import { EntityReferenceParameter } from "./types/entity-reference-parameter.type";
 
 export class Connection {
 
@@ -195,7 +186,7 @@ export class Connection {
       console.time('loadMetadataSchema');
 
       const entitiesToLoad: Function[] = this.loadEntities();
-      entitiesToLoad.unshift(Migration);
+      entitiesToLoad.unshift(MigrationModel);
 
       const subscribersToLoad: Function[] = this.loadSubscribers();
 
@@ -214,7 +205,7 @@ export class Connection {
          const entityMetadata: EntityMetadata = new EntityMetadata({
             ...entityOptions,
             connection: this,
-            name: (entityOptions.target == Migration ? this.options.migrations?.tableName : namingStrategy.tableName(entityOptions)),
+            name: (entityOptions.target == MigrationModel ? this.options.migrations?.tableName : namingStrategy.tableName(entityOptions)),
             subscriber: subscriberOptions?.subscriber
          });
          this.entities[entityOptions.target.name] = entityMetadata;
@@ -593,9 +584,9 @@ export class Connection {
    public async loadPendingMigrations(): Promise<MigrationInterface[]> {
       const migrations: MigrationInterface[] = [];
 
-      const migrationTableName: string = this.entities['Migration'].name as string;
+      const migrationTableName: string = this.entities[MigrationModel.name].name as string;
       const entitiesSchema: SimpleMap<EntitySchema> = await this.driver.loadSchema([migrationTableName]);
-      const performedMigrations: Migration[] = (entitiesSchema[migrationTableName] != null ? await this.find(Migration) : []);
+      const performedMigrations: MigrationModel[] = (entitiesSchema[migrationTableName] != null ? await this.find(MigrationModel) : []);
 
       const migrationsPath = path.join(OrmUtils.rootPath(this.connection.options), this.options.migrations?.directory, '*.js');
       const filesPath: string[] = glob.sync(migrationsPath);
@@ -641,7 +632,7 @@ export class Connection {
                await instance.up(queryRunner);
 
                const migrationCreationDate: string = (instance.constructor.name as string).substring(instance.constructor.name.length - 18, instance.constructor.name.length)
-               await this.getEntityManager(Migration).save({
+               await this.getEntityManager(MigrationModel).save({
                   name: instance.constructor.name,
                   createdAt: new Date(
                      Number.parseInt(migrationCreationDate.substring(0, 4)),

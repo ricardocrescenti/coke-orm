@@ -1,7 +1,7 @@
 import { QueryColumnBuilder } from './query-column-builder';
 import { QueryManager } from '../query-manager';
 import { EntityMetadata } from '../../metadata';
-import { QueryWhere } from '../types/query-where';
+import { QueryWhere } from '../types';
 
 export class QueryWhereColumnBuilder<T> extends QueryColumnBuilder<T> {
 

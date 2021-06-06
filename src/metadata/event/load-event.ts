@@ -1,5 +1,4 @@
-import { Connection } from "../../connection/connection";
-import { QueryRunner } from "../../query-runner/query-runner";
+import { Connection, QueryRunner } from "../../connection";
 import { FindOptions, EntityManager } from "../../manager";
 
 /**

@@ -1,4 +1,4 @@
-import { ForeignKeyMetadata } from "../metadata/foreign-key";
+import { ForeignKeyMetadata } from "../metadata";
 
 export class NonExistentObjectOfRelationError extends Error {
 

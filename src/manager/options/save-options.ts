@@ -1,6 +1,6 @@
-import { Connection } from "../../connection/connection";
-import { ForeignKeyMetadata } from "../../metadata/foreign-key";
-import { QueryRunner } from "../../query-runner/query-runner";
+import { Connection } from "../../connection";
+import { ForeignKeyMetadata } from "../../metadata";
+import { QueryRunner } from "../../connection";
 
 export class SaveOptions {
    queryRunner?: QueryRunner | Connection;

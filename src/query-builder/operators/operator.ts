@@ -1,3 +1,4 @@
+import { UndefinedQueryConditionOperatorError } from "../../errors";
 import { QueryManager } from "../query-manager";
 
 export abstract class Operator {
@@ -10,11 +11,12 @@ export abstract class Operator {
 
    constructor(column: string, values: any | any[]) {
       this.column = column;
-      this.values = (Array.isArray(values) ? values : [values]);
 
-      if (this.values == null || this.values.length == 0) {
-         throw new Error('Operador sem valor definidor para a condição');
+      if (values == null || values?.length == 0) {
+         throw new UndefinedQueryConditionOperatorError(this);
       }
+
+      this.values = (Array.isArray(values) ? values : [values]);
    }
 
    public registerParameters(queryManager: QueryManager<any>): void {
