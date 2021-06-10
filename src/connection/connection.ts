@@ -1,5 +1,4 @@
 const path = require('path');
-const fs = require('fs');
 import * as glob from "glob";
 import { Driver, PostgresDriver, DatabaseDriver, DefaultColumnOptions } from "../drivers";
 import { SimpleMap, ConstructorTo } from "../common";
@@ -10,12 +9,13 @@ import { ColumnMetadata, ColumnOptions, IndexMetadata, EntitySubscriberInterface
 import { MigrationInterface, MigrationModel } from "../migration";
 import { NamingStrategy } from "../naming-strategy";
 import { DeleteQueryBuilder, InsertQueryBuilder, SelectQueryBuilder, QueryTable, UpdateQueryBuilder } from "../query-builder";
-import { QueryRunner } from "../connection";
+import { QueryRunner } from "../query-runner";
 import { EntitySchema } from "../schema";
-import { FindOptions, SaveOptions, EntityManager, EntityValues } from "../manager";
+import { EntityManager } from "../manager";
 import { OrmUtils } from "../utils";
 import { ConnectionOptions } from "./connection-options";
 import { EntityReferenceParameter } from "./types/entity-reference-parameter.type";
+import { CokeORM } from "../coke-orm";
 
 export class Connection {
 
@@ -25,6 +25,11 @@ export class Connection {
    public get connection(): Connection {
       return this;
    }
+
+   /**
+    * 
+    */
+   public readonly name: string;
 
    /**
     * 
@@ -43,6 +48,11 @@ export class Connection {
       return this._isConnected;
    }
    private _isConnected: boolean = false;
+
+   /**
+    * 
+    */
+   public readonly queryRunner: QueryRunner;
 
    /**
     * 
@@ -70,7 +80,9 @@ export class Connection {
     */
    constructor(options: ConnectionOptions) {
       this.options = (options instanceof ConnectionOptions ? options : new ConnectionOptions(options));
+      this.name = options.name as string;
       this.driver = this.getDriver(options.driver);
+      this.queryRunner = this.createQueryRunner();
       this.loadMetadata();
    }
 
@@ -84,8 +96,7 @@ export class Connection {
       }
 
       /// create query executor to verify that the connection was made successfully
-      const queryRunner: QueryRunner = await this.createQueryRunner();
-      await queryRunner.release();
+      this.connection.queryRunner.checkConnection();
 
       this._isConnected = true;
 
@@ -114,6 +125,7 @@ export class Connection {
       for (const queryRunner of this.activeQueryRunners) {
          await queryRunner.release();
       }
+      delete CokeORM.connections[this.name];
       this._isConnected = false;
    }
 
@@ -153,6 +165,10 @@ export class Connection {
     */
    private loadSubscribers(): Function[] {
       const events: Function[] = [];
+
+      if (!this.options.subscribers) {
+         return [];
+      }
 
       for (const event of this.options.subscribers) {
 
@@ -397,15 +413,15 @@ export class Connection {
    /**
     * 
     */
-   public createQueryRunner(): Promise<QueryRunner> {  
-      return QueryRunner.create(this);
+    private createQueryRunner(): QueryRunner {  
+      return new QueryRunner(this);
    }
 
    /**
     * 
     * @param entity
     */
-   public getEntityManager<T>(entity: EntityReferenceParameter<T>): EntityManager<T> {
+   public getEntityManager<T = any>(entity: EntityReferenceParameter<T>): EntityManager<T> {
 
       const parameterEntity: EntityReferenceParameter<T> = entity
       if (typeof(entity) == 'string') {
@@ -424,50 +440,6 @@ export class Connection {
 
       return this.entityManagers[entity.className];
       
-   }
-
-   /**
-    * 
-    * @param entity 
-    * @param findOptions 
-    * @param queryRunner 
-    * @returns 
-    */
-   public async find<T>(entity: EntityReferenceParameter<T>, findOptions?: FindOptions<T>, queryRunner?: QueryRunner | Connection): Promise<T[]> {
-      return this.getEntityManager<T>(entity).find(findOptions, queryRunner);
-   }
-
-   /**
-    * 
-    * @param entity 
-    * @param findOptions 
-    * @param queryRunner 
-    * @returns 
-    */
-   public async findOne<T>(entity: EntityReferenceParameter<T>, findOptions: FindOptions<T>, queryRunner?: QueryRunner | Connection): Promise<T> {
-      return this.getEntityManager<T>(entity).findOne(findOptions, queryRunner);
-   }
-
-   /**
-    * 
-    * @param entity 
-    * @param object 
-    * @param saveOptions 
-    * @returns 
-    */
-   public async save<T>(entity: EntityReferenceParameter<T>, object: EntityValues<T>, saveOptions?: SaveOptions): Promise<any> {
-      return this.getEntityManager<T>(entity).save(object, saveOptions);
-   }
-
-   /**
-    * 
-    * @param entity 
-    * @param object 
-    * @param queryRunner 
-    * @returns 
-    */
-   public async delete<T>(entity: EntityReferenceParameter<T>, object: any, queryRunner?: QueryRunner | Connection): Promise<boolean> {
-      return this.getEntityManager<T>(entity).delete(object, queryRunner);
    }
 
    /**
@@ -500,21 +472,6 @@ export class Connection {
     */
    public createDeleteQuery<T>(entity: QueryTable<T> | EntityMetadata): DeleteQueryBuilder<T> {
       return new DeleteQueryBuilder<T>(this, entity);
-   }
-
-   /**
-    * 
-    * @param query 
-    * @param params 
-    * @param queryRunner 
-    */
-   public async query(query: string, params?: any[]) {
-      const queryRunner: QueryRunner = await this.createQueryRunner();
-      try {
-          return await queryRunner.query(query, params);
-      } finally {
-         await queryRunner.release();
-      }
    }
 
    /**
@@ -586,7 +543,7 @@ export class Connection {
 
       const migrationTableName: string = this.entities[MigrationModel.name].name as string;
       const entitiesSchema: SimpleMap<EntitySchema> = await this.driver.loadSchema([migrationTableName]);
-      const performedMigrations: MigrationModel[] = (entitiesSchema[migrationTableName] != null ? await this.find(MigrationModel) : []);
+      const performedMigrations: MigrationModel[] = (entitiesSchema[migrationTableName] != null ? await this.getEntityManager(MigrationModel).find() : []);
 
       const migrationsPath = path.join(OrmUtils.rootPath(this.connection.options), this.options.migrations?.directory, '*.js');
       const filesPath: string[] = glob.sync(migrationsPath);

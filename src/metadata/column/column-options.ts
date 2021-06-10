@@ -56,6 +56,11 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
     * Indicates whether this is a primary key column
     */
    public readonly primary?: boolean;
+
+   /**
+    * 
+    */
+   public readonly enum?: any;
    
    /**
     * Field relationship settings
@@ -91,6 +96,11 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
     */
    public readonly roles?: string[];
 
+   /**
+    * 
+    */
+   public readonly customOptions?: any;
+
    constructor(options: Omit<ColumnOptions<T, ForeignKeyOptions>, "propertyType">) {
       this.target = options.target;
       this.propertyName = options.propertyName;
@@ -102,11 +112,13 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
       this.default = options.default;
       this.nullable = options.nullable ?? false;
       this.primary = options.primary ?? false;
+      this.enum = options.enum;
       this.relation = options.relation as any;
       this.canSelect = options.canSelect ?? true;
       this.canInsert = options.canInsert ?? true;
       this.canUpdate = options.canUpdate ?? true;
       this.operation = options.operation;
       this.roles = options.roles;
+      this.customOptions = options.customOptions;
    }
 }

@@ -6,23 +6,25 @@ import { Index } from "./index/index";
 import { ManyToOne } from "./columns/many-to-one";
 import { OneToMany } from "./columns/one-to-many";
 import { OneToOne } from "./columns/one-to-one";
-import { PrimaryColumn } from "./columns/primary-column";
+import { PrimaryKeyColumn } from "./columns/primary-key-column";
 import { Entity } from "./entity/entity";
 import { Unique } from "./unique/unique";
 import { UpdatedAtColumn } from "./columns/updated-at-column";
 import { SubscriberOptions } from "./event/subscriber-options";
 import { DecoratorsStore } from "./decorators-store";
+import { DeletedIndicator } from "./columns/deleted-indicator";
 
 export {
    Entity,
    Column,
-   PrimaryColumn,
+   PrimaryKeyColumn,
    ManyToOne,
    OneToMany,
    OneToOne,
    CreatedAtColumn,
    UpdatedAtColumn,
    DeletedAtColumn,
+   DeletedIndicator,
    Unique,
    Index,
    EventsSubscriber,

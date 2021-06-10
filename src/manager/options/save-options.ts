@@ -1,9 +1,10 @@
-import { Connection } from "../../connection";
 import { ForeignKeyMetadata } from "../../metadata";
-import { QueryRunner } from "../../connection";
+import { QueryRunner } from "../../query-runner";
+import { EntitySubscriberInterface } from "../../metadata/event";
 
-export class SaveOptions {
-   queryRunner?: QueryRunner | Connection;
+export class SaveOptions<T = any> {
+   queryRunner?: QueryRunner;
    relation?: ForeignKeyMetadata;
    requester?: any;
+   subscriber?: EntitySubscriberInterface<T>;
 }

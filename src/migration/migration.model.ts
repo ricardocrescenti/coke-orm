@@ -1,11 +1,11 @@
-import { Column, PrimaryColumn, Entity } from "../decorators";
+import { Column, PrimaryKeyColumn, Entity } from "../decorators";
 import { Generate } from "../metadata";
 import { CokeModel } from "../manager";
 
 @Entity()
 export class MigrationModel extends CokeModel {
 
-    @PrimaryColumn({ 
+    @PrimaryKeyColumn({ 
         default: new Generate({ strategy: 'sequence' }) 
     })
     public id?: bigint;

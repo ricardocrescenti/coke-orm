@@ -1,5 +1,6 @@
-import { Connection, QueryRunner } from "../../connection";
+import { Connection } from "../../connection";
 import { EntityManager } from "../../manager";
+import { QueryRunner } from "../../query-runner";
 
 /**
  * RemoveEvent is an object that broadcaster sends to the entity subscriber when entity is being removed to the database.

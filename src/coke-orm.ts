@@ -1,8 +1,7 @@
-const path = require('path');
-const fs = require('fs');
 import { Connection, ConnectionOptions } from "./connection";
 import { SimpleMap } from  "./common";
-import { ConfigFileNotFoundError, ConnectionAlreadyExistsError, ConnectionNameNotFoundError } from "./errors";
+import { ConnectionAlreadyExistsError } from "./errors";
+import { OrmUtils } from "./utils";
 
 export class CokeORM {
 
@@ -28,7 +27,7 @@ export class CokeORM {
       /// located in the root folder
       if (!connectionOptions) {
 
-         connectionOptions = this.loadConfigFile();
+         connectionOptions = OrmUtils.loadConfigFile();
       
       } else {
 
@@ -63,53 +62,25 @@ export class CokeORM {
    /**
     * 
     * @param connectionName 
-    * @returns 
     */
-   public static loadConfigFile(connectionName?: string): ConnectionOptions[] {
-      const configFileName = 'coke-orm.config.json';
-      
-      /// mount the configuration file path
-      let configFilePath = path.join(process.cwd(), configFileName);
-      if (!fs.existsSync(configFilePath)) {         
-         throw new ConfigFileNotFoundError();
+   public static hasConnection(connectionName: string) {
+      if (this.connections[connectionName]) {
+         return true;
       }
-      
-      /// load the configuration file
-      let connectionsOptions = require(configFilePath);
-      
-      /// standardize the configuration to be an array of configurations
-      if (!Array.isArray(connectionsOptions)) {
-         connectionsOptions = [connectionsOptions];
-      }
-
-      /// 
-      for (let i = 0; i < connectionsOptions.length; i++) {
-         connectionsOptions[i] = new ConnectionOptions(connectionsOptions[i]);
-      }
-
-      /// if the name of the connection is entered in the method parameter, this 
-      /// connection will be attempted, if it does not exist, an error will be 
-      /// thrown
-      if (connectionName) {
-         connectionsOptions = connectionsOptions.filter((configFile: ConnectionOptions) => (configFile.name ?? 'default') == connectionName);
-         if (!connectionsOptions) {
-            throw new ConnectionNameNotFoundError(connectionName);
-         }
-      }
-
-      return connectionsOptions;
+      return false;
    }
 
    /**
     * 
     * @param connectionName 
     */
-   public static get(connectionName?: string): Connection {
-      if (CokeORM.connections[connectionName ?? 'default'] == null) {
+   public static getConnection(connectionName?: string): Connection {
+      const connection: Connection = CokeORM.connections[connectionName ?? 'default'];
+      if (!connection) {
          throw Error(`A conexão '${connectionName}' já existe`);
       }
 
-      return CokeORM.connections[connectionName ?? 'default'];
+      return connection;
    }
 }
 

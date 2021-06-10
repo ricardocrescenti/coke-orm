@@ -43,7 +43,7 @@ export class QueryManager<T> {
 
    public orderBy?: QueryOrder<T>;
 
-   public take?: number;
+   public skip?: number;
 
    public limit?: number;
 
@@ -314,14 +314,14 @@ export class QueryManager<T> {
 
    }
 
-   /// TAKE
+   /// SKIP
 
-   public hasTake(): boolean {
-      return (this.take ?? 0) > 0;
+   public hasSkip(): boolean {
+      return (this.skip ?? 0) > 0;
    }
-   public mountTakeExpression(): string {
-      if (this.hasTake()) {
-         return `take ${this.take}`;
+   public mountSkipExpression(): string {
+      if (this.hasSkip()) {
+         return `OFFSET ${this.skip}`;
       }
       return '';
    }
@@ -333,7 +333,7 @@ export class QueryManager<T> {
    }
    public mountLimitExpression(): string {
       if (this.hasLimit()) {
-         return `limit ${this.limit}`;
+         return `LIMIT ${this.limit}`;
       }
       return '';
    }

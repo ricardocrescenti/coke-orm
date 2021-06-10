@@ -1,6 +1,6 @@
 import { Connection } from "../../../connection";
 import { Column, ManyToOne, OneToMany, Entity } from "../../../decorators";
-import { QueryRunner } from "../../../connection";
+import { QueryRunner } from "../../../query-runner";
 import { FileModel } from "../file/file.model";
 import { PatternModel } from "../pattern.model";
 import { EntityAddressModel } from "./entity-address.model";
@@ -47,7 +47,7 @@ export class EntityModel extends PatternModel {
 		super(object);
 	}
 
-	public async loadPrimaryKey(queryRunner: QueryRunner | Connection, requester: any = null): Promise<boolean> {
+	public async loadPrimaryKey(queryRunner: QueryRunner, requester: any = null): Promise<boolean> {
 
 		if (requester) {
 			await requester.loadPrimaryKey(queryRunner, requester);
@@ -57,12 +57,12 @@ export class EntityModel extends PatternModel {
 
 	}
 
-	private async loadReferenceByParent(queryRunner: QueryRunner | Connection, teste: any, parent: PatternModel): Promise<boolean> {
+	private async loadReferenceByParent(queryRunner: QueryRunner, teste: any, parent: PatternModel): Promise<boolean> {
 		
 		if (parent?.id) {
 			const result = await queryRunner.query(`
 				select e.id, e.uuid
-				from ${queryRunner.getEntityManager(parent.constructor.name).entityMetadata.name} p
+				from ${queryRunner.connection.getEntityManager(parent.constructor.name).metadata.name} p
 				inner join entities e on (e.id = p.entity_id)
 				where p.id = ${parent.id}
 			`);

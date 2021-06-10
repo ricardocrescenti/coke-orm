@@ -1,11 +1,11 @@
-import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryColumn, Unique, UpdatedAtColumn } from "../../decorators";
+import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryKeyColumn, Unique, UpdatedAtColumn } from "../../decorators";
 import { Generate } from "../../metadata";
 import { CokeModel } from "../../manager";
 
 @Unique({ columns: ['uuid'] })
 export abstract class PatternModel extends CokeModel {
 
-   @PrimaryColumn({ 
+   @PrimaryKeyColumn({ 
       default: new Generate({ strategy: 'sequence' })
    })
    public id?: bigint;

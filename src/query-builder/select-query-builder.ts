@@ -22,7 +22,7 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this;
    }   
 
-   public join(type: JoinType, table: string, alias: string, condition: ''): this;
+   public join(type: JoinType, table: string, alias: string, condition?: string): this;
    public join(join: QueryRelationBuilder<T>): this;
    public join(join: QueryRelationBuilder<T>[]): this;
    public join(join: JoinType | QueryRelationBuilder<T> | QueryRelationBuilder<T>[], table?: string, alias?: string, condition?: ''): this {
@@ -66,8 +66,8 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       return this
    }
 
-   public take(take?: number): this {
-      this.queryManager.take = take;
+   public skip(take?: number): this {
+      this.queryManager.skip = take;
       return this;
    }
 
@@ -91,8 +91,8 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       expressions.push(indentation + this.queryManager.mountWhereExpression(mainQueryManager))
       expressions.push(indentation + this.queryManager.mountGroupByExpression(mainQueryManager))
       expressions.push(indentation + this.queryManager.mountOrderByExpression(mainQueryManager));
-      expressions.push(indentation + this.queryManager.mountTakeExpression());
       expressions.push(indentation + this.queryManager.mountLimitExpression());
+      expressions.push(indentation + this.queryManager.mountSkipExpression());
 
       const sql = expressions.filter(expression => (expression ?? '').trim().length > 0).join('\n');
       return sql;

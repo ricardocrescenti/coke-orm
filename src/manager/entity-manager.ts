@@ -6,33 +6,34 @@ import { FindOptions } from "./options/find-options";
 import { QueryRelationBuilder, QueryColumnBuilder, QueryDatabaseColumnBuilder, QueryJsonAggColumnBuilder, QueryJsonColumnBuilder, QueryWhereColumnBuilder, QueryAggregateColumnBuilder } from "../query-builder";
 import { FindSelect } from "./types/find-select";
 import { EntityValues } from "./types/entity-values";
-import { CokeModel } from "./coke-model";
 import { SaveOptions } from "./options/save-options";
 import { StringUtils } from "../utils";
 import { OrmUtils } from "../utils";
-import { QueryRunner } from "../connection";
+import { QueryRunner } from "../query-runner";
 import { ColumnMetadataNotLocatedError, DuplicateColumnInQuery } from "../errors";
+import { CokeORM } from "../coke-orm";
+import { DeleteOptions } from "./options/delete-options";
 
-export class EntityManager<T> {
+export class EntityManager<T = any> {
 
    /**
     * 
     */
    public get connection(): Connection {
-      return this.entityMetadata.connection;
+      return this.metadata.connection;
    }
 
    /**
     * 
     */
-   public readonly entityMetadata: EntityMetadata;
+   public readonly metadata: EntityMetadata;
 
    /**
     * 
     * @param entityMetadata
     */
    constructor(entityMetadata: EntityMetadata) {
-      this.entityMetadata = entityMetadata;
+      this.metadata = entityMetadata;
    }
 
    /**
@@ -45,7 +46,7 @@ export class EntityManager<T> {
          return null;
       }
 
-      const object: T = new (this.entityMetadata.target)();
+      const object: T = new (this.metadata.target)();
       if (values) {
          this.populate(object, values);
       }
@@ -65,7 +66,7 @@ export class EntityManager<T> {
       /// get only the entity columns that are in the values object to be 
       /// populated in the main object
 
-      const columnsMetadata: ColumnMetadata[] = Object.values(this.entityMetadata.columns).filter(columnMetadata => objectKeys.indexOf(columnMetadata.propertyName) >= 0);
+      const columnsMetadata: ColumnMetadata[] = Object.values(this.metadata.columns).filter(columnMetadata => objectKeys.indexOf(columnMetadata.propertyName) >= 0);
 
       /// load the values into the main object
       for (const columnMetadata of columnsMetadata) {
@@ -92,7 +93,7 @@ export class EntityManager<T> {
     * @param findOptions 
     * @returns 
     */
-   public async findOne(findOptions: FindOptions<T>, queryRunner?: QueryRunner | Connection, runEventAfterLoad = true): Promise<T> {
+   public async findOne(findOptions: FindOptions<T>, queryRunner?: QueryRunner, runEventAfterLoad = true): Promise<T> {
       
       const [result]: any = await this.find({ 
          ...findOptions,
@@ -108,7 +109,7 @@ export class EntityManager<T> {
     * @param findOptions 
     * @returns 
     */
-   public async find(findOptions?: FindOptions<T>, queryRunner?: QueryRunner | Connection, runEventAfterLoad = true): Promise<T[]> {
+   public async find(findOptions?: FindOptions<T>, queryRunner?: QueryRunner, runEventAfterLoad = true): Promise<T[]> {
 
       /// create the query
       const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions, 0);
@@ -145,18 +146,99 @@ export class EntityManager<T> {
    /**
     * 
     */
-   public async save(object: EntityValues<T>, saveOptions?: SaveOptions): Promise<any> {
-      const objectToSave: CokeModel = this.create(object);
-      return objectToSave.save(saveOptions?.queryRunner ?? this.connection, saveOptions);
+   public async save(object: EntityValues<T>, saveOptions?: SaveOptions): Promise<any>;
+   /**
+    * 
+    */
+   public async save(objects: EntityValues<T>[], saveOptions?: SaveOptions): Promise<any[]>;
+   /**
+    * 
+    */
+   public async save(objects: EntityValues<T> | EntityValues<T>[], saveOptions?: SaveOptions): Promise<any> {
+
+      if (!Array.isArray(objects)) {
+         objects = [objects];
+      }
+
+      let queryRunner: QueryRunner = saveOptions?.queryRunner ?? CokeORM.getConnection('default').queryRunner;      
+      let savedObjects;
+      
+      if (queryRunner.inTransaction) {
+         savedObjects = await this.performSave((Array.isArray(objects) ? objects : [objects]), { ...saveOptions, queryRunner });
+      } else {
+         savedObjects = await queryRunner.connection.transaction((queryRunner) => this.performSave((Array.isArray(objects) ? objects : [objects]), { ...saveOptions, queryRunner }));
+      }
+
+      return (Array.isArray(objects) ? savedObjects : savedObjects[0]);
+      
+   }
+
+   /**
+    * 
+    * @param objectToSave 
+    * @param saveOptions 
+    * @returns 
+    */
+   private async performSave(objectToSave: EntityValues<T>[], saveOptions: SaveOptions): Promise<any[]> {
+      
+      const savedObjects: any[] = [];
+      for (let object of objectToSave) {
+         object = this.create(object);
+         savedObjects.push(await (object as any).save(saveOptions.queryRunner));
+      }
+      return savedObjects;
+
    }
 
    /**
     * 
     * @param queryRunner 
     */
-   public async delete(object: any, queryRunner?: QueryRunner | Connection): Promise<boolean> {
-      const objectToDelete: CokeModel = this.create(object);
-      return objectToDelete.delete(queryRunner ?? this.connection);
+    public async delete(object: any, deleteOptions?: DeleteOptions): Promise<boolean>;
+   /**
+    *
+    * @param queryRunner 
+    */
+   public async delete(objects: any[], deleteOptions?: DeleteOptions): Promise<boolean>;
+   /**
+    * 
+    * @param queryRunner 
+    */
+   public async delete(objects: any | any[], deleteOptions?: DeleteOptions): Promise<boolean> {
+
+      if (!Array.isArray(objects)) {
+         objects = [objects];
+      }
+
+      let queryRunner: QueryRunner = deleteOptions?.queryRunner ?? CokeORM.getConnection('default').queryRunner;
+      let deletedObjects;
+
+      if (queryRunner.inTransaction) {
+         deletedObjects = await this.performDelete((Array.isArray(objects) ? objects : [objects]), { ...deleteOptions, queryRunner });
+      } else {
+         deletedObjects = await queryRunner.connection.transaction((queryRunner) => this.performDelete((Array.isArray(objects) ? objects : [objects]), { ...deleteOptions, queryRunner }));
+      }
+
+      return (Array.isArray(objects) ? deletedObjects : deletedObjects[0]);
+   }
+
+   /**
+    * 
+    * @param objectToDelete 
+    * @param queryRunner 
+    * @returns 
+    */
+   private async performDelete(objectToDelete: EntityValues<T>[], deleteOptions: DeleteOptions): Promise<any[]> {
+      
+      const deletedObjects: any[] = [];
+      for (let object of objectToDelete) {
+         object = this.create(object);
+         if (await (object as any).delete(deleteOptions.queryRunner)) {
+            deletedObjects.push(object);
+         }
+      }
+      return deletedObjects;
+
    }
 
    /**
@@ -169,7 +251,7 @@ export class EntityManager<T> {
       /// create a copy of findOptions to not modify the original and help to 
       /// copy it with the standard data needed to find the records
       findOptions = new FindOptions(findOptions);
-      FindOptions.loadDefaultOrderBy(this.entityMetadata, findOptions);
+      FindOptions.loadDefaultOrderBy(this.metadata, findOptions);
 
       /// obtain the list of columns to be consulted in the main entity (if the 
       /// list of columns is not informed in the find options, all columns that 
@@ -187,7 +269,7 @@ export class EntityManager<T> {
 
       /// if the entity has a column with 'DeletedAt' operation, a filter will be 
       /// added to 'findOptions.where' so as not to get the deleted rows
-      const deletedAtColumnMetadata: ColumnMetadata | null = this.entityMetadata.getDeletedAtColumn();
+      const deletedAtColumnMetadata: ColumnMetadata | null = this.metadata.getDeletedAtColumn();
       if (deletedAtColumnMetadata) {
          
          if (!findOptions.where) {
@@ -213,14 +295,14 @@ export class EntityManager<T> {
       }
 
       /// create the query to get the data
-      const query: SelectQueryBuilder<T> = this.connection.createSelectQuery<T>(this.entityMetadata)
+      const query: SelectQueryBuilder<T> = this.connection.createSelectQuery<T>(this.metadata)
          .level(level ?? 0)
          .select(queryColumns)
          .join(queryJoins)
          //.virtualDeletionColumn(this.entityMetadata.getDeletedAtColumn()?.name)
          .where(findOptions.where)
          .orderBy(findOptions.orderBy)
-         .take(findOptions.take)
+         .skip(findOptions.skip)
          .limit(findOptions.limit)
 
       if ((level ?? 0) > 0) {
@@ -236,7 +318,7 @@ export class EntityManager<T> {
     * @returns 
     */
    public createInsertQuery(): InsertQueryBuilder<T> {
-      return this.connection.createInsertQuery<T>(this.entityMetadata);
+      return this.connection.createInsertQuery<T>(this.metadata);
    }
 
    /**
@@ -244,7 +326,7 @@ export class EntityManager<T> {
     * @returns 
     */
    public createUpdateQuery() : UpdateQueryBuilder<T> {
-      const query: UpdateQueryBuilder<T> = this.connection.createUpdateQuery<T>(this.entityMetadata)
+      const query: UpdateQueryBuilder<T> = this.connection.createUpdateQuery<T>(this.metadata)
          //.virtualDeletionColumn(this.entityMetadata.getDeletedAtColumn()?.name);
       return query;      
    }
@@ -254,7 +336,7 @@ export class EntityManager<T> {
     * @returns 
     */
    public createDeleteQuery(): DeleteQueryBuilder<T> {
-      const query: DeleteQueryBuilder<T> = this.connection.createDeleteQuery<T>(this.entityMetadata)
+      const query: DeleteQueryBuilder<T> = this.connection.createDeleteQuery<T>(this.metadata)
          //.virtualDeletionColumn(this.entityMetadata.getDeletedAtColumn()?.name);
       return query;
    }
@@ -273,7 +355,7 @@ export class EntityManager<T> {
       /// in the parameter `relations`.
       if (!findOptions.select || findOptions.select.length == 0) 
       {
-         findOptions.select = Object.values(this.entityMetadata.columns)
+         findOptions.select = Object.values(this.metadata.columns)
             .filter(column => column.canSelect && (!column.relation || (column.relation.eager || (findOptions.relations ?? []).indexOf(column.propertyName) >= 0)))
             .map(column => column.propertyName);
       }
@@ -284,10 +366,10 @@ export class EntityManager<T> {
       for (const columnStructure of findOptions.select) {
 
          const columnData: [string, FindSelect] = (typeof columnStructure == 'string' ? [columnStructure, []] : columnStructure) as [string, FindSelect];         
-         const columnMetadata: ColumnMetadata = this.entityMetadata.columns[columnData[0]];
+         const columnMetadata: ColumnMetadata = this.metadata.columns[columnData[0]];
 
          if (!columnMetadata) {
-            throw new ColumnMetadataNotLocatedError(this.entityMetadata.className, columnData[0]);
+            throw new ColumnMetadataNotLocatedError(this.metadata.className, columnData[0]);
          }
 
          if (queryColumns[columnData[0]]) {
@@ -307,7 +389,7 @@ export class EntityManager<T> {
 
             if (columnMetadata.relation.type == 'OneToMany') {
 
-               const referencedColumn: ColumnMetadata = relationEntityManager.entityMetadata.columns[columnMetadata.relation.referencedColumn];
+               const referencedColumn: ColumnMetadata = relationEntityManager.metadata.columns[columnMetadata.relation.referencedColumn];
                const relationQuery: SelectQueryBuilder<any> = this.createChildSubquery(columnMetadata, columnData, relationEntityManager, findOptions, level + 1);
 
                queryColumns[columnData[0]] = new QueryDatabaseColumnBuilder({
@@ -318,7 +400,7 @@ export class EntityManager<T> {
                      type: 'left',
                      table: relationQuery,
                      alias: relationAlias,
-                     condition: `"${relationAlias}"."${referencedColumn.propertyName}" = "${this.entityMetadata.className}"."${referencedColumn.relation?.referencedColumn}"`
+                     condition: `"${relationAlias}"."${referencedColumn.propertyName}" = "${this.metadata.className}"."${referencedColumn.relation?.referencedColumn}"`
                   }),
                });
 
@@ -334,7 +416,7 @@ export class EntityManager<T> {
                      type: ((findOptions.where as any ?? {})[columnMetadata.propertyName] ? 'inner' : 'left'),
                      table: relationQuery,
                      alias: relationAlias,
-                     condition: `"${relationAlias}"."${columnMetadata.relation.referencedColumn}" = "${this.entityMetadata.className}"."${columnMetadata.name}"`
+                     condition: `"${relationAlias}"."${columnMetadata.relation.referencedColumn}" = "${this.metadata.className}"."${columnMetadata.name}"`
                   }),
                });
 
@@ -343,7 +425,7 @@ export class EntityManager<T> {
          } else {
 
             queryColumns[columnData[0]] = new QueryDatabaseColumnBuilder({
-               table: this.entityMetadata.className,
+               table: this.metadata.className,
                column: columnMetadata.propertyName,
                alias: columnMetadata.propertyName
             });
@@ -440,9 +522,9 @@ export class EntityManager<T> {
 
       relationQuery.select([
          new QueryDatabaseColumnBuilder({
-            table: relationEntityManager.entityMetadata.className,
-            column: relationEntityManager.entityMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string,
-            alias: relationEntityManager.entityMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string
+            table: relationEntityManager.metadata.className,
+            column: relationEntityManager.metadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string,
+            alias: relationEntityManager.metadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string
          }),
          new QueryJsonAggColumnBuilder({
             jsonColumn: new QueryJsonColumnBuilder({
@@ -466,9 +548,9 @@ export class EntityManager<T> {
       ]);
 
       relationQuery.groupBy(new QueryDatabaseColumnBuilder({
-         table: relationEntityManager.entityMetadata.className,
-         column: relationEntityManager.entityMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName,
-         alias: relationEntityManager.entityMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName
+         table: relationEntityManager.metadata.className,
+         column: relationEntityManager.metadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName,
+         alias: relationEntityManager.metadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName
       }));
 
       /// remove o order by pois ele foi adicionado dentro do SelectJsonAgg
@@ -491,9 +573,9 @@ export class EntityManager<T> {
 
       relationQuery.select([
          new QueryDatabaseColumnBuilder({
-            table: relationEntityManager.entityMetadata.className,
+            table: relationEntityManager.metadata.className,
             column: columnMetadata.relation?.referencedColumn as string,
-            alias: relationEntityManager.entityMetadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName
+            alias: relationEntityManager.metadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName
          }),
          new QueryJsonColumnBuilder({
             jsonColumns: (relationQuery.queryManager.columns as QueryColumnBuilder<any>[]).filter((column) => !(column instanceof QueryWhereColumnBuilder)),
@@ -548,7 +630,7 @@ export class EntityManager<T> {
             return undefined;
          }
 
-         const columnMetadata: ColumnMetadata = this.entityMetadata.columns[column];
+         const columnMetadata: ColumnMetadata = this.metadata.columns[column];
          if (!columnMetadata) {
             throw Error('Coluna inválida para criação do Where')
          }
@@ -572,8 +654,8 @@ export class EntityManager<T> {
     * Create the entity-related subscriber to run the events
     */
    public createEntitySubscriber(): EntitySubscriberInterface<T> | undefined {
-      if (this.entityMetadata.subscriber) {
-         return new (this.entityMetadata.subscriber)();
+      if (this.metadata.subscriber) {
+         return new (this.metadata.subscriber)();
       }
       return undefined;
    }

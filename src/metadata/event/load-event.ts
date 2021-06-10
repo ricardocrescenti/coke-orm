@@ -1,5 +1,6 @@
-import { Connection, QueryRunner } from "../../connection";
+import { Connection } from "../../connection";
 import { FindOptions, EntityManager } from "../../manager";
+import { QueryRunner } from "../../query-runner";
 
 /**
  * LoadEvent is an object that broadcaster sends to the entity subscriber when an entity is loaded from the database.

@@ -2,7 +2,7 @@ import { ColumnMetadataNotLocatedError } from "./column_metadata_not_located.err
 import { ConfigFileNotFoundError } from "./config-file-not-found.error";
 import { ConnectionAlreadyConnectedError } from "./connection-already-connected.error";
 import { ConnectionAlreadyExistsError } from "./connection-already-exists.error";
-import { ConnectionNameNotFoundError } from "./connection-name-not-found.error";
+import { ConnectionNameDoesNotExistError } from "./connection-name-does-not-exist.error";
 import { DuplicateColumnInQuery } from "./duplicate_column_in_query.error";
 import { EntityHasNoPrimaryKeyError } from "./entity-has-no-primary-key.error";
 import { EntityMetadataNotLocatedError } from "./entity_metadata_not_located.error";
@@ -22,7 +22,7 @@ export {
    ConfigFileNotFoundError,
    ConnectionAlreadyConnectedError,
    ConnectionAlreadyExistsError,
-   ConnectionNameNotFoundError,
+   ConnectionNameDoesNotExistError,
    EntityMetadataNotLocatedError,
    EntityHasNoPrimaryKeyError,
    DuplicateColumnInQuery,

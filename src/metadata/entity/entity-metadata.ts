@@ -60,6 +60,11 @@ export class EntityMetadata extends EntityOptions {
    /**
     * 
     */
+   private deletedIndicatorColumn?: ColumnMetadata | null;
+
+   /**
+    * 
+    */
    private columnsThatCannotBeInserted?: ColumnMetadata[];
 
    /**
@@ -71,7 +76,7 @@ export class EntityMetadata extends EntityOptions {
     * 
     * @param options 
     */
-   constructor(options: Omit<EntityMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
+   constructor(options: Omit<EntityMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getDeletedIndicatorColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
       super(options);
       this.connection = options.connection;
       this.subscriber = options.subscriber;
@@ -110,6 +115,16 @@ export class EntityMetadata extends EntityOptions {
          this.deletedAtColumn = Object.values(this.columns).find(columnMetadata => columnMetadata.operation == 'DeletedAt') ?? null;
       }
       return this.deletedAtColumn;
+   }
+
+   /**
+    * 
+    */
+   public getDeletedIndicatorColumn(): ColumnMetadata | null {
+      if (this.deletedIndicatorColumn === undefined) {
+         this.deletedIndicatorColumn = Object.values(this.columns).find(columnMetadata => columnMetadata.operation == 'DeletedIndicator') ?? null;
+      }
+      return this.deletedIndicatorColumn;
    }
 
    /**

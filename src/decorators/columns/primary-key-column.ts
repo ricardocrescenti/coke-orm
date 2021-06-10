@@ -1,7 +1,7 @@
 import { ColumnOptions } from "../../metadata";
 import { DecoratorsStore } from "../decorators-store";
 
-export function PrimaryColumn(options?: Omit<ColumnOptions<any>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'primary' | 'nullable' | 'operation'>): PropertyDecorator {
+export function PrimaryKeyColumn(options?: Omit<ColumnOptions<any>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'primary' | 'nullable' | 'operation'>): PropertyDecorator {
 	return function (target: any, propertyKey: any) {
 
 		const column: ColumnOptions = new ColumnOptions({

@@ -16,7 +16,7 @@ export async function test() {
 
    let city: CityModel;
 
-   city = await connection.findOne(CityModel, {
+   city = await connection.getEntityManager(CityModel).findOne({
       where: { id: 1 }
    });
 
@@ -27,10 +27,10 @@ export async function test() {
       country: 'BRA'
    });
 
-   await city.loadPrimaryKey(connection);
+   await city.loadPrimaryKey(connection.queryRunner);
    console.log('loadPrimaryKey', city);
 
-   const cities = await connection.find(CityModel, {
+   const cities = await connection.getEntityManager(CityModel).find({
       where: [
          {
             name: { equal: 'Guaporé' },
@@ -66,7 +66,7 @@ export async function test() {
       state: 'RS',
       country: 'BRA'
    });
-   await city.save(connection);
+   await city.save();
 
    city = await connection.getEntityManager(CityModel).create({
       name: 'Guaporé 2',
@@ -74,7 +74,7 @@ export async function test() {
       state: 'RS',
       country: 'BRA'
    });
-   await city.save(connection);
+   await city.save();
 
    city = await connection.getEntityManager(CityModel).create({
       name: 'Guaporé 3',
@@ -82,8 +82,8 @@ export async function test() {
       state: 'RS',
       country: 'BRA'
    });
-   await city.save(connection);
-   await city.delete(connection);
+   await city.save();
+   await city.delete();
 
    const sellerEntityManager = connection.getEntityManager(SellerModel);
    let seller: SellerModel = sellerEntityManager.create({
@@ -125,7 +125,7 @@ export async function test() {
       comission: 10,
       status: Status.active
    });
-   await seller.save(connection);
+   await seller.save();
    seller = sellerEntityManager.create({
       uuid: '1fecca37-3d8c-4ff7-8df6-cf7b496b6bcb',
       entity: {
@@ -177,7 +177,7 @@ export async function test() {
       },
       comission: 10,
    });
-   await seller.save(connection);
+   await seller.save();
    await sellerEntityManager.save(seller);
 
    seller.entity?.addresses?.push(connection.getEntityManager(EntityAddressModel).create({
@@ -207,13 +207,13 @@ export async function test() {
       }
    }));
 
-   await seller.save(connection);
+   await seller.save();
    seller.entity?.addresses?.splice(1, 1);
    seller.entity?.addresses?.splice(1, 1);
    seller.status = Status.inactive;
-   await seller.save(connection);
+   await seller.save();
   
-   const sellers = await connection.find(SellerModel, {
+   const sellers = await connection.getEntityManager(SellerModel).find({
       select: [
          'id',
          ['entity', [

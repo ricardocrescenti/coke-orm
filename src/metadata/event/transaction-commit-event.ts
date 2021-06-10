@@ -1,5 +1,6 @@
-import { Connection, QueryRunner } from "../../connection";
+import { Connection } from "../../connection";
 import { EntityManager } from "../../manager";
+import { QueryRunner } from "../../query-runner";
 
 /**
  * TransactionCommitEvent is an object that broadcaster sends to the entity subscriber when an transaction is committed.

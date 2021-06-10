@@ -1,5 +1,5 @@
-import { EntityReferenceParameter } from ".";
-import { Connection } from ".";
+import { EntityReferenceParameter } from "../connection";
+import { Connection } from "../connection";
 import { EntityManager } from "../manager";
 
 export class QueryRunner {
@@ -57,32 +57,31 @@ export class QueryRunner {
     * 
     * @param connection 
     */
-   private constructor(connection: Connection) {
+   public constructor(connection: Connection) {
       this.connection = connection;
+      connection.activeQueryRunners.push(this);
    }
 
    /**
     * 
     */
    private async initializeClient() {
-      this._client = await this.connection.driver.getClient();
-   }
-
-   /**
-    * 
-    * @param entity 
-    * @returns 
-    */
-   public getEntityManager<T>(entity: EntityReferenceParameter<T>): EntityManager<T> {
-      return this.connection.getEntityManager<T>(entity);
+      if (!this._client) {
+         this._client = await this.connection.driver.getClient();
+         this._isReleased = false;
+      }
    }
 
    /**
     * 
     */
    public async beginTransaction(): Promise<void> {
+     
+      await this.initializeClient();
       await this.connection.driver.beginTransaction(this.client);
+      
       this._inTransaction = true;
+
    }
 
    /**
@@ -93,6 +92,7 @@ export class QueryRunner {
       await this.performEvents(this.beforeTransactionCommit);
       await this.connection.driver.commitTransaction(this.client);
       await this.performEvents(this.afterTransactionCommit);
+      await this.release();
 
       this._inTransaction = false;
 
@@ -106,6 +106,7 @@ export class QueryRunner {
       await this.performEvents(this.beforeTransactionRollback);
       await this.connection.driver.rollbackTransaction(this.client);
       await this.performEvents(this.afterTransactionRollback);
+      await this.release();
 
       this._inTransaction = false;
 
@@ -118,8 +119,26 @@ export class QueryRunner {
     * @returns
     */
    public async query(query: string, params?: any[]): Promise<any> {
-      //console.info(query);
-      return this.connection.driver.executeQuery(this, query, params);
+      
+      if (!this.inTransaction) {
+         await this.initializeClient();
+      }
+
+      const result = await this.connection.driver.executeQuery(this, query, params);
+
+      if (!this.inTransaction) {
+         await this.release();
+      }
+
+      return result;
+   }
+
+   /**
+    * 
+    */
+   public async checkConnection() {
+      await this.initializeClient();
+      await this.release();
    }
 
    /**
@@ -138,6 +157,8 @@ export class QueryRunner {
       if (index >= 0) {
          this.connection.activeQueryRunners.splice(index, 1);
       }
+
+      this._client = null;
    }
 
    /**
@@ -148,18 +169,6 @@ export class QueryRunner {
       for (const event of events) {
          await event();
       }
-   }
-
-   /**
-    * 
-    * @param connection 
-    */
-   public static async create(connection: Connection): Promise<QueryRunner> {
-      const queryRunner: QueryRunner = new QueryRunner(connection);
-      await queryRunner.initializeClient();
-
-      connection.activeQueryRunners.push(queryRunner);
-      return queryRunner;
    }
 
 }

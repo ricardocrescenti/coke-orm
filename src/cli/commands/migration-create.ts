@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
 import * as yargs from "yargs";
-import { CokeORM } from "../../coke-orm";
 import { ConnectionOptions } from "../../connection";
 import { OrmUtils } from "../../utils";
 
@@ -16,7 +15,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 	};
 
 	public async handler(args: yargs.Arguments) {
-		let [connectionOptions] = CokeORM.loadConfigFile(args.connection as string);
+		let [connectionOptions] = OrmUtils.loadConfigFile(args.connection as string);
 		MigrationCreateCommand.saveMigrationFile(connectionOptions, args.name as string);
 	}
 
@@ -37,8 +36,8 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 	}
 
 	public static getTemplace(name: string, upQueries?: string[], downQueries?: string[]) {
-		return `import { MigrationInterface } from "@ricardocrescenti/coke-orm/migration";
-import { QueryRunner } from "@ricardocrescenti/coke-orm/query";
+		return `import { MigrationInterface } from "@ricardocrescenti/coke-orm/lib/migration";
+import { QueryRunner } from "@ricardocrescenti/coke-orm/lib/connection";
 
 export class ${name} implements MigrationInterface {
 

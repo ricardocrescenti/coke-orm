@@ -1,7 +1,7 @@
 import { Driver } from "../../driver";
 import { SimpleMap } from "../../../common";
 import { DefaultColumnOptions } from "../../options/default-column-options";
-import { QueryRunner } from "../../../connection";
+import { QueryRunner } from "../../../query-runner";
 import { Connection } from "../../../connection";
 import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, PrimaryKeySchema, UniqueSchema } from "../../../schema";
 import { QueryBuilderDriver } from "../../query-builder-driver";
@@ -84,7 +84,7 @@ export class PostgresDriver extends Driver {
 
       console.time('schema query');
 
-      const informationSchema = await this.connection.query(`
+      const informationSchema = await this.connection.queryRunner.query(`
          SELECT t.table_schema, t.table_name, c.columns
          FROM information_schema.tables t
          LEFT JOIN (
@@ -268,7 +268,7 @@ export class PostgresDriver extends Driver {
 
       console.time('loadExtensions');
 
-      const extensions = await this.connection.query(`
+      const extensions = await this.connection.queryRunner.query(`
          SELECT name 
          FROM pg_available_extensions
          WHERE installed_version is not null
@@ -347,7 +347,7 @@ export class PostgresDriver extends Driver {
             // check column diferences
             for (const columnName in entityMetadata.columns) {
                const columnMetadata: ColumnMetadata = entityMetadata.getColumn(columnName);
-               if (columnMetadata.relation && columnMetadata.relation.type == 'OneToMany') {
+               if (columnMetadata.operation == 'DeletedIndicator' || (columnMetadata.relation && columnMetadata.relation.type == 'OneToMany')) {
                   continue;
                }
 

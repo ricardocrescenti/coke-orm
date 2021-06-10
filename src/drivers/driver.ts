@@ -1,7 +1,7 @@
 import { SimpleMap } from "../common";
 import { Connection, ConnectionOptions } from "../connection";
 import { ColumnMetadata, ColumnOptions, ColumnOperation } from "../metadata";
-import { QueryRunner } from "../connection";
+import { QueryRunner } from "../query-runner";
 import { EntitySchema } from "../schema";
 import { DefaultColumnOptions } from "./options/default-column-options";
 import { QueryBuilderDriver } from "./query-builder-driver";

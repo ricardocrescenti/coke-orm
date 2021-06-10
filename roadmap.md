@@ -2,6 +2,12 @@
 
 ## Geral
 
+* Ajustar o uso do campo com operador 'DeletedIndicator' para não criar campo e detectar eles ao salvar para deletar
+* Testar o uso da option 'enum' das colunas
+* Adicionado a opção 'nullable' no OneToMany
+* Verificar no connection.entities se fica o nome da tabela ou do model
+* Melhor o método save, ficar o processo principal no EntityManager
+
 * **02** - [x] Nas relaçòes com filhos quando salvar, se não mandar um objeto que tinha antes, deletar ele, se tiver cascade['delete']
 * **03** - [x] Permitir inicializar o CokeORM a partir de um arquivo de configuração
 * **04** - [x] Carregar as classes de pastas

@@ -1,4 +1,4 @@
-name: Deploy GitHub Package Registry
+name: Publish to GitHub Package Registry
 
 on:
   push:

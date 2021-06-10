@@ -7,7 +7,7 @@ export class FindOptions<T> {
    relations?: string[];
    where?: QueryWhere<T> | QueryWhere<T>[];
    orderBy?: QueryOrder<T>;
-   take?: number;
+   skip?: number;
    limit?: number;
    roles?: string[];
 
@@ -17,7 +17,7 @@ export class FindOptions<T> {
          this.relations = findOptions.relations;
          this.where = findOptions.where;
          this.orderBy = findOptions.orderBy;
-         this.take = findOptions.take;
+         this.skip = findOptions.skip;
          this.limit = findOptions.limit;
          this.roles = findOptions.roles;
       }
