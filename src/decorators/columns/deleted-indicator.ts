@@ -1,4 +1,4 @@
-import { ColumnOptions, ForeignKeyOptions } from "../../metadata";
+import { ColumnOptions } from "../../metadata";
 import { DecoratorsStore } from "../decorators-store";
 
 export function DeletedIndicator(): PropertyDecorator {

@@ -12,6 +12,6 @@ export interface MigrationInterface {
     * 
     * @param queryRunner 
     */
-    down(queryRunner: QueryRunner): Promise<void>;
+    down?(queryRunner: QueryRunner): Promise<void>;
 
 }

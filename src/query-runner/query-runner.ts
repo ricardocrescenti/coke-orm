@@ -1,6 +1,5 @@
-import { EntityReferenceParameter } from "../connection";
 import { Connection } from "../connection";
-import { EntityManager } from "../manager";
+import { QueryResult } from "../query-builder";
 
 export class QueryRunner {
 
@@ -118,7 +117,7 @@ export class QueryRunner {
     * @param params 
     * @returns
     */
-   public async query(query: string, params?: any[]): Promise<any> {
+   public async query(query: string, params?: any[]): Promise<QueryResult> {
       
       if (!this.inTransaction) {
          await this.initializeClient();

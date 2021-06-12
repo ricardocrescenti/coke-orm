@@ -204,7 +204,7 @@ export class Connection {
       const entitiesToLoad: Function[] = this.loadEntities();
       entitiesToLoad.unshift(MigrationModel);
 
-      const subscribersToLoad: Function[] = this.loadSubscribers();
+      this.loadSubscribers();
 
       const entitiesOptions: EntityOptions[] = DecoratorsStore.getEntities(entitiesToLoad);
       const namingStrategy: NamingStrategy = this.options.namingStrategy as NamingStrategy;

@@ -3,7 +3,9 @@ import { EntityMetadata } from "../metadata";
 import { QueryBuilder } from "./query-builder";
 import { QueryManager } from "./query-manager";
 import { JoinType, QueryOrder, QueryTable, QueryWhere } from "./types";
-import { QueryRelationBuilder, QueryDatabaseColumnBuilder, QueryColumnBuilder } from "./column-builder";
+import { QueryRelationBuilder, QueryDatabaseColumnBuilder, QueryColumnBuilder, QueryAggregateColumnBuilder } from "./column-builder";
+import { QueryRunner } from "../query-runner";
+import { QueryResult } from "./models";
 
 export class SelectQueryBuilder<T> extends QueryBuilder<T> {
    private indentation: number = 0;
@@ -97,5 +99,28 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
       const sql = expressions.filter(expression => (expression ?? '').trim().length > 0).join('\n');
       return sql;
       
+   }
+
+   public async getCount(queryRunner?: QueryRunner): Promise<bigint> {
+      
+      this.select(new QueryAggregateColumnBuilder({
+         column: '*',
+         type: 'count',
+         alias: 'count'
+      }));
+
+      const result: QueryResult = await this.execute();
+      return result.rows[0]['count'];
+   
+   }
+
+   public async getOne(queryRunner?: QueryRunner): Promise<any> {
+      const [result] = await this.getMany();
+      return result;
+   }
+
+   public async getMany(queryRunner?: QueryRunner): Promise<any[]> {
+      const result: QueryResult = await this.execute();
+      return result.rows;
    }
 }

@@ -88,6 +88,11 @@ export class ConnectionOptions {
 
    /**
     * 
+    */
+   public readonly customOptions?: any;
+
+   /**
+    * 
     * @param options 
     */
    constructor(options: ConnectionOptions) {
@@ -107,6 +112,6 @@ export class ConnectionOptions {
       this.migrations = new MigrationOptions(options?.migrations);
       this.namingStrategy = options.namingStrategy ?? new NamingStrategy();
       this.additional = new AdditionalOptions(options.additional);
-
+      this.customOptions = options.customOptions;
    }
 }

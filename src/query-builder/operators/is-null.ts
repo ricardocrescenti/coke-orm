@@ -1,4 +1,3 @@
-import { QueryManager } from "../query-manager";
 import { Operator } from "./operator";
 
 export class IsNull extends Operator {

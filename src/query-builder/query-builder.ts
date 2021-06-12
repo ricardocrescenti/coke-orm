@@ -2,6 +2,7 @@ import { Connection } from "../connection";
 import { PostgresDriver } from "../drivers";
 import { EntityMetadata } from "../metadata";
 import { QueryRunner } from "../query-runner";
+import { QueryResult } from "./models";
 import { QueryManager } from "./query-manager";
 import { QueryTable } from "./types";
 
@@ -63,7 +64,7 @@ export abstract class QueryBuilder<T> {
     * 
     * @returns 
     */
-   public async execute(queryRunner?: QueryRunner): Promise<any> {
+   public async execute(queryRunner?: QueryRunner): Promise<QueryResult> {
       const query: string = this.getQuery();
       const params: string[] = this.getParams();
 

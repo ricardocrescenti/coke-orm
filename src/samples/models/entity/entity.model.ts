@@ -1,4 +1,3 @@
-import { Connection } from "../../../connection";
 import { Column, ManyToOne, OneToMany, Entity } from "../../../decorators";
 import { QueryRunner } from "../../../query-runner";
 import { FileModel } from "../file/file.model";

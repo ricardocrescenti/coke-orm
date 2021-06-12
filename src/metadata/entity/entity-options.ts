@@ -28,12 +28,18 @@ export class EntityOptions<T = any> {
     */
    public readonly orderBy?: QueryOrder<T>;
 
+   /**
+    * 
+    */
+   public readonly customOptions?: any;
+
    constructor(options: Omit<EntityOptions, 'inheritances'>) {
       this.target = options.target;
       this.inheritances = MetadataUtils.getInheritanceTree(options.target).reverse();
       this.className = options.target.name;
       this.name = options.name;
       this.orderBy = options.orderBy;
+      this.customOptions = options.customOptions;
    }
 
 }

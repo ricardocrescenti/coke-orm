@@ -1,4 +1,4 @@
-import { Column, CreatedAtColumn, DeletedAtColumn, PrimaryKeyColumn, Unique, UpdatedAtColumn } from "../../decorators";
+import { Column, CreatedAtColumn, PrimaryKeyColumn, Unique, UpdatedAtColumn } from "../../decorators";
 import { Generate } from "../../metadata";
 import { CokeModel } from "../../manager";
 

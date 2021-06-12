@@ -7,6 +7,7 @@ import { DefaultColumnOptions } from "./options/default-column-options";
 import { QueryBuilderDriver } from "./query-builder-driver";
 import { EntityMetadata } from "../metadata";
 import { InvalidColumnOptionError } from "../errors";
+import { QueryResult } from "../query-builder";
 
 export abstract class Driver {
 
@@ -101,7 +102,7 @@ export abstract class Driver {
     * 
     * @param query 
     */
-   public abstract executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<any>;
+   public abstract executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<QueryResult>;
 
    /**
     * 

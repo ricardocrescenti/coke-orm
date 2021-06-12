@@ -36,8 +36,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 	}
 
 	public static getTemplace(name: string, upQueries?: string[], downQueries?: string[]) {
-		return `import { MigrationInterface } from "@ricardocrescenti/coke-orm/lib/migration";
-import { QueryRunner } from "@ricardocrescenti/coke-orm/lib/connection";
+		return `import { MigrationInterface, QueryRunner } from '@ricardocrescenti/coke-orm';
 
 export class ${name} implements MigrationInterface {
 

@@ -10,6 +10,7 @@ import { ForeignKeyMetadata } from "../../../metadata";
 import { ColumnMetadata, ColumnOperation, IndexMetadata, UniqueMetadata, EntityMetadata } from "../../../metadata";
 import { InvalidColumnOptionError } from "../../../errors";
 import { Generate } from "../../../metadata";
+import { QueryResult } from "../../../query-builder";
 
 export class PostgresDriver extends Driver {
 
@@ -66,14 +67,14 @@ export class PostgresDriver extends Driver {
       await this.client.end();
    }
 
-   public async executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<any> {
+   public async executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<QueryResult> {
       return new Promise((resolve, reject) => {
          queryRunner.client.query(query, params, (error: any, result: any) => {
              
             if (error) {
                return reject(error);
             }
-            resolve(result);
+            resolve(new QueryResult(result));
 
          });
      });

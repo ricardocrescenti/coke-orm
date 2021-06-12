@@ -5,7 +5,7 @@ import { QueryManager } from '../query-manager';
 export class QueryAggregateColumnBuilder<T> extends QueryColumnBuilder<T> {
 
    public type: 'count' | 'max' | 'min' | 'sum' | 'avg';
-   public column: QueryColumnBuilder<T>;
+   public column: string | QueryColumnBuilder<T>;
    public cast?: string;
 
    constructor(select: Omit<QueryAggregateColumnBuilder<T>, 'expression' | 'getExpression' | 'getExpressionWithAlias'>) {
@@ -16,7 +16,8 @@ export class QueryAggregateColumnBuilder<T> extends QueryColumnBuilder<T> {
    }
 
    getExpression(mainQueryManager: QueryManager<any>, queryManager: QueryManager<T>, entityMetadata: EntityMetadata): string {
-      return `${this.type}(${this.column.getExpression(mainQueryManager, queryManager, entityMetadata)})${this.cast ? `::${this.cast}` : ''}`;
+      let column: string = (this.column instanceof QueryColumnBuilder ? this.column.getExpression(mainQueryManager, queryManager, entityMetadata) : this.column);
+      return `${this.type}(${column})${this.cast ? `::${this.cast}` : ''}`;
    }
 
 };

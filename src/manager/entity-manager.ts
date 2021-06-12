@@ -1,7 +1,7 @@
 import { SimpleMap } from "../common";
 import { Connection } from "../connection";
 import { ColumnMetadata, EntitySubscriberInterface, ForeignKeyMetadata, EntityMetadata } from "../metadata";
-import { DeleteQueryBuilder, InsertQueryBuilder, SelectQueryBuilder, UpdateQueryBuilder, QueryWhere } from "../query-builder";
+import { DeleteQueryBuilder, InsertQueryBuilder, SelectQueryBuilder, UpdateQueryBuilder, QueryWhere, QueryResult } from "../query-builder";
 import { FindOptions } from "./options/find-options";
 import { QueryRelationBuilder, QueryColumnBuilder, QueryDatabaseColumnBuilder, QueryJsonAggColumnBuilder, QueryJsonColumnBuilder, QueryWhereColumnBuilder, QueryAggregateColumnBuilder } from "../query-builder";
 import { FindSelect } from "./types/find-select";
@@ -115,7 +115,7 @@ export class EntityManager<T = any> {
       const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions, 0);
 
       /// run the query to get the result
-      const result = await query.execute(queryRunner);
+      const result: QueryResult = await query.execute(queryRunner);
 
       if (result.rows.length > 0) {
 

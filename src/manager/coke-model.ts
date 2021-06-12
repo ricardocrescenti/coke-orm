@@ -1,7 +1,7 @@
 import { NonExistentObjectOfRelationError } from "../errors";
 import { ColumnMetadata, ForeignKeyMetadata, EntityMetadata, UpdateEvent, InsertEvent } from "../metadata";
 import { EntitySubscriberInterface, TransactionCommitEvent, TransactionRollbackEvent } from "../metadata";
-import { DeleteQueryBuilder, InsertQueryBuilder, QueryWhere, UpdateQueryBuilder } from "../query-builder";
+import { DeleteQueryBuilder, InsertQueryBuilder, QueryResult, QueryWhere, UpdateQueryBuilder } from "../query-builder";
 import { QueryRunner } from "../query-runner";
 import { SaveOptions } from "./options/save-options";
 import { EntityManager } from "./entity-manager";
@@ -177,7 +177,7 @@ export abstract class CokeModel {
          const insertQuery: InsertQueryBuilder<this> = entityManager.createInsertQuery()
             .values(objectToSave)
             .returning(columnsToReturn);
-         const insertedObject = await insertQuery.execute(queryRunner);
+         const insertedObject: QueryResult = await insertQuery.execute(queryRunner);
 
          /// fill in the sent object to be saved the primary key of the registry
          entityManager.populate(objectToSave, insertedObject.rows[0]);
@@ -488,7 +488,7 @@ export abstract class CokeModel {
             });
          }
 
-         let deletedResult;
+         let deletedResult: QueryResult;
          if (entityManager.metadata.getDeletedAtColumn()) {
             
             const objectValue: any = {};

@@ -17,7 +17,7 @@ __exportStar(require("./lib/drivers"), exports);
 __exportStar(require("./lib/errors"), exports);
 __exportStar(require("./lib/manager"), exports);
 __exportStar(require("./lib/metadata"), exports);
-__exportStar(require("./slibrc/migration"), exports);
+__exportStar(require("./lib/migration"), exports);
 __exportStar(require("./lib/naming-strategy"), exports);
 __exportStar(require("./lib/query-builder"), exports);
 __exportStar(require("./lib/query-runner"), exports);
