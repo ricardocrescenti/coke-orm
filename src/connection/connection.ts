@@ -98,6 +98,11 @@ export class Connection {
       /// create query executor to verify that the connection was made successfully
       this.connection.queryRunner.checkConnection();
 
+      /// set timezone
+      if (this.options.timezone) {
+         this.connection.queryRunner.query(`SET TIMEZONE = '${this.options.timezone}'`);
+      }
+
       this._isConnected = true;
 
       try {
@@ -141,6 +146,7 @@ export class Connection {
             entities.push(entity);
          } else {
             
+            /// ver aqui pois retorna no entity o caminho completo
             const entityPath = path.join(OrmUtils.rootPath(this.connection.options), entity);
             const filesPath: string[] = glob.sync(entityPath);
 

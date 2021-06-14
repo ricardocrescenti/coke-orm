@@ -29,7 +29,7 @@ export class ConnectionOptions {
    /**
     * 
     */
-   public readonly port?: number;
+   public readonly port?: string | number;
 
    /**
     * 

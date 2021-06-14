@@ -3,5 +3,6 @@
 lib/samples
 src
 coke-orm.config.json
+index.ts
 roadmap.md
 tsconfig.json

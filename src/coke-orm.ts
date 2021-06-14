@@ -1,6 +1,6 @@
 import { Connection, ConnectionOptions } from "./connection";
 import { SimpleMap } from  "./common";
-import { ConnectionAlreadyExistsError } from "./errors";
+import { ConnectionAlreadyExistsError, ConnectionNameDoesNotExistError } from "./errors";
 import { OrmUtils } from "./utils";
 
 export class CokeORM {
@@ -77,7 +77,7 @@ export class CokeORM {
    public static getConnection(connectionName?: string): Connection {
       const connection: Connection = CokeORM.connections[connectionName ?? 'default'];
       if (!connection) {
-         throw Error(`A conexão '${connectionName}' já existe`);
+         throw new ConnectionNameDoesNotExistError(connectionName as string);
       }
 
       return connection;

@@ -167,7 +167,7 @@ export abstract class Driver {
             throw new InvalidColumnOptionError(`The '${column.name}' column of the '${entityMetadata.name}' entity with a 'OneToMany' type relation must be an array.`);
          }
 
-      } else {
+      } else if (column.operation != 'DeletedIndicator') {
          
          if (!column.relation) {
 

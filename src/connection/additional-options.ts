@@ -13,12 +13,12 @@ export class AdditionalOptions {
    /**
     * 
     */
-   public readonly allowNullInUniqueKeyColumn: boolean;
+   public readonly allowNullInUniqueKeyColumn?: boolean;
    
    /**
     * 
     */
-   public readonly addVirtualDeletionColumnToUniquesAndIndexes: boolean;
+   public readonly addVirtualDeletionColumnToUniquesAndIndexes?: boolean;
 
    constructor(options?: AdditionalOptions) {
       this.sourceDir = options?.sourceDir ?? 'src';

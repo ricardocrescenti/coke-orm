@@ -41,11 +41,7 @@ export class EntityManager<T = any> {
     * @param values 
     * @returns 
     */
-   public create(values?: EntityValues<T>): any {
-      if (values == null) {
-         return null;
-      }
-
+   public create(values?: EntityValues<T>): T {
       const object: T = new (this.metadata.target)();
       if (values) {
          this.populate(object, values);

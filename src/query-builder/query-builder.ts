@@ -68,6 +68,8 @@ export abstract class QueryBuilder<T> {
       const query: string = this.getQuery();
       const params: string[] = this.getParams();
 
+      console.log(query);
+      
       if (queryRunner) {
          return queryRunner.query(query, params);
       } else {
