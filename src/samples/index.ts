@@ -6,14 +6,18 @@ import { EntityAddressModel } from "./models/entity/entity-address.model";
 import { SellerModel } from "./models/entity/seller.model";
 
 export async function test() {
-
-   console.log('Connecting', new Date().toLocaleString());
   
    const connection: Connection = await CokeORM.connect();
-   
-   console.log('Connected', new Date().toLocaleString());
 
    let city: CityModel;
+
+   city = await connection.getEntityManager(CityModel).save({
+      name: 'Guaporé 99',
+      code: '4309499',
+      state: 'RS',
+      country: 'BRA'
+   });
+   await city.delete({ queryRunner: connection.queryRunner });
 
    city = await connection.getEntityManager(CityModel).findOne({
       where: { id: 1 }
@@ -65,7 +69,7 @@ export async function test() {
       state: 'RS',
       country: 'BRA'
    });
-   await city.save();
+   await city.save({ queryRunner: connection.queryRunner });
 
    city = await connection.getEntityManager(CityModel).create({
       name: 'Guaporé 2',
@@ -73,7 +77,7 @@ export async function test() {
       state: 'RS',
       country: 'BRA'
    });
-   await city.save();
+   await city.save({ queryRunner: connection.queryRunner });
 
    city = await connection.getEntityManager(CityModel).create({
       name: 'Guaporé 3',
@@ -81,8 +85,8 @@ export async function test() {
       state: 'RS',
       country: 'BRA'
    });
-   await city.save();
-   await city.delete();
+   await city.save({ queryRunner: connection.queryRunner });
+   await city.delete({ queryRunner: connection.queryRunner });
 
    const sellerEntityManager = connection.getEntityManager(SellerModel);
    let seller: SellerModel = sellerEntityManager.create({
@@ -124,7 +128,7 @@ export async function test() {
       comission: 10,
       status: Status.active
    });
-   await seller.save();
+   await seller.save({ queryRunner: connection.queryRunner });
    seller = sellerEntityManager.create({
       uuid: '1fecca37-3d8c-4ff7-8df6-cf7b496b6bcb',
       entity: {
@@ -176,7 +180,7 @@ export async function test() {
       },
       comission: 10,
    });
-   await seller.save();
+   await seller.save({ queryRunner: connection.queryRunner });
    await sellerEntityManager.save(seller);
 
    seller.entity?.addresses?.push(connection.getEntityManager(EntityAddressModel).create({
@@ -206,11 +210,11 @@ export async function test() {
       }
    }));
 
-   await seller.save();
+   await seller.save({ queryRunner: connection.queryRunner });
    seller.entity?.addresses?.splice(1, 1);
    seller.entity?.addresses?.splice(1, 1);
    seller.status = Status.inactive;
-   await seller.save();
+   await seller.save({ queryRunner: connection.queryRunner });
   
    const sellers = await connection.getEntityManager(SellerModel).find({
       select: [

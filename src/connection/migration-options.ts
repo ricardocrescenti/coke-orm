@@ -28,7 +28,7 @@ export class MigrationOptions {
    /**
     * 
     */
-   public readonly transactionMode?: 'all' | 'none' | 'each';
+   public readonly transactionMode?: 'all' | 'each' | 'none';
 
    constructor(options?: MigrationOptions) {
       this.synchronize = options?.synchronize ?? false;
@@ -36,7 +36,7 @@ export class MigrationOptions {
       this.deleteColumns = options?.deleteColumns ?? false;
       this.tableName = options?.tableName ?? 'migrations';
       this.directory = options?.directory ?? 'migrations';
-      this.transactionMode = options?.transactionMode ?? 'each';
+      this.transactionMode = options?.transactionMode ?? 'all';
    }
 
 }

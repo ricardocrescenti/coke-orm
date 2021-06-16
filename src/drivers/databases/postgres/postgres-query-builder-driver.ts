@@ -88,24 +88,24 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
          (columnMetadata.precision != null && columnMetadata.precision != columnSchema.scale)) {
 
          if (columnMetadata.type != columnSchema.type) {
-            sqls.push(`${alterTable} ${columnMetadata.name} TYPE ${this.generateColumnTypeSQL(columnMetadata)};`);
+            sqls.push(`${alterTable} "${columnMetadata.name}" TYPE ${this.generateColumnTypeSQL(columnMetadata)};`);
          }
 
       }
 
       if (columnMetadata.nullable != columnSchema.nullable) {
 
-         sqls.push(`${alterTable} COLUMN ${columnMetadata.name} ${columnMetadata.nullable ? 'DROP' : 'SET'} NOT NULL;`);
+         sqls.push(`${alterTable} COLUMN "${columnMetadata.name}" ${columnMetadata.nullable ? 'DROP' : 'SET'} NOT NULL;`);
 
       }
 
       if ((columnMetadata.default?.toString() ?? '') != columnSchema.default) {
 
          if (columnSchema.default != null && columnMetadata.default == null) {
-            sqls.push(`${alterTable} COLUMN ${columnMetadata.name} DROP DEFAULT;`);
+            sqls.push(`${alterTable} COLUMN "${columnMetadata.name}" DROP DEFAULT;`);
          }
          if (columnMetadata.default != null) {
-            sqls.push(`${alterTable} COLUMN ${columnMetadata.name} SET DEFAULT ${columnMetadata.default};`);
+            sqls.push(`${alterTable} COLUMN "${columnMetadata.name}" SET DEFAULT ${columnMetadata.default};`);
          }
 
       }

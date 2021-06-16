@@ -2,6 +2,7 @@ import { Connection, ConnectionOptions } from "./connection";
 import { SimpleMap } from  "./common";
 import { ConnectionAlreadyExistsError, ConnectionNameDoesNotExistError } from "./errors";
 import { OrmUtils } from "./utils";
+import { log } from "./log";
 
 export class CokeORM {
 
@@ -21,7 +22,7 @@ export class CokeORM {
     * @param connectionOptions 
     */
    public static async connect(connectionOptions?: ConnectionOptions | ConnectionOptions[]): Promise<Connection> {
-      
+
       /// if the configuration in the parameter is not informed, it will be 
       /// tried to load through the configuration file 'coke-orm.config.json' 
       /// located in the root folder
@@ -41,13 +42,18 @@ export class CokeORM {
       /// make the connection
       for (const options of connectionOptions) {
 
+         /// create the class with the connection options
+         const connection: Connection = new Connection(options);
+      
+         /// log the start of the connection
+         log.info(`Connecting (${connection.name})`, `connection-${connection.name}`);
+
          /// checks if a configuration with the same name already exists
          if (CokeORM.connections[options.name ?? 'default'] != null) {
             throw new ConnectionAlreadyExistsError(options.name ?? 'default');
          }
 
          /// make the connection
-         const connection: Connection = new Connection(options);
          if (await connection.connect()) {
             CokeORM.connections[options.name ?? 'default'] = connection;
          }
@@ -83,4 +89,3 @@ export class CokeORM {
       return connection;
    }
 }
-

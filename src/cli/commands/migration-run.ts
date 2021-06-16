@@ -31,6 +31,9 @@ export class MigrationRunCommand implements yargs.CommandModule {
       });
 
 		await connection.runMigrations();
+
+		await connection.disconnect();
+		process.exit();
 	}
 
 }

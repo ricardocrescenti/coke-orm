@@ -28,12 +28,14 @@ export class MigrationGenerateCommand implements yargs.CommandModule {
       });
 
       const migrations: string[] = await connection.driver.generateSQLsMigrations();
-      if (migrations.length == 0) {
+      if (migrations.length > 0) {
+         MigrationCreateCommand.saveMigrationFile(connectionOptions, args.name as string, migrations);
+      } else {
          console.info('No necessary changes were detected to be made');
-         return;
       }
-      
-      MigrationCreateCommand.saveMigrationFile(connectionOptions, args.name as string, migrations);
+
+		await connection.disconnect();
+		process.exit();
    }
 
 }

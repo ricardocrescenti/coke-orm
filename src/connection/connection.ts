@@ -16,6 +16,7 @@ import { OrmUtils } from "../utils";
 import { ConnectionOptions } from "./connection-options";
 import { EntityReferenceParameter } from "./types/entity-reference-parameter.type";
 import { CokeORM } from "../coke-orm";
+import { log } from "../log";
 
 export class Connection {
 
@@ -97,6 +98,9 @@ export class Connection {
 
       /// create query executor to verify that the connection was made successfully
       this.connection.queryRunner.checkConnection();
+
+      /// log the success of the connection
+      // log.endInfo(this.options.name as string);
 
       /// set timezone
       if (this.options.timezone) {
@@ -369,8 +373,8 @@ export class Connection {
                   if (sourceColumnMetadata.relation?.type == 'OneToOne') {
 
                      if (((sourceEntityMetadata.primaryKey?.columns?.length ?? 0) != 1 || sourceEntityMetadata.columns[sourceEntityMetadata.primaryKey?.columns[0] as string].name != sourceColumnMetadata.name) &&
-                        sourceEntityMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == sourceColumnMetadata.name).length == 0 &&
-                        sourceEntityMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == sourceColumnMetadata.name).length == 0) {
+                        sourceEntityMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == sourceColumnMetadata.propertyName).length == 0 &&
+                        sourceEntityMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == sourceColumnMetadata.propertyName).length == 0) {
 
                         const options: UniqueOptions = {
                            target: sourceEntityMetadata.target,
@@ -390,8 +394,8 @@ export class Connection {
                   }
 
                   if (((referencedEntityMetadata.primaryKey?.columns?.length ?? 0) != 1 || referencedEntityMetadata.columns[referencedEntityMetadata.primaryKey?.columns[0] as string].name != referencedColumnMetadata.name) &&
-                     referencedEntityMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == referencedColumnMetadata.name).length == 0 &&
-                     referencedEntityMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == referencedColumnMetadata.name).length == 0) {
+                     referencedEntityMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == referencedColumnMetadata.propertyName).length == 0 &&
+                     referencedEntityMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == referencedColumnMetadata.propertyName).length == 0) {
 
                      const options: UniqueOptions = {
                         target: referencedEntityMetadata.target,
@@ -551,7 +555,7 @@ export class Connection {
       const entitiesSchema: SimpleMap<EntitySchema> = await this.driver.loadSchema([migrationTableName]);
       const performedMigrations: MigrationModel[] = (entitiesSchema[migrationTableName] != null ? await this.getEntityManager(MigrationModel).find() : []);
 
-      const migrationsPath = path.join(OrmUtils.rootPath(this.connection.options), this.options.migrations?.directory, '*.js');
+      const migrationsPath = path.join(OrmUtils.rootPath(this.connection.options), this.options.migrations?.directory);
       const filesPath: string[] = glob.sync(migrationsPath);
 
       for (const filePath of filesPath) {

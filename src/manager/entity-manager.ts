@@ -10,9 +10,9 @@ import { SaveOptions } from "./options/save-options";
 import { StringUtils } from "../utils";
 import { OrmUtils } from "../utils";
 import { QueryRunner } from "../query-runner";
-import { ColumnMetadataNotLocatedError, DuplicateColumnInQuery } from "../errors";
-import { CokeORM } from "../coke-orm";
+import { ColumnMetadataNotLocatedError, DuplicateColumnInQuery, InvalidEntityPropertyValueError } from "../errors";
 import { DeleteOptions } from "./options/delete-options";
+import { CokeModel } from "./coke-model";
 
 export class EntityManager<T = any> {
 
@@ -70,8 +70,10 @@ export class EntityManager<T = any> {
          if (columnMetadata.relation) {
 
             const relationEntityManager: EntityManager<any> = this.connection.getEntityManager(columnMetadata.relation.referencedEntity);
-            
             if (columnMetadata.relation.type == 'OneToMany') {
+               if (!Array.isArray(values[columnMetadata.propertyName])) {
+                  throw new InvalidEntityPropertyValueError(`The value of the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not an array`)
+               }
                object[columnMetadata.propertyName] = values[columnMetadata.propertyName].map((value: any) => relationEntityManager.create(value));
             } else {
                object[columnMetadata.propertyName] = relationEntityManager.create(values[columnMetadata.propertyName]);
@@ -79,6 +81,18 @@ export class EntityManager<T = any> {
 
          } else {
             object[columnMetadata.propertyName] = values[columnMetadata.propertyName];
+         }
+
+         if (columnMetadata.enum && object[columnMetadata.propertyName] != null) {
+
+            if (typeof object[columnMetadata.propertyName] == 'string') {
+               object[columnMetadata.propertyName] = columnMetadata.enum[object[columnMetadata.propertyName]];
+            }
+
+            if (!columnMetadata.enum[object[columnMetadata.propertyName]]) {
+               throw new InvalidEntityPropertyValueError(`The value of the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' does not contain a valid value for the enumerated`);
+            }
+
          }
 
       }
@@ -142,21 +156,22 @@ export class EntityManager<T = any> {
    /**
     * 
     */
-   public async save(object: EntityValues<T>, saveOptions?: SaveOptions): Promise<any>;
+   public async save(object: EntityValues<T>, saveOptions?: SaveOptions): Promise<T>;
    /**
     * 
     */
-   public async save(objects: EntityValues<T>[], saveOptions?: SaveOptions): Promise<any[]>;
+   public async save(objects: EntityValues<T>[], saveOptions?: SaveOptions): Promise<T[]>;
    /**
     * 
     */
-   public async save(objects: EntityValues<T> | EntityValues<T>[], saveOptions?: SaveOptions): Promise<any> {
+   public async save(objects: EntityValues<T> | EntityValues<T>[], saveOptions?: SaveOptions): Promise<T | T[]> {
 
-      if (!Array.isArray(objects)) {
+      const returnArray = Array.isArray(objects)
+      if (!returnArray) {
          objects = [objects];
       }
 
-      let queryRunner: QueryRunner = saveOptions?.queryRunner ?? CokeORM.getConnection('default').queryRunner;      
+      let queryRunner: QueryRunner = (saveOptions?.queryRunner ?? this.connection.queryRunner);      
       let savedObjects;
       
       if (queryRunner.inTransaction) {
@@ -165,7 +180,7 @@ export class EntityManager<T = any> {
          savedObjects = await queryRunner.connection.transaction((queryRunner) => this.performSave((Array.isArray(objects) ? objects : [objects]), { ...saveOptions, queryRunner }));
       }
 
-      return (Array.isArray(objects) ? savedObjects : savedObjects[0]);
+      return (returnArray ? savedObjects : savedObjects[0]);
       
    }
 
@@ -180,7 +195,7 @@ export class EntityManager<T = any> {
       const savedObjects: any[] = [];
       for (let object of objectToSave) {
          object = this.create(object);
-         savedObjects.push(await (object as any).save(saveOptions.queryRunner));
+         savedObjects.push(await (object as CokeModel).save(saveOptions));
       }
       return savedObjects;
 
@@ -206,7 +221,7 @@ export class EntityManager<T = any> {
          objects = [objects];
       }
 
-      let queryRunner: QueryRunner = deleteOptions?.queryRunner ?? CokeORM.getConnection('default').queryRunner;
+      let queryRunner: QueryRunner = (deleteOptions?.queryRunner ?? this.connection.queryRunner);
       let deletedObjects;
 
       if (queryRunner.inTransaction) {
@@ -229,7 +244,7 @@ export class EntityManager<T = any> {
       const deletedObjects: any[] = [];
       for (let object of objectToDelete) {
          object = this.create(object);
-         if (await (object as any).delete(deleteOptions.queryRunner)) {
+         if (await (object as CokeModel).delete(deleteOptions)) {
             deletedObjects.push(object);
          }
       }
@@ -352,7 +367,7 @@ export class EntityManager<T = any> {
       if (!findOptions.select || findOptions.select.length == 0) 
       {
          findOptions.select = Object.values(this.metadata.columns)
-            .filter(column => column.canSelect && (!column.relation || (column.relation.eager || (findOptions.relations ?? []).indexOf(column.propertyName) >= 0)))
+            .filter(column => column.canSelect && column.operation != 'DeletedIndicator' && (!column.relation || (column.relation.eager || (findOptions.relations ?? []).indexOf(column.propertyName) >= 0)))
             .map(column => column.propertyName);
       }
 

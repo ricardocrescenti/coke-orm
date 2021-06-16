@@ -153,7 +153,7 @@ export abstract class Driver {
       if (columnOptions.operation) {
          return this.defaultColumnOptionsByOperation.get(columnOptions.operation);
       }
-      return this.defaultColumnOptionsByPropertyType.get(columnOptions.propertyType.name);
+      return this.defaultColumnOptionsByPropertyType.get(columnOptions.enum ? 'Enum' : columnOptions.propertyType.name);
    }
 
    /**
@@ -164,7 +164,7 @@ export abstract class Driver {
       if (column.relation?.type == 'OneToMany') {
 
          if (column.propertyType.prototype != Array.prototype) {
-            throw new InvalidColumnOptionError(`The '${column.name}' column of the '${entityMetadata.name}' entity with a 'OneToMany' type relation must be an array.`);
+            throw new InvalidColumnOptionError(`The '${column.name}' property of the '${entityMetadata.name}' entity with a 'OneToMany' type relation must be an array.`);
          }
 
       } else if (column.operation != 'DeletedIndicator') {
@@ -173,17 +173,21 @@ export abstract class Driver {
 
             // check if type if informed
             if (!column.type) {
-               throw new InvalidColumnOptionError(`The '${column.name}' column of the '${entityMetadata.name}' entity does not have an informed type`);
+               throw new InvalidColumnOptionError(`The '${column.name}' property of the '${entityMetadata.name}' entity does not have an informed type`);
             }
 
             // check if type is valid
             if (this.supportedColumnsTypes.indexOf(column.type as string) < 0) {
-               throw new InvalidColumnOptionError(`The '${column.name}' column of the '${entityMetadata.name}' entity does not have an valid type (${column.type})`);
+               throw new InvalidColumnOptionError(`The '${column.name}' property of the '${entityMetadata.name}' entity does not have an valid type (${column.type})`);
             }
          }
 
          if (!this.connectionOptions.additional?.allowNullInUniqueKeyColumn && (column.uniques.length > 0 || column.indexs.some(index => index.unique)) && column.nullable) {
             throw new InvalidColumnOptionError(`The '${column.propertyName}' property of the '${entityMetadata.className}' entity has a unique key or unique index and is not mandatory, if one of the columns is null the record may be duplicated`);
+         }
+
+         if (column.enum && ',integer,bigint'.indexOf(',' + column.type) < 0) {
+            throw new InvalidColumnOptionError(`The '${column.propertyName}' property of the '${entityMetadata.className}' with the enum '${column.enum}' must be of type 'integer' or 'bigint'`);
          }
          
       }

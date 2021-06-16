@@ -13,6 +13,6 @@
    ],
    "migrations": {
       "synchronize": false,
-      "directory": "samples/migrations"
+      "directory": "samples/migrations/*.js"
    }
 }

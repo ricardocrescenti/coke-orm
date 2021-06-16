@@ -786,7 +786,8 @@ export class PostgresDriver extends Driver {
          ['BigInt', { type: 'bigint' }],
          ['Date', { type: 'timestamp with time zone' }],
          ['Number', { type: 'numeric' }],
-         ['String', { type: 'character varying' }]
+         ['String', { type: 'character varying' }],
+         ['Enum', { type: 'integer' }]
       ]);
    }
    

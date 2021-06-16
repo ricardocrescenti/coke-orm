@@ -16,33 +16,31 @@ export abstract class CokeModel {
     * @param queryRunner 
     * @returns 
     */
-   protected getEntityManager(queryRunner?: QueryRunner): EntityManager<this> {
-      const connection: Connection = (queryRunner?.connection ?? CokeORM.getConnection())
-      return connection.getEntityManager(this.constructor.name);
+   protected getEntityManager(queryRunner: QueryRunner): EntityManager<this> {
+      return queryRunner?.connection.getEntityManager(this.constructor.name);
    }
 
    /**
     * 
     * @param queryRunner 
     */
-   public async save(saveOptions?: SaveOptions): Promise<this> {
-      let queryRunner: QueryRunner | undefined = saveOptions?.queryRunner;
-      if (!queryRunner) {
-         queryRunner = CokeORM.getConnection('default').queryRunner;
-      }
+   public async save(saveOptions: SaveOptions): Promise<this> {
+      const queryRunner: QueryRunner = saveOptions.queryRunner;
 
       /// get the entity manager to perform the processes below
       const entityManager: EntityManager<this> = this.getEntityManager(queryRunner);
-      
+
+      let savedObject;
       if (queryRunner.inTransaction) {
-         return await this.performSave(entityManager, queryRunner, saveOptions);
+         savedObject = await this.performSave(entityManager, queryRunner, saveOptions);
       } else {
-         return await queryRunner.connection.transaction((queryRunner) => this.performSave(entityManager, queryRunner, saveOptions)).then(savedObject => {
-            entityManager.populate(this, savedObject);
-            return savedObject;
-         });
+         savedObject = await queryRunner.connection.transaction((queryRunner) => this.performSave(entityManager, queryRunner, saveOptions));
       }
 
+      /// populate in the primary keys in the main object
+      entityManager.populate(this, savedObject);
+
+      return this;
    }
 
    /**
@@ -295,12 +293,12 @@ export abstract class CokeModel {
          /// check if the object can be inserted or updated to perform the 
          /// necessary operation
          if (columnParentRelation.relation?.canInsert || columnParentRelation.relation?.canUpdate) {
-            const savedParentObject = await parentObject.save({ 
+            await parentObject.save({ 
                queryRunner,
                relation: columnParentRelation.relation,
                requester: objectToSave
             });
-            (objectToSave as any)[columnParentRelation.propertyName] = savedParentObject;//(savedParentObject as any)[columnParentRelation.relation?.referencedColumn as string];
+            (objectToSave as any)[columnParentRelation.propertyName] = parentObject;//(savedParentObject as any)[columnParentRelation.relation?.referencedColumn as string];
          }
 
       }
@@ -393,23 +391,23 @@ export abstract class CokeModel {
             if (columnChildRelation.relation?.canInsert || columnChildRelation.relation?.canUpdate) {
 
                /// save the object
-               const savedChildObject = await childObject.save({ 
+               await childObject.save({ 
                   queryRunner,
                   relation: columnChildRelation.relation,
                   requester: objectToSave
                });
 
                /// remove the object used to relate it to the current object
-               delete (savedChildObject as any)[columnChildRelation.relation?.referencedColumn as string];
+               delete (childObject as any)[columnChildRelation.relation?.referencedColumn as string];
 
                /// updates the object saved in the list of child objects of the 
                /// current object so that when saving the entire structure of the 
                /// object, a new object with all updated data is returned
-               (objectToSave as any)[columnChildRelation.propertyName][childIndex] = savedChildObject;
+               (objectToSave as any)[columnChildRelation.propertyName][childIndex] = childObject;
 
                /// removes the saved object from the list of objects to be removed
                childrenToRemove?.splice(childrenToRemove.findIndex((child: any) => {
-                  return child[columnChildRelation.relation?.referencedEntityManager.metadata.primaryKey?.columns[0] as string] == (savedChildObject as any)[columnChildRelation.relation?.referencedEntityManager.metadata.primaryKey?.columns[0] as string]
+                  return child[columnChildRelation.relation?.referencedEntityManager.metadata.primaryKey?.columns[0] as string] == (childObject as any)[columnChildRelation.relation?.referencedEntityManager.metadata.primaryKey?.columns[0] as string]
                }), 1)
             
             }
@@ -432,11 +430,8 @@ export abstract class CokeModel {
     * 
     * @param queryRunner 
     */
-   public async delete(deleteOptions?: DeleteOptions): Promise<boolean> {
-      let queryRunner: QueryRunner | undefined = deleteOptions?.queryRunner;
-      if (!queryRunner) {
-         queryRunner = CokeORM.getConnection('default').queryRunner;
-      }
+   public async delete(deleteOptions: DeleteOptions): Promise<boolean> {
+      const queryRunner: QueryRunner = deleteOptions.queryRunner;
       
       /// get the entity manager to perform the processes below
       const entityManager: EntityManager<this> = this.getEntityManager(queryRunner);
@@ -574,10 +569,7 @@ export abstract class CokeModel {
     * 
     * @returns 
     */
-   public async loadPrimaryKey(queryRunner?: QueryRunner, requester: any = null): Promise<boolean> {
-      if (!queryRunner) {
-         queryRunner = CokeORM.getConnection('default').queryRunner;
-      }
+   public async loadPrimaryKey(queryRunner: QueryRunner, requester: any = null): Promise<boolean> {
       
       /// get the entity manager to perform the processes below
       const entityManager: EntityManager<this> = this.getEntityManager(queryRunner);
@@ -634,11 +626,7 @@ export abstract class CokeModel {
    /**
     * 
     */
-   public async loadPrimaryKeyCascade(queryRunner?: QueryRunner, loadChildrensPrimaryKey: boolean = true): Promise<void> {
-      if (!queryRunner) {
-         queryRunner = CokeORM.getConnection('default').queryRunner;
-      }
-
+   public async loadPrimaryKeyCascade(queryRunner: QueryRunner, loadChildrensPrimaryKey: boolean = true): Promise<void> {
       const entityManager: EntityManager<this> = this.getEntityManager(queryRunner);
       
       const parentRelations: ForeignKeyMetadata[] = entityManager.metadata.foreignKeys.filter(foreignKey => foreignKey.type != 'OneToMany');

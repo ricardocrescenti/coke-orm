@@ -7,6 +7,7 @@ import { DuplicateColumnInQuery } from "./duplicate_column_in_query.error";
 import { EntityHasNoPrimaryKeyError } from "./entity-has-no-primary-key.error";
 import { EntityMetadataNotLocatedError } from "./entity_metadata_not_located.error";
 import { InvalidColumnOptionError } from "./invalid-column-options.error";
+import { InvalidEntityPropertyValueError } from "./invalid-entity-property-value.error";
 import { InvalidGenerateStrategyError } from "./invalid-generate-strategy.error";
 import { InvalidQueryBuilderError } from "./invalid-query-builder.error";
 import { InvalidWhereOperatorError } from "./invalid-where-operator.error";
@@ -27,6 +28,7 @@ export {
    EntityHasNoPrimaryKeyError,
    DuplicateColumnInQuery,
    InvalidColumnOptionError,
+   InvalidEntityPropertyValueError,
    InvalidGenerateStrategyError,
    InvalidQueryBuilderError,
    InvalidWhereOperatorError,

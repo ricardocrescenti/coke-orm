@@ -3,8 +3,15 @@ import { QueryRunner } from "../../query-runner";
 import { EntitySubscriberInterface } from "../../metadata/event";
 
 export class SaveOptions<T = any> {
-   queryRunner?: QueryRunner;
+   queryRunner: QueryRunner;
    relation?: ForeignKeyMetadata;
    requester?: any;
    subscriber?: EntitySubscriberInterface<T>;
+
+   constructor(options: SaveOptions) {
+      this.queryRunner = options.queryRunner;
+      this.relation = options.relation;
+      this.requester = options.requester;
+      this.subscriber = options.subscriber;
+   }
 }

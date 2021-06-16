@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 import { ConnectionOptions } from "../connection";
 import { ConfigFileNotFoundError, ConnectionNameDoesNotExistError } from "../errors";
+import { log } from "../log";
 
 export class OrmUtils {
    private constructor() {}
@@ -31,11 +32,21 @@ export class OrmUtils {
     * @param connectionName 
     * @returns 
     */
-    public static loadConfigFile(connectionName?: string): ConnectionOptions[] {
-      const configFileName = 'coke-orm.config.json';
+   public static loadConfigFile(connectionName?: string): ConnectionOptions[] {      
       
+      /// default configuration file name
+      const configFileName = 'coke-orm.config.json';
+      const configFilePath = path.join(process.cwd(), configFileName);
+      
+      /// start log to load configuration file
+      //log.error(`Loading Configuration File (${configFilePath})`);
+      
+      let i = 0;
+      setTimeout(() => {
+         log.error(`Loading Configuration File ${i++} (${configFilePath})`);
+      }, 1000)
+
       /// mount the configuration file path
-      let configFilePath = path.join(process.cwd(), configFileName);
       if (!fs.existsSync(configFilePath)) {         
          throw new ConfigFileNotFoundError();
       }

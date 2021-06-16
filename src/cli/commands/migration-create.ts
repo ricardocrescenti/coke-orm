@@ -17,6 +17,8 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 	public async handler(args: yargs.Arguments) {
 		let [connectionOptions] = OrmUtils.loadConfigFile(args.connection as string);
 		MigrationCreateCommand.saveMigrationFile(connectionOptions, args.name as string);
+
+		process.exit();
 	}
 
 	public static defaultArgs(args: yargs.Argv): yargs.Argv {
