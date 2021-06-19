@@ -1,5 +1,9 @@
-import { log } from "./log";
+import { Logger } from './logger';
+import { LogStep } from './interfaces/log-step.interface';
+import { ConnectionLogStep } from './types/connection-log-step.type';
 
 export {
-   log
-}
+	LogStep,
+	ConnectionLogStep,
+	Logger,
+};

@@ -12,7 +12,7 @@
       "./samples/models/**/*.subscriber.js"
    ],
    "migrations": {
-      "synchronize": false,
+      "synchronize": true,
       "directory": "./samples/migrations/*.js"
    }
 }

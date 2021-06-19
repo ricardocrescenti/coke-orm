@@ -3,6 +3,7 @@ import { NamingStrategy } from "../naming-strategy";
 import { MigrationOptions } from "./migration-options";
 import { PoolOptions } from "./pool-options";
 import { AdditionalOptions } from "./additional-options";
+import { Logger } from "../log";
 
 export class ConnectionOptions {
 
@@ -89,6 +90,11 @@ export class ConnectionOptions {
    /**
     * 
     */
+   public readonly logger?: boolean | Logger;
+
+   /**
+    * 
+    */
    public readonly customOptions?: any;
 
    /**
@@ -112,6 +118,7 @@ export class ConnectionOptions {
       this.migrations = new MigrationOptions(options?.migrations);
       this.namingStrategy = options.namingStrategy ?? new NamingStrategy();
       this.additional = new AdditionalOptions(options.additional);
+      this.logger =  (options.logger instanceof Logger ? options.logger : new Logger(typeof options.logger == 'boolean' ? options.logger : true));
       this.customOptions = options.customOptions;
    }
 }

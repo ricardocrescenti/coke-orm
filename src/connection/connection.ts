@@ -10,6 +10,7 @@ import { ConnectionOptions } from './connection-options';
 import { EntityReferenceParameter } from './types/entity-reference-parameter.type';
 import { CokeORM } from '../coke-orm';
 import { Metadata } from '../metadata/metadata';
+import { Logger } from '../log';
 
 /**
  * Class responsible for managing the database connection.
@@ -30,6 +31,11 @@ export class Connection {
 	 * Driver used for connection
 	 */
 	public readonly driver: Driver;
+
+	/**
+	 * Class used to record logs.
+	 */
+	public readonly logger: Logger;
 
 	/**
 	 * Indicates whether this connection is connected to the database.
@@ -79,12 +85,17 @@ export class Connection {
 	 * @param {ConnectionOptions} options Connection Options.
 	 */
 	constructor(options: ConnectionOptions) {
+
+		/** Initialize connection options and log class */
 		this.options = (options instanceof ConnectionOptions ? options : new ConnectionOptions(options));
+		this.logger = this.options.logger as Logger;
 		this.name = options.name as string;
 		this.driver = this.getDriver(options.driver);
 		this.queryRunner = this.createQueryRunner();
 		this.migrations = new Migrations(this);
 		this.metadata = new Metadata(this);
+
+		/** Load entity metadata */
 		this.metadata.loadMetadata();
 	}
 
@@ -105,20 +116,27 @@ export class Connection {
 	 * Connect to the database.
 	 */
 	public async connect(): Promise<boolean> {
+
+		/** If the connection is already connected, an error will be issued. */
 		if (this.isConnected) {
 			throw new ConnectionAlreadyConnectedError();
 		}
 
-		/** create query executor to verify that the connection was made successfully */
+		/** Connection start log */
+		this.logger.start('Connecting');
 
-		// log the success of the connection
-		// log.endInfo(this.options.name as string);
+		/** create query executor to verify that the connection was made successfully */
+		await this.queryRunner.initializeClient();
 
 		/** set timezone */
 		if (this.options.timezone) {
-			this.queryRunner.query(`SET TIMEZONE = '${this.options.timezone}'`);
+			await this.queryRunner.query(`SET TIMEZONE = '${this.options.timezone}'`);
 		}
 
+		/** Connection success log */
+		this.logger.sucess('Connecting');
+
+		/** Set the connection as connected */
 		this._isConnected = true;
 
 		try {
@@ -136,6 +154,7 @@ export class Connection {
 			throw error;
 		}
 
+		this.logger.storeOutput = false;
 		return this.isConnected;
 	}
 

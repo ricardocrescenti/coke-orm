@@ -309,7 +309,7 @@ export async function test() {
          id: 'ASC'
       }
    });
-   console.log('find', sellers);
+   //console.log('find', sellers);
 
 }
 

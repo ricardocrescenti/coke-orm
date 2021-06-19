@@ -108,12 +108,20 @@ export class Metadata {
 	 * indices, unique keys, relationships between entities and subscribers.
 	 */
 	public loadMetadata(): void {
-		console.time('loadMetadataSchema');
+		
+		/** Entities subscriber loading start log */
+		this.connection.logger.start('Loading Subscribers');
+
+		this.loadSubscribersClasses();
+		
+		/** Entities subscriber loading success log */
+		this.connection.logger.sucess('Loading Subscribers');
+		
+		/** Entities loading start log */
+		this.connection.logger.start('Loading Entities');
 
 		const entitiesToLoad: Function[] = this.loadEntitiesClasses();
 		entitiesToLoad.unshift(MigrationModel);
-
-		this.loadSubscribersClasses();
 
 		const entitiesOptions: EntityOptions[] = DecoratorsStore.getEntities(entitiesToLoad);
 		const namingStrategy: NamingStrategy = this.connection.options.namingStrategy as NamingStrategy;
@@ -318,6 +326,7 @@ export class Metadata {
 			}
 		}
 
-		console.timeLog('loadMetadataSchema');
+		/** Entities loading success log */
+		this.connection.logger.sucess('Loading Entities');
 	}
 }

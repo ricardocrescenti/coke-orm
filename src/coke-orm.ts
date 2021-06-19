@@ -2,7 +2,6 @@ import { Connection, ConnectionOptions } from "./connection";
 import { SimpleMap } from  "./common";
 import { ConnectionAlreadyExistsError, ConnectionNameDoesNotExistError } from "./errors";
 import { OrmUtils } from "./utils";
-import { log } from "./log";
 
 export class CokeORM {
 
@@ -44,9 +43,6 @@ export class CokeORM {
 
          /// create the class with the connection options
          const connection: Connection = new Connection(options);
-      
-         /// log the start of the connection
-         log.info(`Connecting (${connection.name})`, `connection-${connection.name}`);
 
          /// checks if a configuration with the same name already exists
          if (CokeORM.connections[options.name ?? 'default'] != null) {

@@ -83,8 +83,6 @@ export class PostgresDriver extends Driver {
    public async loadSchema(entitiesToLoad?: string[]): Promise<SimpleMap<EntitySchema>> {
       const tablesSchema: SimpleMap<EntitySchema> = new SimpleMap<EntitySchema>();
 
-      console.time('schema query');
-
       const informationSchema = await this.connection.queryRunner.query(`
          SELECT t.table_schema, t.table_name, c.columns
          FROM information_schema.tables t
@@ -135,12 +133,9 @@ export class PostgresDriver extends Driver {
          WHERE t.table_schema = '${this.connection.options.schema ?? 'public'}'
          ${(entitiesToLoad ?? []).length > 0 ? `AND t.table_name in ('${entitiesToLoad?.join(`','`)}')` : ''}
          ORDER BY t.table_name`);
-      
-      console.timeLog('schema query');
 
       if (informationSchema.rows.length > 0) {
-         
-         console.time('schema load');
+
          for (const table of informationSchema.rows) {
 
             let columns: SimpleMap<ColumnSchema> = new SimpleMap<ColumnSchema>();
@@ -258,7 +253,6 @@ export class PostgresDriver extends Driver {
             });
             
          }
-         console.timeLog('schema load');
 
       }
 
@@ -282,8 +276,17 @@ export class PostgresDriver extends Driver {
 
    public async generateSQLsMigrations(): Promise<string[]> {
 
+      /** */
+      this.connection.logger.start('Loading Schema');
+
       const tablesSchema = await this.loadSchema();
       const extensions = await this.loadExtensions();
+
+      /** */
+      this.connection.logger.sucess('Loading Schema')
+
+      /** */
+      this.connection.logger.start('Generating Migrations');
 
       const sqlMigrationsCreateExtension: string[] = [];
       const sqlMigrationsCreateSequence: string[] = [];
@@ -308,8 +311,6 @@ export class PostgresDriver extends Driver {
       const deletedForeignKeys: string[] = [];
       const deletedIndex: string[] = [];
       const deletedUniques: string[] = [];
-
-      console.time('generate SQLs migrations');
 
       //const columnsVarifyHaveUnique: any = {};
       
@@ -525,27 +526,29 @@ export class PostgresDriver extends Driver {
 
       }
 
-      console.timeLog('generate SQLs migrations');
+      const sqlMigrations: string[] = [
+         ...sqlMigrationsCreateExtension,
+         ...sqlMigrationsDropForeignKeys,
+         ...sqlMigrationsDropUniques,
+         ...sqlMigrationsDropIndex,
+         ...sqlMigrationsDropPrimaryKeys,
+         ...sqlMigrationsDropColumns,
+         ...sqlMigrationsCreateSequence,
+         ...sqlMigrationsCreateTable,
+         ...sqlMigrationsCreateColumns,
+         ...sqlMigrationsAlterColumns,
+         ...sqlMigrationsAssociateSequences,
+         ...sqlMigrationsDropSequence,
+         ...sqlMigrationsCreatePrimaryKeys,
+         ...sqlMigrationsCreateUniques,
+         ...sqlMigrationsCreateIndexs,
+         ...sqlMigrationsCreateForeignKeys
+      ];
 
-      const sqlMigrations: string[] = [];
+      /** */
+      this.connection.logger.sucess('Generating Migrations');
 
-      return sqlMigrations.concat(
-         sqlMigrationsCreateExtension,
-         sqlMigrationsDropForeignKeys,
-         sqlMigrationsDropUniques,
-         sqlMigrationsDropIndex,
-         sqlMigrationsDropPrimaryKeys,
-         sqlMigrationsDropColumns,
-         sqlMigrationsCreateSequence,
-         sqlMigrationsCreateTable,
-         sqlMigrationsCreateColumns,
-         sqlMigrationsAlterColumns,
-         sqlMigrationsAssociateSequences,
-         sqlMigrationsDropSequence,
-         sqlMigrationsCreatePrimaryKeys,
-         sqlMigrationsCreateUniques,
-         sqlMigrationsCreateIndexs,
-         sqlMigrationsCreateForeignKeys);
+      return sqlMigrations;
    }
    
    protected getSupportedColumnsType(): string[] {
