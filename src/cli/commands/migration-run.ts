@@ -1,7 +1,7 @@
-import * as yargs from "yargs";
-import { CokeORM } from "../../coke-orm";
-import { Connection } from "../../connection";
-import { OrmUtils } from "../../utils";
+import * as yargs from 'yargs';
+import { CokeORM } from '../../coke-orm';
+import { Connection } from '../../connection';
+import { OrmUtils } from '../../utils';
 
 export class MigrationRunCommand implements yargs.CommandModule {
 
@@ -11,26 +11,26 @@ export class MigrationRunCommand implements yargs.CommandModule {
 
 	public builder(args: yargs.Argv): yargs.Argv {
 		return args
-			.option("c", {
-				alias: "connection",
-				default: "default",
-				describe: "Name of the connection where queries will be executed."
+			.option('c', {
+				alias: 'connection',
+				default: 'default',
+				describe: 'Name of the connection where queries will be executed.',
 			});
 	};
 
 	public async handler(args: yargs.Arguments) {
-		let [connectionOptions] = OrmUtils.loadConfigFile(args.connection as string);
-		
-		const connection: Connection = await CokeORM.connect({
-         ...connectionOptions,
-         migrations: {
-            ...connectionOptions.migrations,
-            runMigrations: false,
-            synchronize: false
-         }
-      });
+		const [connectionOptions] = OrmUtils.loadConfigFile(args.connection as string);
 
-		await connection.runMigrations();
+		const connection: Connection = await CokeORM.connect({
+			...connectionOptions,
+			migrations: {
+				...connectionOptions.migrations,
+				runMigrations: false,
+				synchronize: false,
+			},
+		});
+
+		await connection.migrations.runMigrations();
 
 		await connection.disconnect();
 		process.exit();

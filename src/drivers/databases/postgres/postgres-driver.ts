@@ -26,7 +26,7 @@ export class PostgresDriver extends Driver {
       this.postgres = require("pg");
 
       this.client = new this.postgres.Pool({
-         application_name: 'CokeORM',
+         application_name: connection.options.additional?.applicationName,
          host: connection.options.host,
          port: connection.options.port,
          user: connection.options.user,

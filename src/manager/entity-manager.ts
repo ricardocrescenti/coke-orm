@@ -306,7 +306,7 @@ export class EntityManager<T = any> {
       }
 
       /// create the query to get the data
-      const query: SelectQueryBuilder<T> = this.connection.createSelectQuery<T>(this.metadata)
+      const query: SelectQueryBuilder<T> = new SelectQueryBuilder<T>(this.connection, this.metadata)
          .level(level ?? 0)
          .select(queryColumns)
          .join(queryJoins)
@@ -329,7 +329,7 @@ export class EntityManager<T = any> {
     * @returns 
     */
    public createInsertQuery(): InsertQueryBuilder<T> {
-      return this.connection.createInsertQuery<T>(this.metadata);
+      return new InsertQueryBuilder<T>(this.connection, this.metadata);
    }
 
    /**
@@ -337,7 +337,7 @@ export class EntityManager<T = any> {
     * @returns 
     */
    public createUpdateQuery() : UpdateQueryBuilder<T> {
-      const query: UpdateQueryBuilder<T> = this.connection.createUpdateQuery<T>(this.metadata)
+      const query: UpdateQueryBuilder<T> = new UpdateQueryBuilder<T>(this.connection, this.metadata)
          //.virtualDeletionColumn(this.entityMetadata.getDeletedAtColumn()?.name);
       return query;      
    }
@@ -347,7 +347,7 @@ export class EntityManager<T = any> {
     * @returns 
     */
    public createDeleteQuery(): DeleteQueryBuilder<T> {
-      const query: DeleteQueryBuilder<T> = this.connection.createDeleteQuery<T>(this.metadata)
+      const query: DeleteQueryBuilder<T> = new DeleteQueryBuilder<T>(this.connection, this.metadata)
          //.virtualDeletionColumn(this.entityMetadata.getDeletedAtColumn()?.name);
       return query;
    }

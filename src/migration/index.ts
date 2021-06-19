@@ -1,7 +1,9 @@
-import { MigrationInterface } from "./migration.interface";
-import { MigrationModel } from "./migration.model";
+import { Migrations } from './migrations';
+import { MigrationInterface } from './migration.interface';
+import { MigrationModel } from './migration.model';
 
-export  {
-   MigrationInterface,
-   MigrationModel
-}
+export {
+	MigrationInterface,
+	MigrationModel,
+	Migrations,
+};

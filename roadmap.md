@@ -2,11 +2,12 @@
 
 ## Geral
 
+- O QueryRunner da conexao deixar sempre iniciado.
+- Adicionar parâmetro para definir o nome do aplicativo na conexão (aquela que aparece no pgAdmin)
 * Testar o operador 'DeletedIndicator'
-* Adicionado a opção 'nullable' no OneToMany
 * Melhorar o método save, ficar o processo principal no EntityManager
 * Ajustar para o tipo do campo ficar por padrão integer quando a propriedade for number e não tiver precision
-* 
+* Implementar as rules a nivel de linha
 
 * **02** - [x] Nas relaçòes com filhos quando salvar, se não mandar um objeto que tinha antes, deletar ele, se tiver cascade['delete']
 * **03** - [x] Permitir inicializar o CokeORM a partir de um arquivo de configuração

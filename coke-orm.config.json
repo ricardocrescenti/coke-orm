@@ -6,13 +6,13 @@
    "password": "supadm",
    "database": "devmaster",
    "entities": [
-      "samples/models/**/*.model.js"
+      "./samples/models/**/*.model.js"
    ],
    "subscribers": [
-      "samples/models/**/*.subscriber.js"
+      "./samples/models/**/*.subscriber.js"
    ],
    "migrations": {
       "synchronize": false,
-      "directory": "samples/migrations/*.js"
+      "directory": "./samples/migrations/*.js"
    }
 }

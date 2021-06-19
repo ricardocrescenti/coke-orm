@@ -1,9 +1,13 @@
 const path = require('path');
 const fs = require('fs');
-import * as yargs from "yargs";
-import { ConnectionOptions } from "../../connection";
-import { OrmUtils } from "../../utils";
+import * as yargs from 'yargs';
+import { ConnectionOptions } from '../../connection';
+import { OrmUtils } from '../../utils';
 
+/**
+ * Class invoked by CLI responsible for loading and executing pending
+ * migrations.
+ */
 export class MigrationCreateCommand implements yargs.CommandModule {
 
 	public command: string = 'mc';
@@ -15,7 +19,7 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 	};
 
 	public async handler(args: yargs.Arguments) {
-		let [connectionOptions] = OrmUtils.loadConfigFile(args.connection as string);
+		const [connectionOptions] = OrmUtils.loadConfigFile(args.connection as string);
 		MigrationCreateCommand.saveMigrationFile(connectionOptions, args.name as string);
 
 		process.exit();
@@ -23,17 +27,17 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 
 	public static defaultArgs(args: yargs.Argv): yargs.Argv {
 		return args
-			.option("c", {
-				alias: "connection",
-				default: "default",
-				describe: "Name of the connection where queries will be executed."
+			.option('c', {
+				alias: 'connection',
+				default: 'default',
+				describe: 'Name of the connection where queries will be executed.',
 			})
 			.option('n', {
 				alias: 'name',
-            default: 'migration',
+				default: 'migration',
 				describe: 'Migration name',
 				type: 'string',
-				requiresArg: true
+				requiresArg: true,
 			});
 	}
 
@@ -43,13 +47,13 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 export class ${name} implements MigrationInterface {
 
 	public async up(queryRunner: QueryRunner): Promise<void> {
-		${(upQueries ?? []).map(upQuery => `await queryRunner.query(\`${upQuery}\`);`).join('\n		')}
+		${(upQueries ?? []).map((upQuery) => `await queryRunner.query(\`${upQuery}\`);`).join('\n		')}
 	}
 
 	public async down(queryRunner: QueryRunner): Promise<void> {
-		${(downQueries ?? []).map(upQuery => `await queryRunner.query(\`${upQuery}\`);`).join('\n		')}
+		${(downQueries ?? []).map((upQuery) => `await queryRunner.query(\`${upQuery}\`);`).join('\n		')}
 	}
-	
+
 }`;
 	}
 
@@ -63,7 +67,7 @@ export class ${name} implements MigrationInterface {
 
 		let migrationPath = path.join(OrmUtils.rootPath(connectionOptions, true), connectionOptions.migrations?.directory);
 		fs.mkdirSync(migrationPath, { recursive: true });
-		
+
 		migrationPath = path.join(migrationPath, migrationFileName + '.ts');
 		fs.writeFileSync(migrationPath, migrationContent);
 	}
