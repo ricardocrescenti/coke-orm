@@ -1,4 +1,4 @@
-import { ColumnMetadata, ColumnOptions, ForeignKeyOptions, IndexOptions, EntityMetadata, EntityOptions, UniqueOptions } from "../metadata";
+import { ColumnMetadata, ColumnOptions, ForeignKeyOptions, IndexOptions, EntityMetadata, EntityOptions, UniqueOptions, TriggerOptions } from "../metadata";
 import { StringUtils } from "../utils";
 
 export class NamingStrategy {
@@ -37,6 +37,9 @@ export class NamingStrategy {
     * Create foreign key name
     */
    foreignKeyName(entityMetadata: EntityMetadata, columnMetadata: ColumnMetadata, foreignKeyOptions: ForeignKeyOptions): string {
+      if (foreignKeyOptions.name) {
+         return foreignKeyOptions.name;
+      }
       const key = `${entityMetadata.className}_${columnMetadata.propertyName}${foreignKeyOptions.referencedColumn}`;
       return "FK_" + StringUtils.sha1(key).substr(0, 27);
    }
@@ -45,6 +48,9 @@ export class NamingStrategy {
     * Create unique constraint name
     */
    uniqueName(entityMetadata: EntityMetadata, uniqueOptions: UniqueOptions): string {
+      if (uniqueOptions.name) {
+         return uniqueOptions.name;
+      }
       const columnsNames: string[] = uniqueOptions.columns.map<string>((columnPropertyName) => entityMetadata.getColumn(columnPropertyName).name as string);
       return "UQ_" + StringUtils.sha1(`${entityMetadata.name}_${columnsNames.join("_")}`);//.substr(0, 27);
    }
@@ -53,8 +59,21 @@ export class NamingStrategy {
     * Create index name
     */
    indexName(entityMetadata: EntityMetadata, indexOptions: IndexOptions): string {
+      if (indexOptions.name) {
+         return indexOptions.name;
+      }
       const columnsNames: string[] = indexOptions.columns.map<string>((columnPropertyName) => entityMetadata.getColumn(columnPropertyName).name as string);
       return "IDX_" + StringUtils.sha1(`${entityMetadata.name}_${indexOptions.unique}_${columnsNames.join("_")}`);//.substr(0, 27);
+   }
+
+   /**
+    * Create trigger name
+    */
+   triggerName(entityMetadata: EntityMetadata, triggerOptions: TriggerOptions): string {
+      if (triggerOptions.name) {
+         return triggerOptions.name;
+      }
+      return `${entityMetadata.name}_${StringUtils.snakeCase(triggerOptions.trigger.constructor.name)}`;
    }
 
    /**
@@ -67,7 +86,7 @@ export class NamingStrategy {
    /**
     * Gets the name of the alias used for relation joins.
     */
-    eagerJoinRelationAlias(columnMetadata: ColumnMetadata): string {
+   eagerJoinRelationAlias(columnMetadata: ColumnMetadata): string {
       return `${columnMetadata.propertyName}_${columnMetadata.relation?.referencedEntity}`;
    }
 

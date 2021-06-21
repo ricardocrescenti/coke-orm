@@ -9,6 +9,7 @@ import { Connection } from "../../connection";
 import { ColumnMetadataNotLocatedError } from "../../errors";
 import { EntitySubscriberInterface } from "../event";
 import { ConstructorTo } from "../../common";
+import { TriggerMetadata } from "../trigger";
 
 export class EntityMetadata extends EntityOptions {
 
@@ -45,6 +46,11 @@ export class EntityMetadata extends EntityOptions {
    /**
     * 
     */
+   public readonly triggers: TriggerMetadata[] = [];
+
+   /**
+    * 
+    */
    public readonly subscriber?: ConstructorTo<EntitySubscriberInterface<any>>;
    
    /**
@@ -76,7 +82,7 @@ export class EntityMetadata extends EntityOptions {
     * 
     * @param options 
     */
-   constructor(options: Omit<EntityMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getDeletedIndicatorColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
+   constructor(options: Omit<EntityMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs'  | 'triggers' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getDeletedIndicatorColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
       super(options);
       this.connection = options.connection;
       this.subscriber = options.subscriber;

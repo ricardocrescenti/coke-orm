@@ -3,14 +3,15 @@ import { SimpleMap } from "../../../common";
 import { DefaultColumnOptions } from "../../options/default-column-options";
 import { QueryRunner } from "../../../query-runner";
 import { Connection } from "../../../connection";
-import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, PrimaryKeySchema, UniqueSchema } from "../../../schema";
+import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, PrimaryKeySchema, TriggerSchema, UniqueSchema } from "../../../schema";
 import { QueryBuilderDriver } from "../../query-builder-driver";
 import { PostgresQueryBuilderDriver } from "./postgres-query-builder-driver";
-import { ForeignKeyMetadata } from "../../../metadata";
+import { ForeignKeyMetadata, TriggerMetadata } from "../../../metadata";
 import { ColumnMetadata, ColumnOperation, IndexMetadata, UniqueMetadata, EntityMetadata } from "../../../metadata";
 import { InvalidColumnOptionError } from "../../../errors";
 import { Generate } from "../../../metadata";
 import { QueryResult } from "../../../query-builder";
+import { StringUtils } from "../../../utils";
 
 export class PostgresDriver extends Driver {
 
@@ -84,14 +85,16 @@ export class PostgresDriver extends Driver {
       const tablesSchema: SimpleMap<EntitySchema> = new SimpleMap<EntitySchema>();
 
       const informationSchema = await this.connection.queryRunner.query(`
-         SELECT t.table_schema, t.table_name, c.columns
+         SELECT t.table_schema, t.table_name, c.columns, g.triggers
          FROM information_schema.tables t
+
+         -- load columns (with constraints, indexs and sequences)
          LEFT JOIN (
          
             SELECT c.table_schema, c.table_name, json_agg(json_build_object('column_name', c.column_name, 'ordinal_position', c.ordinal_position, 'column_default', c.column_default, 'is_nullable', c.is_nullable, 'data_type', c.data_type, 'numeric_precision', c.numeric_precision, 'numeric_scale', c.numeric_scale, 'constraints', constraints, 'indexs', indexs, 'sequences', sequences) ORDER BY c.ordinal_position) as columns
             FROM information_schema.columns c
 
-            --- load constraints
+            -- load constraints
             LEFT JOIN (
                SELECT tc.table_schema, tc.table_name, kcu.column_name, json_agg(json_build_object('constraint_name', tc.constraint_name, 'constraint_type', tc.constraint_type, 'ordinal_position', kcu.ordinal_position, 'unique_constraint_name', (case when tc.constraint_type = 'FOREIGN KEY' then rc.unique_constraint_name else null end), 'update_rule', rc.update_rule, 'delete_rule', rc.delete_rule)) as constraints
                FROM information_schema.key_column_usage kcu
@@ -100,7 +103,7 @@ export class PostgresDriver extends Driver {
                GROUP BY tc.table_schema, tc.table_name, kcu.column_name
                ORDER BY table_schema, table_name, column_name) ccu on (ccu.table_schema = c.table_schema and ccu.table_name = c.table_name and ccu.column_name = c.column_name)
          
-            --- load indexs
+            -- load indexs
             LEFT JOIN (
                SELECT n.nspname as table_schema, t.relname as table_name, a.attname as column_name, array_agg(i.relname order by i.relname) as indexs
                FROM pg_class t, pg_class i, pg_index ix, pg_attribute a, pg_namespace n
@@ -113,7 +116,7 @@ export class PostgresDriver extends Driver {
                GROUP BY table_schema, table_name, column_name
                ORDER BY table_schema, table_name, column_name) idx on (idx.table_schema = c.table_schema and idx.table_name = c.table_name and idx.column_name = c.column_name)
 
-            --- load sequences
+            -- load sequences
             LEFT JOIN (
                WITH fq_objects AS (SELECT c.oid, n.nspname, c.relname AS fqname, c.relkind, c.relname AS relation FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace), 
                sequences AS (SELECT oid,fqname FROM fq_objects WHERE relkind = 'S'), 
@@ -129,6 +132,18 @@ export class PostgresDriver extends Driver {
 
             GROUP BY c.table_schema, c.table_name 
             ORDER BY c.table_schema, c.table_name) c on (c.table_schema = t.table_schema and c.table_name = t.table_name)
+
+         -- load triggers
+         LEFT JOIN (
+            SELECT trigger_catalog, trigger_schema, trigger_name, event_object_table, JSON_AGG(g.trigger) as triggers
+            FROM (
+               SELECT trigger_catalog, trigger_schema, trigger_name, event_object_table, json_build_object('trigger_name', trigger_name, 'event_manipulation', ARRAY_AGG(event_manipulation), 'action_timing', action_timing, 'comment', pg_description.description) as trigger
+               FROM information_schema.triggers g
+               INNER JOIN pg_catalog.pg_trigger ON (pg_trigger.tgname = g.trigger_name)
+               INNER JOIN pg_catalog.pg_depend ON (pg_depend.refobjid = pg_trigger.tgfoid)
+               INNER JOIN pg_catalog.pg_description ON (pg_description.objoid = pg_depend.objid)
+               GROUP BY trigger_catalog, trigger_schema, trigger_name, event_object_table, action_timing, pg_description.description) g
+            GROUP BY trigger_catalog, trigger_schema, trigger_name, event_object_table) g on (g.trigger_catalog = t.table_catalog and g.trigger_schema = t.table_schema and g.event_object_table = t.table_name)
          
          WHERE t.table_schema = '${this.connection.options.schema ?? 'public'}'
          ${(entitiesToLoad ?? []).length > 0 ? `AND t.table_name in ('${entitiesToLoad?.join(`','`)}')` : ''}
@@ -143,6 +158,7 @@ export class PostgresDriver extends Driver {
             let foreignKeys: SimpleMap<ForeignKeySchema> = new SimpleMap<ForeignKeySchema>();
             let uniques: SimpleMap<UniqueSchema> = new SimpleMap<UniqueSchema>();
             let indexs: SimpleMap<IndexSchema> = new SimpleMap<IndexSchema>();
+            let triggers: SimpleMap<TriggerSchema> = new SimpleMap<TriggerSchema>();
             
             for (const column of table.columns ?? []) {
 
@@ -246,10 +262,18 @@ export class PostgresDriver extends Driver {
                }
             }
 
+            for (const trigger of (table.triggers ?? [])) {
+               triggers[trigger.trigger_name] = new TriggerSchema({
+                  name: trigger.trigger_name,
+                  comment: trigger.comment,
+               });
+            }
+
             tablesSchema[table.table_name] = new EntitySchema({
+               schema: table.table_schema,
                name: table.table_name,
                columns: columns,
-               schema: table.table_schema
+               triggers: triggers
             });
             
          }
@@ -261,17 +285,14 @@ export class PostgresDriver extends Driver {
 
    private async loadExtensions(): Promise<string[]> {
 
-      console.time('loadExtensions');
-
       const extensions = await this.connection.queryRunner.query(`
          SELECT name 
          FROM pg_available_extensions
          WHERE installed_version is not null
          AND name in ('uuid-ossp')`);
 
-      console.timeEnd('loadExtensions');
-
       return extensions.rows.map((row: any) => row.name);
+
    }
 
    public async generateSQLsMigrations(): Promise<string[]> {
@@ -279,8 +300,8 @@ export class PostgresDriver extends Driver {
       /** */
       this.connection.logger.start('Loading Schema');
 
-      const tablesSchema = await this.loadSchema();
-      const extensions = await this.loadExtensions();
+      const tablesSchema: SimpleMap<EntitySchema> = await this.loadSchema();
+      const extensions: string[] = await this.loadExtensions();
 
       /** */
       this.connection.logger.sucess('Loading Schema')
@@ -298,11 +319,13 @@ export class PostgresDriver extends Driver {
       const sqlMigrationsCreatePrimaryKeys: string[] = [];
       const sqlMigrationsCreateIndexs: string[] = [];
       const sqlMigrationsCreateUniques: string[] = [];
+      const sqlMigrationsCreateTriggers: string[] = [];
       const sqlMigrationsCreateForeignKeys: string[] = [];
 
       const sqlMigrationsDropForeignKeys: string[] = [];
       const sqlMigrationsDropUniques: string[] = [];
       const sqlMigrationsDropIndex: string[] = [];
+      const sqlMigrationsDropTriggers: string[] = [];
       const sqlMigrationsDropPrimaryKeys: string[] = [];
 
       const sqlMigrationsDropColumns: string[] = [];
@@ -311,8 +334,6 @@ export class PostgresDriver extends Driver {
       const deletedForeignKeys: string[] = [];
       const deletedIndex: string[] = [];
       const deletedUniques: string[] = [];
-
-      //const columnsVarifyHaveUnique: any = {};
       
       for (const entityMetadata of Object.values(this.connection.entities)) {
 
@@ -524,10 +545,33 @@ export class PostgresDriver extends Driver {
             sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.deleteIndexFromSchema(entityMetadata, entitySchema.indexs[indexName]))
          }
 
+         // check triggers
+         const pendingTriggersSchema: string[] = Object.keys(entitySchema?.triggers ?? []);
+         const triggers: TriggerMetadata[] = (entityMetadata.triggers ?? []);
+         for (let i = 0; i < triggers.length; i++) {
+            const triggerMetadata: TriggerMetadata = triggers[i];
+            const triggerSchema: TriggerSchema = entitySchema?.triggers[triggerMetadata.name as string];
+            const triggerChanged: boolean = (triggerSchema && triggerMetadata.hash != triggerSchema.comment);
+
+            if (!triggerSchema || triggerChanged) {
+               sqlMigrationsCreateTriggers.push(...this.connection.driver.queryBuilder.createTriggerFromMetadata(triggerMetadata));
+            }
+
+            if (!triggerChanged && pendingTriggersSchema.indexOf(triggerMetadata.name as string) >= 0) {
+               pendingTriggersSchema.splice(pendingTriggersSchema.indexOf(triggerMetadata.name as string), 1);
+            }
+         }
+
+         // delete triggers
+         for (const triggerName of pendingTriggersSchema) {
+            sqlMigrationsDropTriggers.push(...this.connection.driver.queryBuilder.deleteTriggerFromSchema(entityMetadata, entitySchema.triggers[triggerName]))
+         }
+
       }
 
       const sqlMigrations: string[] = [
          ...sqlMigrationsCreateExtension,
+         ...sqlMigrationsDropTriggers,
          ...sqlMigrationsDropForeignKeys,
          ...sqlMigrationsDropUniques,
          ...sqlMigrationsDropIndex,
@@ -542,7 +586,8 @@ export class PostgresDriver extends Driver {
          ...sqlMigrationsCreatePrimaryKeys,
          ...sqlMigrationsCreateUniques,
          ...sqlMigrationsCreateIndexs,
-         ...sqlMigrationsCreateForeignKeys
+         ...sqlMigrationsCreateForeignKeys,
+         ...sqlMigrationsCreateTriggers
       ];
 
       /** */

@@ -134,9 +134,22 @@ export class QueryRunner {
 	 */
 	public async query(query: string, params?: any[]): Promise<QueryResult> {
 
-		await this.initializeClient();
-		const result = await this.connection.driver.executeQuery(this, query, params);
+		this.connection.logger.start('Query', query);
 
+		let result: QueryResult;
+		try {
+
+			await this.initializeClient();
+			result = await this.connection.driver.executeQuery(this, query, params);
+
+		} catch (error) {
+
+			this.connection.logger.error('Query', query);
+			throw error;
+
+		}
+
+		this.connection.logger.sucess('Query', query);
 		return result;
 	}
 

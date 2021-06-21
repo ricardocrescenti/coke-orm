@@ -3,4 +3,5 @@ export type ConnectionLogStep =
    'Loading Subscribers' |
    'Loading Entities' |
    'Loading Schema' |
-   'Generating Migrations';
+   'Generating Migrations' |
+   'Query';

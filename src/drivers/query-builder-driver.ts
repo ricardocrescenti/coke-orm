@@ -1,5 +1,5 @@
-import { EntityMetadata, ColumnMetadata, ColumnOptions, ForeignKeyMetadata, IndexMetadata, UniqueMetadata } from "../metadata";
-import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, UniqueSchema } from "../schema";
+import { EntityMetadata, ColumnMetadata, ColumnOptions, ForeignKeyMetadata, IndexMetadata, UniqueMetadata, TriggerMetadata } from "../metadata";
+import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, UniqueSchema, TriggerSchema } from "../schema";
 import { Driver } from "./driver";
 
 export abstract class QueryBuilderDriver {
@@ -83,6 +83,12 @@ export abstract class QueryBuilderDriver {
     * @param foreignKeyMetadata 
     */
    public abstract createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata): string;
+
+   /**
+    * 
+    * @param {TriggerMetadata} triggerMetadata 
+    */
+   public abstract createTriggerFromMetadata(triggerMetadata: TriggerMetadata): string[];
    
    /**
     * 
@@ -127,5 +133,11 @@ export abstract class QueryBuilderDriver {
     * 
     */
    public abstract deleteSequenceFromName(sequenceName: string): string;
+   
+   /**
+    * 
+    * @param triggerOptions 
+    */
+   public abstract deleteTriggerFromSchema(entityMetadata: EntityMetadata, triggerOptions: TriggerSchema): string[]
 
 }

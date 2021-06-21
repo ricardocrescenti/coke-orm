@@ -4,14 +4,14 @@ import { SimpleMap } from '../common';
 import { Connection } from '../connection';
 import { DecoratorsStore } from '../decorators';
 import { DefaultColumnOptions } from '../drivers';
-import { ColumnMetadataNotLocatedError, EntityHasNoPrimaryKeyError, EntityMetadataNotLocatedError, ReferencedColumnMetadataNotLocatedError, ReferencedEntityMetadataNotLocatedError } from '../errors';
+import { ColumnMetadataNotLocatedError, EntityHasNoPrimaryKeyError, EntityMetadataNotLocatedError, InvalidTriggerOptionError, ReferencedColumnMetadataNotLocatedError, ReferencedEntityMetadataNotLocatedError } from '../errors';
 import { MigrationModel } from '../migration';
 import { NamingStrategy } from '../naming-strategy';
 import { OrmUtils } from '../utils';
 import { ColumnMetadata, ColumnOptions } from './column';
 import { EntityMetadata, EntityOptions } from './entity';
 import { ForeignKeyMetadata, ForeignKeyOptions } from './foreign-key';
-import { IndexMetadata } from './index';
+import { IndexMetadata, TriggerMetadata } from './index';
 import { PrimaryKeyMetadata } from './primary-key';
 import { UniqueMetadata, UniqueOptions } from './unique';
 
@@ -67,40 +67,73 @@ export class Metadata {
 	}
 
 	/**
-	 * Load the entity subscribers classes defined in the [subscribers] parameter
-	 * of the connection options.
-	 * @return {Function[]} Returns the subscriber classes of loaded entities.
-	 */
-	public loadSubscribersClasses(): Function[] {
-		const events: Function[] = [];
+	* Load the entity triggers classes defined in the [triggers] parameter of
+	* the connection options.
+	*/
+	public loadTriggersClasses(): void {
+		// const events: Function[] = [];
 
-		if (!this.connection.options.subscribers) {
-			return [];
+		if (!this.connection.options.triggers) {
+			return;
 		}
 
-		for (const event of this.connection.options.subscribers) {
+		for (const trigger of this.connection.options.triggers.filter((trigger) => typeof trigger == 'string')) {
 
-			if (event instanceof Function) {
-				events.push(event);
-			} else {
+			// if (trigger instanceof Function) {
+			// 	events.push(trigger);
+			// } else {
 
-				const eventsPath = path.join(OrmUtils.rootPath(this.connection.options), event);
-				const filesPath: string[] = glob.sync(eventsPath);
+			const eventsPath = path.join(OrmUtils.rootPath(this.connection.options), trigger);
+			const filesPath: string[] = glob.sync(eventsPath);
 
-				for (const filePath of filesPath) {
-					const file = require(filePath);
-					for (const key of Object.keys(file)) {
-						if (file.__esModule) {
-							events.push(file[key]);
-						}
-					}
-				}
-
+			for (const filePath of filesPath) {
+				require(filePath);
+				// const file = require(filePath);
+				// for (const key of Object.keys(file)) {
+				// 	if (file.__esModule) {
+				// 		events.push(file[key]);
+				// 	}
+				// }
 			}
 
+			// }
+
+		}
+	}
+
+	/**
+	 * Load the entity subscribers classes defined in the [subscribers] parameter
+	 * of the connection options.
+	 */
+	public loadSubscribersClasses(): void {
+		// const subscribers: Function[] = [];
+
+		if (!this.connection.options.subscribers) {
+			return;
 		}
 
-		return events;
+		for (const subscriber of this.connection.options.subscribers.filter((subscriber) => typeof subscriber == 'string')) {
+
+			// if (subscriber instanceof Function) {
+			// 	subscribers.push(event);
+			// } else {
+
+			const eventsPath = path.join(OrmUtils.rootPath(this.connection.options), subscriber);
+			const filesPath: string[] = glob.sync(eventsPath);
+
+			for (const filePath of filesPath) {
+				require(filePath);
+				// const file = require(filePath);
+				// for (const key of Object.keys(file)) {
+				// 	if (file.__esModule) {
+				// 		subscribers.push(file[key]);
+				// 	}
+				// }
+			}
+
+			// }
+
+		}
 	}
 
 	/**
@@ -108,15 +141,19 @@ export class Metadata {
 	 * indices, unique keys, relationships between entities and subscribers.
 	 */
 	public loadMetadata(): void {
-		
+
 		/** Entities subscriber loading start log */
 		this.connection.logger.start('Loading Subscribers');
 
+		/** load trigger classes */
+		this.loadTriggersClasses();
+
+		/** load subscriber classes */
 		this.loadSubscribersClasses();
-		
+
 		/** Entities subscriber loading success log */
 		this.connection.logger.sucess('Loading Subscribers');
-		
+
 		/** Entities loading start log */
 		this.connection.logger.start('Loading Entities');
 
@@ -245,6 +282,24 @@ export class Metadata {
 					entity: entityMetadata,
 					name: namingStrategy.indexName(entityMetadata, indexOptions),
 				}));
+			}
+
+			// get triggers to this entity
+			for (const triggerOptions of DecoratorsStore.getTriggers(entityOptions.target)) {
+
+				if (!triggerOptions.events || triggerOptions.events.length == 0) {
+					throw new InvalidTriggerOptionError(`The '${triggerOptions.trigger.constructor.name}' trigger of the '${entityMetadata.className}' entity does not have the 'events' option indicating when it will be triggered`);
+				}
+				if (triggerOptions.trigger.when && (triggerOptions.events.length > 1 || triggerOptions.events[0] != 'UPDATE')) {
+					throw new InvalidTriggerOptionError(`The '${triggerOptions.trigger.constructor.name}' trigger of the '${entityMetadata.className}' entity has the 'when' property informed and is not only executed on update`);
+				}
+
+				entityMetadata.triggers.push(new TriggerMetadata({
+					...triggerOptions,
+					entity: entityMetadata,
+					name: namingStrategy.triggerName(entityMetadata, triggerOptions),
+				}));
+
 			}
 
 			// validar as colunas

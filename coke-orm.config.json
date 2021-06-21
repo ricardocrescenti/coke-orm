@@ -5,12 +5,9 @@
    "user": "devmaster",
    "password": "supadm",
    "database": "devmaster",
-   "entities": [
-      "./samples/models/**/*.model.js"
-   ],
-   "subscribers": [
-      "./samples/models/**/*.subscriber.js"
-   ],
+   "entities": ["./samples/models/**/*.model.js"],
+   "subscribers": ["./samples/models/**/*.subscriber.js"],
+   "triggers": ["./samples/triggers/**/*.trigger.js"],
    "migrations": {
       "synchronize": true,
       "directory": "./samples/migrations/*.js"

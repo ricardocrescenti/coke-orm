@@ -2,7 +2,7 @@ import { Driver, PostgresDriver, DatabaseDriver } from '../drivers';
 import { SimpleMap, ConstructorTo } from '../common';
 import { TransactionProcess } from './types/transaction-process';
 import { ConnectionAlreadyConnectedError, EntityMetadataNotLocatedError } from '../errors';
-import { EntitySubscriberInterface, EntityMetadata } from '../metadata';
+import { EntityMetadata } from '../metadata';
 import { Migrations } from '../migration';
 import { QueryRunner } from '../query-runner';
 import { EntityManager } from '../manager';
@@ -64,11 +64,6 @@ export class Connection {
 	 * Entities loaded on this connection.
 	 */
 	public readonly entities: SimpleMap<EntityMetadata> = {};
-
-	/**
-	 * Subscribers loaded on this connection.
-	 */
-	public readonly subscribers: SimpleMap<ConstructorTo<EntitySubscriberInterface<any>>> = {};
 
 	/**
 	 * Managers of the entities loaded on this connection.

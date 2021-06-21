@@ -7,6 +7,7 @@ import { EntitySubscriberInterface } from "./interfaces/entity-subscriber.interf
 import { EntityTransactionEventsInterface } from "./interfaces/entity-transaction-events.interface";
 import { EntityUpdateEventsInterface } from "./interfaces/entity-update-events.interface";
 import { LoadEvent } from "./load-event";
+import { SubscriberOptions } from "./subscriber-options";
 import { TransactionCommitEvent } from "./transaction-commit-event";
 import { TransactionRollbackEvent } from "./transaction-rollback-event";
 import { UpdateEvent } from "./update-event";
@@ -21,6 +22,7 @@ export {
    DeleteEvent,
    InsertEvent,
    LoadEvent,
+   SubscriberOptions,
    TransactionCommitEvent,
    TransactionRollbackEvent,
    UpdateEvent

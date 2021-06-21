@@ -1,7 +1,7 @@
 import { InvalidGenerateStrategyError } from "../../../errors";
-import { Generate } from "../../../metadata";
+import { Generate, TriggerMetadata } from "../../../metadata";
 import { ColumnMetadata, ColumnOptions, ForeignKeyMetadata, IndexMetadata, EntityMetadata, UniqueMetadata } from "../../../metadata";
-import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, UniqueSchema } from "../../../schema";
+import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, TriggerSchema, UniqueSchema } from "../../../schema";
 import { QueryBuilderDriver } from "../../query-builder-driver";
 
 export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
@@ -146,6 +146,15 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
       return `ALTER TABLE "${foreignKeyMetadata.entity.connection.options.schema ?? 'public'}"."${foreignKeyMetadata.entity.name}" ADD ${constraint};`;
    }
 
+   public createTriggerFromMetadata(triggerMetadata: TriggerMetadata): string[] {
+      const variables = (triggerMetadata.trigger.variables ? `DECLARE ${triggerMetadata.trigger.variables.map((variable) => `${variable.name} ${variable.type}`).join(' ')};` : '');
+      return [
+         `CREATE FUNCTION "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.name}"() RETURNS trigger LANGUAGE 'plpgsql' VOLATILE AS $BODY$ ${variables} BEGIN ${triggerMetadata.trigger.code} END $BODY$;`,
+         `CREATE TRIGGER "${triggerMetadata.name}" ${triggerMetadata.fires} ${triggerMetadata.events.join(' OR ')} ON "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.entity.name}" FOR EACH ROW ${triggerMetadata.trigger.when ? ` WHEN ${triggerMetadata.trigger.when} ` : ''} EXECUTE FUNCTION "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.name}"();`,
+         `COMMENT ON TRIGGER "${triggerMetadata.name}" ON "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.entity.name}" IS '${triggerMetadata.hash}';`,
+      ];
+   }
+
    public deleteTableFromSchema(entitySchema: EntitySchema): string {
       return `DROP TABLE "${entitySchema.schema ?? 'public'}"."${entitySchema.name}";`;
    }
@@ -168,6 +177,14 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 
    public deleteForeignKeyFromSchema(entityMetadata: EntityMetadata, foreignKeySchema: ForeignKeySchema): string {
       return `ALTER TABLE "${entityMetadata.connection.options.schema ?? 'public'}"."${entityMetadata.name}" DROP CONSTRAINT "${foreignKeySchema.name}";`;
+   }
+
+   public deleteTriggerFromSchema(entityMetadata: EntityMetadata, triggerSchema: TriggerSchema): string[] {
+      const triggerName = `"${entityMetadata.connection.options.schema ?? 'public'}"."${triggerSchema.name}"`;
+      return [
+         `DROP TRIGGER "${triggerSchema.name}" ON "${entityMetadata.connection.options.schema ?? 'public'}"."${entityMetadata.name}";`,
+         `DROP FUNCTION "${entityMetadata.connection.options.schema ?? 'public'}"."${triggerSchema.name}"();`
+      ];
    }
 
    public deleteSequenceFromName(sequenceName: string): string {

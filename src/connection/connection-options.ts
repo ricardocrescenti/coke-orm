@@ -75,6 +75,11 @@ export class ConnectionOptions {
    /**
     * 
     */
+   public readonly triggers?: (Function | string)[];
+
+   /**
+    * 
+    */
    public readonly migrations?: MigrationOptions;
 
    /**
@@ -114,6 +119,7 @@ export class ConnectionOptions {
       this.timezone = options?.timezone;
       this.pool = new PoolOptions(options?.pool);
       this.entities = options.entities;
+      this.triggers = options.triggers;
       this.subscribers = options.subscribers;
       this.migrations = new MigrationOptions(options?.migrations);
       this.namingStrategy = options.namingStrategy ?? new NamingStrategy();

@@ -15,9 +15,12 @@
         "@typescript-eslint"
     ],
     "rules": {
+        "guard-for-in": "off",
         "indent": ["error", "tab", { "SwitchCase": 1 }],
+        "require-jsdoc": ["warn"],
         "linebreak-style": ["error", "windows"],
         "max-len": "off",
+        "new-cap": "off",
         "no-tabs": "off",
         "object-curly-spacing": ["error", "always"],
         "padded-blocks": "off"

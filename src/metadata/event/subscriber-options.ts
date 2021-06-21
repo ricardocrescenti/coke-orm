@@ -1,6 +1,6 @@
 import { ConstructorTo } from "../../common";
-import { EntitySubscriberInterface } from "../../metadata";
 import { CokeModel } from "../../manager";
+import { EntitySubscriberInterface } from "./interfaces/entity-subscriber.interface";
 
 export class SubscriberOptions {
 
