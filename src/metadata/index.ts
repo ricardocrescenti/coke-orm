@@ -6,7 +6,7 @@ import { IndexMetadata, IndexOptions } from './index/index';
 import { PrimaryKeyMetadata, PrimaryKeyOptions } from './primary-key';
 import { EntityMetadata, EntityOptions } from './entity';
 import { UniqueMetadata, UniqueOptions } from './unique';
-import { TriggerEvent, TriggerFire, TriggerInterface, TriggerMetadata, TriggerOptions } from './trigger';
+import { TriggerInterface, TriggerMetadata, TriggerOptions } from './trigger';
 
 export {
 	Generate,
@@ -23,8 +23,6 @@ export {
 	PrimaryKeyOptions,
 	EntityMetadata,
 	EntityOptions,
-	TriggerEvent,
-	TriggerFire,
 	TriggerInterface,
 	TriggerMetadata,
 	TriggerOptions,
