@@ -2,12 +2,10 @@
 
 ## Geral
 
+* No QueryBuilderDriver e PostgresQueryBuilderDriver mudar o prefixo "delete" das funções para "drop"
 * Implementar a opção "DeleteTables" no "MigrationOptions"
 * Adicionar uma validação para dar erro caso não ache alguma entidade solicitada no método Decorators.getEntities
-* No método Decorators.getColumn e getColumns não precisar as heranças da tabela principal, pegar internamente
-* Colocar o parâmetro "connection.options.schema" em "entity.schema"
 * Conferir todas as classes de Schema se elas tem a propriedade "schema" para usar na hora de deletar os objetos
-* No QueryBuilderDriver e PostgresQueryBuilderDriver mudar o prefixo "delete" das funções para "drop"
 * Testar o operador 'DeletedIndicator'
 * Melhorar o método save, ficar o processo principal no EntityManager
 * Ajustar para o tipo do campo ficar por padrão integer quando a propriedade for number e não tiver precision

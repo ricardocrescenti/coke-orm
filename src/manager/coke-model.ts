@@ -175,10 +175,10 @@ export abstract class CokeModel {
          const insertQuery: InsertQueryBuilder<this> = entityManager.createInsertQuery()
             .values(objectToSave)
             .returning(columnsToReturn);
-         const insertedObject: QueryResult = await insertQuery.execute(queryRunner);
+         const insertedObject: this[] = await insertQuery.execute(queryRunner);
 
          /// fill in the sent object to be saved the primary key of the registry
-         entityManager.populate(objectToSave, insertedObject.rows[0]);
+         entityManager.populate(objectToSave, insertedObject[0]);
 
          /// run event before saving
          if (eventData) {
@@ -483,7 +483,7 @@ export abstract class CokeModel {
             });
          }
 
-         let deletedResult: QueryResult;
+         let deletedResult: this[];
          if (entityManager.metadata.getDeletedAtColumn()) {
             
             const objectValue: any = {};

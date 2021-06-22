@@ -125,16 +125,16 @@ export class EntityManager<T = any> {
       const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions, 0);
 
       /// run the query to get the result
-      const result: QueryResult = await query.execute(queryRunner);
+      const result: T[] = await query.execute(queryRunner);
 
-      if (result.rows.length > 0) {
+      if (result.length > 0) {
 
          /// create the entity-related subscriber to run the events
          const subscriber: EntitySubscriberInterface<T> | undefined = (runEventAfterLoad ? this.createEntitySubscriber() : undefined);
 
          /// transform the query result into its specific classes
-         for (let i = 0; i < result.rows.length; i++) {
-            result.rows[i] = this.create(result.rows[i]);
+         for (let i = 0; i < result.length; i++) {
+            result[i] = this.create(result[i]);
 
             if (subscriber?.afterLoad) {
                await subscriber.afterLoad({
@@ -142,11 +142,11 @@ export class EntityManager<T = any> {
                   queryRunner: (queryRunner instanceof QueryRunner ? queryRunner : undefined),
                   manager: this,
                   findOptions: findOptions,
-                  entity: result.rows[i]
+                  entity: result[i]
                });
             }
          }
-         return result.rows;
+         return result;
 
       }
 

@@ -59,16 +59,16 @@ export class EntityModel extends PatternModel {
 	private async loadReferenceByParent(queryRunner: QueryRunner, teste: any, parent: PatternModel): Promise<boolean> {
 		
 		if (parent?.id) {
-			const result = await queryRunner.query(`
+			const result: any[] = await queryRunner.query(`
 				select e.id, e.uuid
 				from ${queryRunner.connection.getEntityManager(parent.constructor.name).metadata.name} p
 				inner join entities e on (e.id = p.entity_id)
 				where p.id = ${parent.id}
 			`);
 
-			if (result.rows.length > 0) {
-				this.id = result.rows[0].id;
-				this.uuid = result.rows[0].uuid;
+			if (result.length > 0) {
+				this.id = result[0].id;
+				this.uuid = result[0].uuid;
 			}
 		}
 

@@ -64,7 +64,7 @@ export abstract class QueryBuilder<T> {
     * 
     * @returns 
     */
-   public async execute(queryRunner?: QueryRunner): Promise<QueryResult> {
+   public async execute(queryRunner?: QueryRunner): Promise<T[]> {
       const query: string = this.getQuery();
       const params: string[] = this.getParams();
       

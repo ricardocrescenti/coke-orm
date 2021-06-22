@@ -132,7 +132,7 @@ export class QueryRunner {
 	 * @param {string} query Query to be performed.
 	 * @param {any[]} params Query parameter list. (Query example: name = $1)
 	 */
-	public async query(query: string, params?: any[]): Promise<QueryResult> {
+	public async query(query: string, params?: any[]): Promise<any[]> {
 
 		this.connection.logger.start('Query', query);
 
@@ -150,7 +150,7 @@ export class QueryRunner {
 		}
 
 		this.connection.logger.sucess('Query', query);
-		return result;
+		return result.rows;
 	}
 
 	/**

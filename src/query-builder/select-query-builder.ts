@@ -109,8 +109,8 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
          alias: 'count'
       }));
 
-      const result: QueryResult = await this.execute();
-      return result.rows[0]['count'];
+      const result: any[] = await this.execute();
+      return result[0]['count'];
    
    }
 
@@ -120,7 +120,6 @@ export class SelectQueryBuilder<T> extends QueryBuilder<T> {
    }
 
    public async getMany(queryRunner?: QueryRunner): Promise<any[]> {
-      const result: QueryResult = await this.execute();
-      return result.rows;
+      return this.execute();
    }
 }

@@ -149,9 +149,9 @@ export class PostgresDriver extends Driver {
          ${(entitiesToLoad ?? []).length > 0 ? `AND t.table_name in ('${entitiesToLoad?.join(`','`)}')` : ''}
          ORDER BY t.table_name`);
 
-      if (informationSchema.rows.length > 0) {
+      if (informationSchema.length > 0) {
 
-         for (const table of informationSchema.rows) {
+         for (const table of informationSchema) {
 
             let columns: SimpleMap<ColumnSchema> = new SimpleMap<ColumnSchema>();
             let primaryKey: PrimaryKeySchema | undefined;
@@ -291,7 +291,7 @@ export class PostgresDriver extends Driver {
          WHERE installed_version is not null
          AND name in ('uuid-ossp')`);
 
-      return extensions.rows.map((row: any) => row.name);
+      return extensions.map((row: any) => row.name);
 
    }
 
