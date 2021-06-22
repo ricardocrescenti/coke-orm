@@ -413,7 +413,7 @@ export class PostgresDriver extends Driver {
                      const sequenceName: string = this.connection.options.namingStrategy?.sequenceName(columnMetadata) as string;
                      
                      // verify that the sequence is not created in the database, to create it
-                     if (columnSchema.sequences.indexOf(sequenceName) < 0) {
+                     if (!columnSchema || columnSchema.sequences.indexOf(sequenceName) < 0) {
                         sqlMigrationsCreateSequence.push(this.connection.driver.queryBuilder.createSequenceFromMetadata(columnMetadata));
                         sqlMigrationsAssociateSequences.push(this.connection.driver.queryBuilder.associateSequenceFromMetadata(columnMetadata));
                      }
