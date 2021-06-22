@@ -1,5 +1,5 @@
 import { Driver, PostgresDriver, DatabaseDriver } from '../drivers';
-import { SimpleMap, ConstructorTo } from '../common';
+import { SimpleMap } from '../common';
 import { TransactionProcess } from './types/transaction-process';
 import { ConnectionAlreadyConnectedError, EntityMetadataNotLocatedError } from '../errors';
 import { EntityMetadata } from '../metadata';
