@@ -39,6 +39,11 @@ export class Metadata {
 	 * @return {Function[]} Return loaded entity classes.
 	 */
 	private loadEntitiesClasses(): Function[] {
+
+		if (!this.connection.options.entities) {
+			return [];
+		}
+
 		const entities: Function[] = [];
 
 		for (const entity of this.connection.options.entities) {

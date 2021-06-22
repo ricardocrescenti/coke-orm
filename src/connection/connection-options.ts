@@ -65,7 +65,7 @@ export class ConnectionOptions {
    /**
     * 
     */
-   public readonly entities: (Function | string)[];
+   public readonly entities?: (Function | string)[];
 
    /**
     * 
