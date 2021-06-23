@@ -1,6 +1,7 @@
 import { CokeORM } from "../coke-orm";
 import { Connection } from "../connection";
 import { Status } from "./enums/status.enum";
+import { CategoryModel } from "./models/categories/category.model";
 import { CityModel } from "./models/entity/city.model";
 import { EntityAddressModel } from "./models/entity/entity-address.model";
 import { SellerModel } from "./models/entity/seller.model";
@@ -8,6 +9,39 @@ import { SellerModel } from "./models/entity/seller.model";
 export async function test() {
   
    const connection: Connection = await CokeORM.connect();
+
+   let category: CategoryModel;
+   let categories: any;
+
+   category = await connection.getEntityManager(CategoryModel).save({
+      name: 'Category 1'
+   });
+   
+   categories = await connection.getEntityManager(CategoryModel).save([
+      {
+         name: 'Category 2'
+      },
+      {
+         name: 'Category 1.1',
+         parent: category
+      }
+   ]);
+
+   categories = await await connection.getEntityManager(CategoryModel).find({
+      where: [
+         {
+            parent: { isNull: true },
+         },
+         {
+            parent: {
+               id: 2
+            }
+         }
+      ],
+      relations: [
+         'parent'
+      ]
+   })
 
    let city: CityModel;
 
@@ -309,7 +343,7 @@ export async function test() {
          id: 'ASC'
       }
    });
-   //console.log('find', sellers);
+   console.log('find', sellers);
 
 }
 

@@ -1,7 +1,7 @@
 import { SimpleMap } from "../common";
 import { Connection } from "../connection";
 import { ColumnMetadata, EntitySubscriberInterface, ForeignKeyMetadata, EntityMetadata } from "../metadata";
-import { DeleteQueryBuilder, InsertQueryBuilder, SelectQueryBuilder, UpdateQueryBuilder, QueryWhere, QueryResult } from "../query-builder";
+import { DeleteQueryBuilder, InsertQueryBuilder, SelectQueryBuilder, UpdateQueryBuilder, QueryWhere, QueryResult, QueryManager } from "../query-builder";
 import { FindOptions } from "./options/find-options";
 import { QueryRelationBuilder, QueryColumnBuilder, QueryDatabaseColumnBuilder, QueryJsonAggColumnBuilder, QueryJsonColumnBuilder, QueryWhereColumnBuilder, QueryAggregateColumnBuilder } from "../query-builder";
 import { FindSelect } from "./types/find-select";
@@ -474,21 +474,24 @@ export class EntityManager<T = any> {
 
          for (let i = 0; i < subqueryWhere.length; i++) {
             
-            const where: any = subqueryWhere[i];
-            if (OrmUtils.isNotEmpty(where[columnMetadata.propertyName])) {
+            const queryWhere: any = subqueryWhere[i];
+            const whereValue: any = queryWhere[columnMetadata.propertyName];
+            const wherekeys = (OrmUtils.isNotEmpty(whereValue) ? Object.keys(whereValue) : []);
+
+            if (wherekeys.length > 0 && (wherekeys.length != 1 || !QueryManager.operatorsConstructor[wherekeys[0]])) {
             
-               const sha1Where: string = StringUtils.sha1(JSON.stringify(where[columnMetadata.propertyName]));
+               const sha1Where: string = StringUtils.sha1(JSON.stringify(queryWhere[columnMetadata.propertyName]));
                if (queryWhereColumns.filter(column => column.alias == sha1Where).length == 0) { 
 
                   queryWhereColumns.push(new QueryWhereColumnBuilder({
-                     where: where[columnMetadata.propertyName],
+                     where: whereValue,
                      alias: sha1Where
                   }))
 
                }
 
                subqueryWhere[i][`${columnMetadata.propertyName}_${columnMetadata.relation?.referencedEntity}.${sha1Where}`] = { equal: true };
-               delete where[columnMetadata.propertyName];
+               delete queryWhere[columnMetadata.propertyName];
             
             }
 

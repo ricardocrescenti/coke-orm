@@ -5,7 +5,7 @@ import { ColumnMetadata, ForeignKeyMetadata, EntityMetadata } from "../metadata"
 import { InvalidWhereOperatorError } from "../errors";
 
 export class QueryManager<T> {
-   private static operatorsConstructor: { [p: string]: Function } = {
+   public static operatorsConstructor: { [p: string]: Function } = {
       between: Between,
       equal: Equal,
       greaterThan: GreaterThan,
@@ -182,7 +182,9 @@ export class QueryManager<T> {
          } else {
 
             const relationMetadata: ForeignKeyMetadata | undefined = entityMetadata?.columns[key]?.relation;
-            if (relationMetadata) {
+            const keys = Object.keys((whereCondition as any)[key]);
+
+            if (relationMetadata && (keys.length != 1 || !QueryManager.operatorsConstructor[keys[0]])) {
 
                const relationEntityMetadata: EntityMetadata = relationMetadata.getReferencedEntityMetadata();
                

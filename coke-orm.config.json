@@ -11,5 +11,8 @@
    "migrations": {
       "synchronize": true,
       "directory": "./samples/migrations/*.js"
+   },
+   "cli": {
+      "migrations": "./samples/migrations"
    }
 }
