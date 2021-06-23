@@ -161,13 +161,17 @@ export abstract class Driver {
     */
    public validateColumnMetadatada(entityMetadata: EntityMetadata, column: ColumnMetadata): void {
 
+      if (column.operation == 'DeletedIndicator' || column.operation == 'Virtual') {
+         return;
+      }
+
       if (column.relation?.type == 'OneToMany') {
 
          if (column.propertyType.prototype != Array.prototype) {
             throw new InvalidColumnOptionError(`The '${column.name}' property of the '${entityMetadata.name}' entity with a 'OneToMany' type relation must be an array.`);
          }
 
-      } else if (column.operation != 'DeletedIndicator') {
+      } else {
          
          if (!column.relation) {
 

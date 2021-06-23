@@ -370,7 +370,7 @@ export class PostgresDriver extends Driver {
             // check column diferences
             for (const columnName in entityMetadata.columns) {
                const columnMetadata: ColumnMetadata = entityMetadata.getColumn(columnName);
-               if (columnMetadata.operation == 'DeletedIndicator' || (columnMetadata.relation && columnMetadata.relation.type == 'OneToMany')) {
+               if (columnMetadata.operation == 'DeletedIndicator' || columnMetadata.operation == 'Virtual' || (columnMetadata.relation && columnMetadata.relation.type == 'OneToMany')) {
                   continue;
                }
 

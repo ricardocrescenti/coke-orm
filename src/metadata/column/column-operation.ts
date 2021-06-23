@@ -1,1 +1,1 @@
-export type ColumnOperation = 'CreatedAt' | 'UpdatedAt' | 'DeletedAt' | 'DeletedIndicator';
+export type ColumnOperation = 'CreatedAt' | 'UpdatedAt' | 'DeletedAt' | 'DeletedIndicator' | 'Virtual';

@@ -55,7 +55,7 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 
       for (const columnName in entityMetadata.columns) {
          const column: ColumnMetadata = entityMetadata.getColumn(columnName);
-         if (column.operation == 'DeletedIndicator' || (column.relation && column.relation.type == 'OneToMany')) {
+         if (column.operation == 'DeletedIndicator' || column.operation == 'Virtual' || (column.relation && column.relation.type == 'OneToMany')) {
             continue;
          }
 

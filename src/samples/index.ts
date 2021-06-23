@@ -16,6 +16,7 @@ export async function test() {
    category = await connection.getEntityManager(CategoryModel).save({
       name: 'Category 1'
    });
+   console.log(category);
    
    categories = await connection.getEntityManager(CategoryModel).save([
       {
@@ -26,6 +27,7 @@ export async function test() {
          parent: category
       }
    ]);
+   console.log(categories);
 
    categories = await await connection.getEntityManager(CategoryModel).find({
       where: [
@@ -41,7 +43,8 @@ export async function test() {
       relations: [
          'parent'
       ]
-   })
+   });
+   console.log(categories);
 
    let city: CityModel;
 

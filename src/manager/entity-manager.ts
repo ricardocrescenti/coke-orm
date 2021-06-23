@@ -367,7 +367,7 @@ export class EntityManager<T = any> {
       if (!findOptions.select || findOptions.select.length == 0) 
       {
          findOptions.select = Object.values(this.metadata.columns)
-            .filter(column => column.canSelect && column.operation != 'DeletedIndicator' && (!column.relation || (column.relation.eager || (findOptions.relations ?? []).indexOf(column.propertyName) >= 0)))
+            .filter(column => column.canSelect && column.operation != 'DeletedIndicator' && column.operation != 'Virtual' && (!column.relation || (column.relation.eager || (findOptions.relations ?? []).indexOf(column.propertyName) >= 0)))
             .map(column => column.propertyName);
       }
 
