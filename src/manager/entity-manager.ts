@@ -69,16 +69,19 @@ export class EntityManager<T = any> {
 
          if (columnMetadata.relation) {
 
-            const relationEntityManager: EntityManager<any> = this.connection.getEntityManager(columnMetadata.relation.referencedEntity);
-            if (columnMetadata.relation.type == 'OneToMany') {
-               if (!Array.isArray(values[columnMetadata.propertyName])) {
-                  throw new InvalidEntityPropertyValueError(`The value of the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not an array`)
+            if (values[columnMetadata.propertyName]) {
+               const relationEntityManager: EntityManager<any> = this.connection.getEntityManager(columnMetadata.relation.referencedEntity);
+               if (columnMetadata.relation.type == 'OneToMany') {
+                  if (!Array.isArray(values[columnMetadata.propertyName])) {
+                     throw new InvalidEntityPropertyValueError(`The value of the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not an array`)
+                  }
+                  object[columnMetadata.propertyName] = values[columnMetadata.propertyName].map((value: any) => relationEntityManager.create(value));
+               } else {
+                  object[columnMetadata.propertyName] = relationEntityManager.create(values[columnMetadata.propertyName]);
                }
-               object[columnMetadata.propertyName] = values[columnMetadata.propertyName].map((value: any) => relationEntityManager.create(value));
             } else {
-               object[columnMetadata.propertyName] = relationEntityManager.create(values[columnMetadata.propertyName]);
+               object[columnMetadata.propertyName] = values[columnMetadata.propertyName];
             }
-
          } else {
             object[columnMetadata.propertyName] = values[columnMetadata.propertyName];
          }
