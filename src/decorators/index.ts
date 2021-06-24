@@ -13,6 +13,7 @@ import { UpdatedAtColumn } from './columns/updated-at-column';
 import { DecoratorsStore } from './decorators-store';
 import { DeletedIndicator } from './columns/deleted-indicator';
 import { Trigger } from './trigger/trigger';
+import { VirtualColumn } from './columns/virtual-column';
 
 export {
 	Entity,
@@ -25,6 +26,7 @@ export {
 	UpdatedAtColumn,
 	DeletedAtColumn,
 	DeletedIndicator,
+	VirtualColumn,
 	Unique,
 	Index,
 	Trigger,
