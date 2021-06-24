@@ -1,3 +1,4 @@
+import { CliNotConfiguredError } from './cli-not-configured.error';
 import { ColumnMetadataNotLocatedError } from './column_metadata_not_located.error';
 import { ConfigFileNotFoundError } from './config-file-not-found.error';
 import { ConnectionAlreadyConnectedError } from './connection-already-connected.error';
@@ -20,6 +21,7 @@ import { SubscriberAlreadyInformedError } from './subscriber-already-informed.er
 import { UndefinedQueryConditionOperatorError } from './undefined_query_condition_operator.error';
 
 export {
+	CliNotConfiguredError,
 	ColumnMetadataNotLocatedError,
 	ConfigFileNotFoundError,
 	ConnectionAlreadyConnectedError,

@@ -106,7 +106,7 @@ export class ConnectionOptions {
 	/**
 	 * Options used for the command line.
 	 */
-	public readonly cli: CliOptions;
+	public readonly cli?: CliOptions;
 
 	/**
 	 * Additional user-defined data for this connection.

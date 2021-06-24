@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 import * as yargs from 'yargs';
 import { ConnectionOptions } from '../../connection';
+import { CliNotConfiguredError } from '../../errors';
 import { OrmUtils } from '../../utils';
 
 /**
@@ -93,7 +94,11 @@ export class ${name} implements MigrationInterface {
 
 		const migrationContent: string = this.getTemplace(migrationClassName.replace(new RegExp('-', 'g'), ''), upQueries, downQueries);
 
-		let migrationPath = OrmUtils.pathTo(connectionOptions.cli.migrationsDir);
+		if (!connectionOptions.cli?.migrationsDir) {
+			throw new CliNotConfiguredError('migration path');
+		}
+
+		let migrationPath = OrmUtils.pathTo(connectionOptions.cli?.migrationsDir);
 		fs.mkdirSync(migrationPath, { recursive: true });
 
 		migrationPath = path.join(migrationPath, migrationFileName + '.ts');
