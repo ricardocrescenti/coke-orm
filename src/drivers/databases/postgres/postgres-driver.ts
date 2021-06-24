@@ -60,17 +60,17 @@ export class PostgresDriver extends Driver {
       await queryRunner.query(`ROLLBACK TRANSACTION`);
    }
    
-   public async releaseQueryRunner(queryRunner: QueryRunner): Promise<void> {
-      await queryRunner.client.release();
+   public async releaseQueryRunner(client: any): Promise<void> {
+      await client.release();
    }
    
    public async disconnect(): Promise<void> {
       await this.client.end();
    }
 
-   public async executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<QueryResult> {
+   public async executeQuery(client: any, query: string, params?: any[]): Promise<QueryResult> {
       return new Promise((resolve, reject) => {
-         queryRunner.client.query(query, params, (error: any, result: any) => {
+         client.query(query, params, (error: any, result: any) => {
 
             if (error) {
                return reject(error);

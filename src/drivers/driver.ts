@@ -96,13 +96,13 @@ export abstract class Driver {
    /**
     * 
     */
-   public abstract releaseQueryRunner(queryRunner: QueryRunner): Promise<void>;
+   public abstract releaseQueryRunner(client: any): Promise<void>;
 
    /**
     * 
     * @param query 
     */
-   public abstract executeQuery(queryRunner: QueryRunner, query: string, params?: any[]): Promise<QueryResult>;
+   public abstract executeQuery(client: any, query: string, params?: any[]): Promise<QueryResult>;
 
    /**
     * 

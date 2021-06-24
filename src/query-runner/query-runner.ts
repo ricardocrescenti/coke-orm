@@ -20,7 +20,6 @@ export class QueryRunner {
 	}
 
 	private _client: any;
-	private _clientePromise?: Promise<void>
 
 	/**
 	 * Indicates whether this QueryRunner is currently in transaction.
@@ -65,14 +64,7 @@ export class QueryRunner {
 	 * Get a client from the connection pool.
 	 */
 	public async initializeClient() {
-
-		if (!this._clientePromise) {
-			this._clientePromise = this.connection.driver.getClient().then<void, any>((client) => {
-				this._client = client;
-			});
-		}
-		await this._clientePromise;
-
+		return this.connection.driver.getClient();
 	}
 
 	/**
@@ -84,7 +76,7 @@ export class QueryRunner {
 			throw new Error('O QueryRunner já possui uma transação iniciada');
 		}
 
-		await this.initializeClient();
+		this._client = await this.initializeClient();
 		await this.connection.driver.beginTransaction(this.client);
 
 		this._inTransaction = true;
@@ -136,16 +128,26 @@ export class QueryRunner {
 
 		this.connection.logger.start('Query', query);
 
+		let client: any;
 		let result: QueryResult;
 		try {
 
-			await this.initializeClient();
-			result = await this.connection.driver.executeQuery(this, query, params);
+			if (!this.inTransaction) {
+				client = await this.initializeClient();
+			}
+
+			result = await this.connection.driver.executeQuery(client ?? this.client, query, params);
 
 		} catch (error) {
 
 			this.connection.logger.error('Query', query);
 			throw error;
+
+		} finally {
+
+			if (!this.inTransaction) {
+				await this.connection.driver.releaseQueryRunner(client);
+			}
 
 		}
 
@@ -158,18 +160,16 @@ export class QueryRunner {
 	 */
 	public async release(): Promise<void> {
 
-		if (!this.client) {
-			return;
-		}
-
-		await this.connection.driver.releaseQueryRunner(this);
-
 		const index = this.connection.activeQueryRunners.indexOf(this);
 		if (index >= 0) {
 			this.connection.activeQueryRunners.splice(index, 1);
 		}
 
-		this._clientePromise = undefined;
+		if (!this.client) {
+			return;
+		}
+		await this.connection.driver.releaseQueryRunner(this.client);
+
 		this._client = undefined;
 
 	}
