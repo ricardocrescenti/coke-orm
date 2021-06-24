@@ -1,70 +1,92 @@
 const path = require('path');
 const fs = require('fs');
-import { ConnectionOptions } from "../connection";
-import { ConfigFileNotFoundError, ConnectionNameDoesNotExistError } from "../errors";
+import { ConnectionOptions } from '../connection';
+import { ConfigFileNotFoundError, ConnectionNameDoesNotExistError } from '../errors';
 
+/**
+ * Useful Classes for ORM.
+ */
 export class OrmUtils {
-   private constructor() {}
 
-   public static rootPath(connectionOptions: ConnectionOptions, useSourcePath: boolean = false): Promise<string> {
-      return path.join(process.cwd(), (useSourcePath ? connectionOptions.additional?.sourceDir : connectionOptions.additional?.outDir));
-   }
+	/**
+	 * Constructor with private access to not allow creating this class, as
+	 * all methods will be static.
+	 */
+	private constructor() {}
 
-   public static isEmpty(value: any): boolean {
-      if (value) {
-         return Object.keys(value).length == 0;
-         // if (Array.isArray(value)) {
-         //    return value.length == 0;
-         // } else if (value instanceof Object) {
-         //    return ;
-         // }
-      }
-      return true;
-   }
 
-   public static isNotEmpty(value: any): boolean {
-      return !this.isEmpty(value);
-   }
+	/**
+	 * Create the path to the specified folder from the project's root folder.
+	 * @param {string} dir Final path to be requested.
+	 * @return {string} Full path to requested folder.
+	 */
+	public static pathTo(dir: string): string {
+		return path.join(process.cwd(), dir);
+	}
 
-   /**
-    * 
-    * @param connectionName 
-    * @returns 
-    */
-   public static loadConfigFile(connectionName?: string): ConnectionOptions[] {      
-      
-      /// default configuration file name
-      const configFileName = 'coke-orm.config.json';
-      const configFilePath = path.join(process.cwd(), configFileName);
+	/**
+	 * Load ORM configuration file.
+	 * @param {string} connectionName Name of the connection that will be
+	 * loaded, because the configuration file might be a list of connections.
+	 * @return {ConnectionOptions[]} Settings loaded, if the connection name is
+	 * entered, only it will be returned.
+	 */
+	public static loadConfigFile(connectionName?: string): ConnectionOptions[] {
 
-      /// mount the configuration file path
-      if (!fs.existsSync(configFilePath)) {         
-         throw new ConfigFileNotFoundError();
-      }
-      
-      /// load the configuration file
-      let connectionsOptions = require(configFilePath);
-      
-      /// standardize the configuration to be an array of configurations
-      if (!Array.isArray(connectionsOptions)) {
-         connectionsOptions = [connectionsOptions];
-      }
+		// Default configuration file name
+		const configFileName = 'coke-orm.config.json';
+		const configFilePath = path.join(process.cwd(), configFileName);
 
-      /// 
-      for (let i = 0; i < connectionsOptions.length; i++) {
-         connectionsOptions[i] = new ConnectionOptions(connectionsOptions[i]);
-      }
+		// Mount the configuration file path
+		if (!fs.existsSync(configFilePath)) {
+			throw new ConfigFileNotFoundError();
+		}
 
-      /// if the name of the connection is entered in the method parameter, this 
-      /// connection will be attempted, if it does not exist, an error will be 
-      /// thrown
-      if (connectionName) {
-         connectionsOptions = connectionsOptions.filter((configFile: ConnectionOptions) => (configFile.name ?? 'default') == connectionName);
-         if (!connectionsOptions) {
-            throw new ConnectionNameDoesNotExistError(connectionName);
-         }
-      }
+		// Load the configuration file
+		let connectionsOptions = require(configFilePath);
 
-      return connectionsOptions;
-   }
+		// Standardize the configuration to be an array of configurations
+		if (!Array.isArray(connectionsOptions)) {
+			connectionsOptions = [connectionsOptions];
+		}
+
+		// Create the settings class
+		for (let i = 0; i < connectionsOptions.length; i++) {
+			connectionsOptions[i] = new ConnectionOptions(connectionsOptions[i]);
+		}
+
+		// If the name of the connection is entered in the method parameter, this
+		// connection will be attempted, if it does not exist, an error will be
+		// thrown
+		if (connectionName) {
+			connectionsOptions = connectionsOptions.filter((configFile: ConnectionOptions) => (configFile.name ?? 'default') == connectionName);
+			if (!connectionsOptions) {
+				throw new ConnectionNameDoesNotExistError(connectionName);
+			}
+		}
+
+		return connectionsOptions;
+	}
+
+	/**
+	 * Check if an object is empty.
+	 * @param {any} value Object to be tested.
+	 * @return {boolean} Indication if the object is empty.
+	 */
+	public static isEmpty(value: any): boolean {
+		if (value) {
+			return Object.keys(value).length == 0;
+		}
+		return true;
+	}
+
+	/**
+	 * Check if an object is not empty.
+	 * @param {any} value Object to be tested.
+	 * @return {boolean} Indication if the object is not empty.
+	 */
+	public static isNotEmpty(value: any): boolean {
+		return !this.isEmpty(value);
+	}
+
 }

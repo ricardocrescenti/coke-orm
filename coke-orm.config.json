@@ -5,14 +5,14 @@
    "user": "devmaster",
    "password": "supadm",
    "database": "devmaster",
-   "entities": ["./samples/models/**/*.model.js"],
-   "subscribers": ["./samples/models/**/*.subscriber.js"],
-   "triggers": ["./samples/triggers/**/*.trigger.js"],
+   "entities": ["lib/samples/models/**/*.model.js"],
+   "subscribers": ["lib/samples/models/**/*.subscriber.js"],
+   "triggers": ["lib/samples/triggers/**/*.trigger.js"],
    "migrations": {
       "synchronize": true,
-      "directory": "./samples/migrations/*.js"
+      "directory": "lib/samples/migrations/*.js"
    },
    "cli": {
-      "migrations": "./samples/migrations"
+      "migrationsDir": "src/samples/migrations"
    }
 }

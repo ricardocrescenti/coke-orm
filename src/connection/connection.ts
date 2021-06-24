@@ -6,7 +6,7 @@ import { EntityMetadata } from '../metadata';
 import { Migrations } from '../migration';
 import { QueryRunner } from '../query-runner';
 import { EntityManager } from '../manager';
-import { ConnectionOptions } from './connection-options';
+import { ConnectionOptions } from './options/connection-options';
 import { EntityReferenceParameter } from './types/entity-reference-parameter.type';
 import { CokeORM } from '../coke-orm';
 import { Metadata } from '../metadata/metadata';

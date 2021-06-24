@@ -1,4 +1,3 @@
-const path = require('path');
 import * as glob from 'glob';
 import { SimpleMap } from '../common';
 import { Connection } from '../connection';
@@ -52,7 +51,7 @@ export class Metadata {
 				entities.push(entity);
 			} else {
 
-				const entityPath = path.join(OrmUtils.rootPath(this.connection.options), entity);
+				const entityPath = OrmUtils.pathTo(entity);
 				const filesPath: string[] = glob.sync(entityPath);
 
 				for (const filePath of filesPath) {
@@ -76,7 +75,6 @@ export class Metadata {
 	* the connection options.
 	*/
 	public loadTriggersClasses(): void {
-		// const events: Function[] = [];
 
 		if (!this.connection.options.triggers) {
 			return;
@@ -84,24 +82,12 @@ export class Metadata {
 
 		for (const trigger of this.connection.options.triggers.filter((trigger) => typeof trigger == 'string')) {
 
-			// if (trigger instanceof Function) {
-			// 	events.push(trigger);
-			// } else {
-
-			const eventsPath = path.join(OrmUtils.rootPath(this.connection.options), trigger);
+			const eventsPath = OrmUtils.pathTo(trigger as string);
 			const filesPath: string[] = glob.sync(eventsPath);
 
 			for (const filePath of filesPath) {
 				require(filePath);
-				// const file = require(filePath);
-				// for (const key of Object.keys(file)) {
-				// 	if (file.__esModule) {
-				// 		events.push(file[key]);
-				// 	}
-				// }
 			}
-
-			// }
 
 		}
 	}
@@ -111,7 +97,6 @@ export class Metadata {
 	 * of the connection options.
 	 */
 	public loadSubscribersClasses(): void {
-		// const subscribers: Function[] = [];
 
 		if (!this.connection.options.subscribers) {
 			return;
@@ -119,24 +104,12 @@ export class Metadata {
 
 		for (const subscriber of this.connection.options.subscribers.filter((subscriber) => typeof subscriber == 'string')) {
 
-			// if (subscriber instanceof Function) {
-			// 	subscribers.push(event);
-			// } else {
-
-			const eventsPath = path.join(OrmUtils.rootPath(this.connection.options), subscriber);
+			const eventsPath = OrmUtils.pathTo(subscriber as string);
 			const filesPath: string[] = glob.sync(eventsPath);
 
 			for (const filePath of filesPath) {
 				require(filePath);
-				// const file = require(filePath);
-				// for (const key of Object.keys(file)) {
-				// 	if (file.__esModule) {
-				// 		subscribers.push(file[key]);
-				// 	}
-				// }
 			}
-
-			// }
 
 		}
 	}

@@ -12,12 +12,12 @@ export class AdditionalOptions {
 	/**
 	 * Project source code base folder. (Default: src)
 	 */
-	public readonly sourceDir?: string;
+	// public readonly sourceDir?: string;
 
 	/**
 	 * Destination folder for transpiled files. (Default: lib)
 	 */
-	public readonly outDir?: string;
+	// public readonly outDir?: string;
 
 	/**
 	 * Indicates whether null values are allowed in unique key fields, if it is
@@ -32,8 +32,8 @@ export class AdditionalOptions {
 	 */
 	constructor(options?: AdditionalOptions) {
 		this.applicationName = options?.applicationName ?? 'CokeORM';
-		this.sourceDir = options?.sourceDir ?? 'src';
-		this.outDir = options?.outDir ?? 'lib';
+		// this.sourceDir = options?.sourceDir ?? 'src';
+		// this.outDir = options?.outDir ?? 'lib';
 		this.allowNullInUniqueKeyColumn = options?.allowNullInUniqueKeyColumn ?? false;
 	}
 

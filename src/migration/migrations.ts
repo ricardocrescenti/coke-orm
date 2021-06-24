@@ -1,4 +1,3 @@
-const path = require('path');
 import * as glob from 'glob';
 import { SimpleMap } from '../common';
 import { Connection } from '../connection';
@@ -70,7 +69,7 @@ export class Migrations {
 		const entitiesSchema: SimpleMap<EntitySchema> = await this.connection.driver.loadSchema([migrationTableName]);
 		const performedMigrations: MigrationModel[] = (entitiesSchema[migrationTableName] != null ? await this.connection.getEntityManager(MigrationModel).find() : []);
 
-		const migrationsPath = path.join(OrmUtils.rootPath(this.connection.options), this.connection.options.migrations?.directory);
+		const migrationsPath = OrmUtils.pathTo(this.connection.options.migrations?.directory as string);
 		const filesPath: string[] = glob.sync(migrationsPath);
 
 		for (const filePath of filesPath) {

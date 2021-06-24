@@ -14,10 +14,19 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 	public aliases: string = 'migration:create';
 	public describe: string = 'Generate a new migration file.';
 
+	/**
+	 * 
+	 * @param args 
+	 * @returns 
+	 */
 	public builder(args: yargs.Argv): yargs.Argv {
 		return MigrationCreateCommand.defaultArgs(args);
 	};
 
+	/**
+	 * 
+	 * @param args 
+	 */
 	public async handler(args: yargs.Arguments) {
 		const [connectionOptions] = OrmUtils.loadConfigFile(args.connection as string);
 		MigrationCreateCommand.saveMigrationFile(connectionOptions, args.name as string);
@@ -25,6 +34,11 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 		process.exit();
 	}
 
+	/**
+	 * 
+	 * @param args 
+	 * @returns 
+	 */
 	public static defaultArgs(args: yargs.Argv): yargs.Argv {
 		return args
 			.option('c', {
@@ -41,6 +55,13 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 			});
 	}
 
+	/**
+	 * 
+	 * @param name 
+	 * @param upQueries 
+	 * @param downQueries 
+	 * @returns 
+	 */
 	public static getTemplace(name: string, upQueries?: string[], downQueries?: string[]) {
 		return `import { MigrationInterface, QueryRunner } from '@ricardocrescenti/coke-orm';
 
@@ -57,6 +78,13 @@ export class ${name} implements MigrationInterface {
 }`;
 	}
 
+	/**
+	 * 
+	 * @param connectionOptions 
+	 * @param name 
+	 * @param upQueries 
+	 * @param downQueries 
+	 */
 	public static saveMigrationFile(connectionOptions: ConnectionOptions, name: string, upQueries?: string[], downQueries?: string[]) {
 		const date: Date = new Date();
 
@@ -65,7 +93,7 @@ export class ${name} implements MigrationInterface {
 
 		const migrationContent: string = this.getTemplace(migrationClassName.replace(new RegExp('-', 'g'), ''), upQueries, downQueries);
 
-		let migrationPath = path.join(OrmUtils.rootPath(connectionOptions, true), connectionOptions.migrations?.directory);
+		let migrationPath = OrmUtils.pathTo(connectionOptions.cli.migrationsDir);
 		fs.mkdirSync(migrationPath, { recursive: true });
 
 		migrationPath = path.join(migrationPath, migrationFileName + '.ts');
