@@ -355,10 +355,10 @@ export class QueryManager<T> {
    /// PARAMETERS
 
    public registerParameter(value: any): number {
-      const parameterIndex: number = this.parameters.indexOf(value);
-      if (parameterIndex >= 0) {
-         return (parameterIndex + 1);
-      }
+      // const parameterIndex: number = this.parameters.indexOf(value);
+      // if (parameterIndex >= 0) {
+      //    return (parameterIndex + 1);
+      // }
       return this.parameters.push(value);
    }
 
