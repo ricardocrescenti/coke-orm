@@ -139,7 +139,7 @@ export class EntityMetadata extends EntityOptions {
     */
    public getColumnsThatCannotBeInserted(): ColumnMetadata[] {
       if (this.columnsThatCannotBeInserted === undefined) {
-         this.columnsThatCannotBeInserted = Object.values(this.columns).filter(columnMetadata => !columnMetadata.canInsert || columnMetadata.operation == 'Virtual');
+         this.columnsThatCannotBeInserted = Object.values(this.columns).filter(columnMetadata => !columnMetadata.canInsert);
       }
       return this.columnsThatCannotBeInserted as ColumnMetadata[];
    }
@@ -150,7 +150,7 @@ export class EntityMetadata extends EntityOptions {
     */
    public getColumnsThatCannotBeUpdated(): ColumnMetadata[] {
       if (this.columnsThatCannotBeUpdated === undefined) {
-         this.columnsThatCannotBeUpdated = Object.values(this.columns).filter(columnMetadata => !columnMetadata.canUpdate || columnMetadata.operation == 'Virtual');
+         this.columnsThatCannotBeUpdated = Object.values(this.columns).filter(columnMetadata => !columnMetadata.canUpdate);
       }
       return this.columnsThatCannotBeUpdated as ColumnMetadata[];
    }

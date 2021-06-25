@@ -8,6 +8,9 @@ export function VirtualColumn(): PropertyDecorator {
 			target: target, 
 			propertyName: propertyKey, 
 			nullable: true,
+			canSelect: false,
+			canInsert: false,
+			canUpdate: false,
 			operation: 'Virtual'
 		});
 		DecoratorsStore.addColumn(column);

@@ -29,6 +29,41 @@ export async function test() {
 	]);
 	console.log(categories);
 
+	categories = await connection.transaction(async (queryRunner) => {
+
+		return await queryRunner.connection.getEntityManager(CategoryModel).save([
+			{
+				name: 'Category 4',
+			},
+			{
+				name: 'Category 5',
+			},
+		]);
+
+	});
+	console.log(categories);
+
+	categories = await connection.transaction(async (queryRunner) => {
+
+		const categoria1 = await queryRunner.connection.getEntityManager(CategoryModel).save({
+			name: 'Category 8',
+		}, {
+			queryRunner,
+		});
+		const categoria2 = await queryRunner.connection.getEntityManager(CategoryModel).save({
+			name: 'Category 9',
+		}, {
+			queryRunner,
+		});
+
+		return [
+			categoria1,
+			categoria2,
+		];
+
+	});
+	console.log(categories);
+
 	categories = await connection.getEntityManager(CategoryModel).find({
 		where: [
 			{
