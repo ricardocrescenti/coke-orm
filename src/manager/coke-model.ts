@@ -73,6 +73,11 @@ export abstract class CokeModel {
       /// object saved in the database to pass on events
       let databaseData: this | undefined = undefined;
 
+      /// get the column that indicates if the object is deleted, if not, null
+      /// will be returned.
+      const deletedIndicatorColumn: ColumnMetadata | null = entityManager.metadata.getDeletedIndicatorColumn();
+      const deleteObject: boolean = (deletedIndicatorColumn && (objectToSave as any)[deletedIndicatorColumn.propertyName]);
+
       /// save the current record to the database
       ///
       /// if saveOptions has the relation informed, before saving, the cascade
@@ -83,6 +88,13 @@ export abstract class CokeModel {
       /// be returned.
       const objectExists: boolean = await objectToSave.loadPrimaryKey(queryRunner, saveOptions?.requester);
       if (objectExists) {
+
+         if (deleteObject) {
+            await objectToSave.delete({
+               queryRunner: queryRunner
+            });
+            return objectToSave;
+         }
          
          /// create condition by primary key to change specific record
          const where: QueryWhere<this> | undefined = entityManager.createWhereFromColumns(objectToSave, entityManager.metadata.primaryKey?.columns ?? []);
@@ -148,6 +160,10 @@ export abstract class CokeModel {
          }
 
       } else {
+
+         if (deleteObject) {
+            return objectToSave;
+         }
 
          /// remove fields that cannot be inserted
          for (const columnMetadata of entityManager.metadata.getColumnsThatCannotBeInserted()) {
@@ -261,7 +277,7 @@ export abstract class CokeModel {
 
       /// get the columns of the object being saved to see below the columns 
       /// that have relations with parent and child entities
-      const columnsParentRelation: ColumnMetadata[] = Object.values(entityManager.metadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation && columnMetadata.relation.type != 'OneToMany');
+      const columnsParentRelation: ColumnMetadata[] = Object.values(entityManager.metadata.columns).filter(columnMetadata => columnsToSave.indexOf(columnMetadata.propertyName) >= 0 && columnMetadata.relation && columnMetadata.relation.type != 'OneToMany' && (objectToSave as any)[columnMetadata.propertyName]);
 
       /// go through the columns with the parent relation to load their primary
       /// keys, if the relation is configured to be inser, update or remove, 
@@ -342,9 +358,6 @@ export abstract class CokeModel {
             }, queryRunner) as any[];
          }
 
-         /// 
-         const deletedIndicatorColumn: ColumnMetadata | null = entityManager.metadata.getDeletedIndicatorColumn();
-
          /// go through the current children to check if they exist and perform
          /// the necessary operations on them
          for (const childIndex in (objectToSave as any)[columnChildRelation.propertyName]) {
@@ -362,28 +375,6 @@ export abstract class CokeModel {
             /// to insert, an error will be returned
             if (!childExists && !columnChildRelation.relation?.canInsert) {
                throw new NonExistentObjectOfRelationError(columnChildRelation.relation as ForeignKeyMetadata);
-            }
-
-            /// checks if the object has the field indicating that the record is 
-            /// deleted, if the record exists, it will be deleted, otherwise it 
-            /// will not be inserted
-            if (deletedIndicatorColumn && (childObject as any)[deletedIndicatorColumn.propertyName]) {
-               
-               if (childExists) {
-                  
-                  /// insert record into array of records to be deleted
-                  childObject.delete({
-                     queryRunner,
-                     requester: objectToSave
-                  });
-
-               } else {
-
-                  /// the record does not exist and will not be inserted
-                  continue;
-
-               }
-
             }
 
             /// check if the object can be inserted or updated to perform the 

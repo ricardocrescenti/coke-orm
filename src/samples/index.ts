@@ -82,6 +82,12 @@ export async function test() {
 	});
 	console.log(categories);
 
+	categories[0].name = categories[0].name + " 1";
+	categories[1].deleted = true;
+	await connection.getEntityManager(CategoryModel).save(categories, {
+		queryRunner: connection.queryRunner
+	});
+
 	let city: CityModel;
 
 	city = await connection.getEntityManager(CityModel).save({
