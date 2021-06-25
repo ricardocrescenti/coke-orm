@@ -80,10 +80,10 @@ export async function test() {
 	});
 	console.log(categories);
 
-	categories[0].name = categories[0].name + " 1";
+	categories[0].name = categories[0].name + ' 1';
 	categories.find((category: CategoryModel) => category.children == null).deleted = true;
 	await connection.getEntityManager(CategoryModel).save(categories, {
-		queryRunner: connection.queryRunner
+		queryRunner: connection.queryRunner,
 	});
 
 	let city: CityModel;
@@ -203,8 +203,11 @@ export async function test() {
 			],
 			photo: {
 				path: 'batatinha_path',
-				privateUrl: '/temp/sasdaskdakdslakdsal.jpg'
-			}
+				content: 'teste',
+				type: 0,
+				privateUrl: '/temp/sasdaskdakdslakdsal.jpg',
+				publicUrl: '/temp/sasdaskdakdslakdsal.jpg',
+			},
 		},
 		comission: 10,
 		status: Status.active,

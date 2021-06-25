@@ -41,10 +41,8 @@ export class EntityManager<T = any> {
     * @param values 
     * @returns 
     */
-   public create(values?: EntityValues<T>): T;
-   public create(values?: EntityValues<T>, requestingEntityColumn?: ColumnMetadata, entity?: T): T;
    public create(values?: EntityValues<T>, requestingEntityColumn?: ColumnMetadata, entity?: T): T {
-      const object: T = (requestingEntityColumn?.relation?.createEntity ? requestingEntityColumn?.relation?.createEntity(entity, values) : new (this.metadata.target)());
+      const object: T = (requestingEntityColumn?.relation?.createEntity ? requestingEntityColumn?.relation?.createEntity(this, entity, values) : new (this.metadata.target)());
       if (values) {
          this.populate(object, values);
       }
@@ -68,6 +66,10 @@ export class EntityManager<T = any> {
 
       /// load the values into the main object
       for (const columnMetadata of columnsMetadata) {
+
+         if (!columnMetadata.canPopulate) {
+            continue;
+         }
 
          if (columnMetadata.relation) {
 

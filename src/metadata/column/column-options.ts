@@ -66,6 +66,12 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions<T>> {
     * Field relationship settings
     */
    public readonly relation?: R;
+
+   /**
+    * Indicates whether this column can be populated when created.
+    * Default value is "true".
+    */
+   public readonly canPopulate?: boolean;
    
    /**
     * Indicates if column is always selected by QueryBuilder and find operations.
@@ -114,6 +120,7 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions<T>> {
       this.primary = options.primary ?? false;
       this.enum = options.enum;
       this.relation = options.relation as any;
+      this.canPopulate = options.canPopulate ?? true;
       this.canSelect = options.canSelect ?? true;
       this.canInsert = options.canInsert ?? true;
       this.canUpdate = options.canUpdate ?? true;

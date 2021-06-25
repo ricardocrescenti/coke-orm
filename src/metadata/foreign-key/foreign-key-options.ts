@@ -57,7 +57,7 @@ export class ForeignKeyOptions<T = any> {
 	/**
 	 * Allows you to specify a custom builder for entity creation.
 	 */
-	public readonly createEntity?: (entity: T, values?: EntityValues<any>) => any;
+	public readonly createEntity?: (entityManager: EntityManager, entity: any, values?: EntityValues<any>) => any;
 
 	/**
 	 * Default class constructor.

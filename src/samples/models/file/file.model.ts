@@ -9,8 +9,8 @@ export class FileModel extends PatternModel {
 	 * will be created inside the folder with the name of the database 
 	 * connection passed in the `uploadFile` method
 	 */
-	@VirtualColumn()
-	public path?: string;
+	@VirtualColumn({ canPopulate: false })
+	public path?: string = 'batatinha';
 	/** 
 	 * This field is used to receive the base64 file in the API, it is not 
 	 * saved in the database, it will only be used in the `uploadFile` method.
@@ -21,7 +21,7 @@ export class FileModel extends PatternModel {
 	@Column({ nullable: false }) //, enum: [FileType]
 	type?: number;//FileType;
 
-	@Column()
+	@Column({ nullable: true, default: 1 })
 	content?: string;
 
 	@Column()
@@ -29,11 +29,5 @@ export class FileModel extends PatternModel {
 
 	@Column()
 	publicUrl?: string;
-
-	constructor(path?: string) {
-		super();
-
-		this.path = path;
-	}
 
 }

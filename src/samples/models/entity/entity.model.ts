@@ -40,7 +40,7 @@ export class EntityModel extends PatternModel {
 	@OneToMany({ relation: { referencedEntity: 'EntityAddressModel', referencedColumn: 'entity', cascade: ['insert', 'update','remove'] } })
 	addresses?: Array<EntityAddressModel>;
 
-	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE', createEntity: (entity: EntityModel, values?: EntityValues<FileModel>) => entity.createFileModel(values) } })
+	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE', createEntity: (entityManager: EntityManager, entity: EntityModel, values?: EntityValues<FileModel>) => entity.createFileModel(entityManager, values) } })
 	photo?: FileModel;
 
 	constructor(object: any = null) {
@@ -77,9 +77,10 @@ export class EntityModel extends PatternModel {
 
 	}
 
-	public createFileModel(values?: EntityValues<FileModel>) {
-		delete values?.path;
-		return new FileModel('entities/photos');
+	public createFileModel(entityManager: EntityManager, values?: EntityValues<FileModel>) {
+		const file: FileModel = entityManager.connection.getEntityManager('FileModel').create();
+		file.path = 'entities/photos';
+		return file;
 	}
 
 }
