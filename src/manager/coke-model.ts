@@ -629,7 +629,7 @@ export abstract class CokeModel {
             const relationEntityManager = queryRunner.connection.getEntityManager(relation.referencedEntity);
 
             if (!(parent instanceof CokeModel)) {
-               parent = relationEntityManager.create(parent);
+               parent = relationEntityManager.create(parent, relation.column, this);
             }
 
             await parent.loadPrimaryKeyCascade(queryRunner);
@@ -651,7 +651,7 @@ export abstract class CokeModel {
                const childEntityManager = queryRunner.connection.getEntityManager(relation.referencedEntity);
 
                if (!(child instanceof CokeModel)) {
-                  child = childEntityManager.create(parent);
+                  child = childEntityManager.create(parent, relation.column, this);
                }
 
                await child.loadPrimaryKeyCascade(queryRunner);

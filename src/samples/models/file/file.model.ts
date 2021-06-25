@@ -1,4 +1,4 @@
-import { Column, Entity } from "../../../decorators";
+import { Column, Entity, VirtualColumn } from "../../../decorators";
 import { PatternModel } from "../pattern.model";
 
 @Entity({ name: 'files' })
@@ -9,11 +9,13 @@ export class FileModel extends PatternModel {
 	 * will be created inside the folder with the name of the database 
 	 * connection passed in the `uploadFile` method
 	 */
-	public path: string;
+	@VirtualColumn()
+	public path?: string;
 	/** 
 	 * This field is used to receive the base64 file in the API, it is not 
 	 * saved in the database, it will only be used in the `uploadFile` method.
 	 */
+	 @VirtualColumn()
 	public base64?: string;
 
 	@Column({ nullable: false }) //, enum: [FileType]
@@ -28,27 +30,10 @@ export class FileModel extends PatternModel {
 	@Column()
 	publicUrl?: string;
 
-	constructor(object: any = null, path: string) {
-		super(object);
+	constructor(path?: string) {
+		super();
 
 		this.path = path;
-
-		// if (!Utility.isEmpty(object)) {
-		// 	Object.assign(this, object);
-
-		// 	if (Utility.isNotEmpty(object.base64)) {
-		// 		this.privateUrl = '';
-		// 	}
-		// }
 	}
-
-	// public async validate(entityManager: EntityManager) {
-	// 	super.validate(entityManager);
-
-	// 	if (Utility.isEmpty(this.privateUrl) && Utility.isEmpty(this.privateUrl)) {
-	// 		await LogUtility.saveLog(entityManager.connection.name, StatusLog.Error, StepLog.FileModel,
-	// 			MessageUtility.createCustomError(`Error writing image, privateUrl and publicUrl are empty`));
-	// 	}
-	// }
 
 }

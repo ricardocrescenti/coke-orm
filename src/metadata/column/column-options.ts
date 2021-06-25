@@ -2,7 +2,7 @@ import { ForeignKeyOptions } from "../foreign-key";
 import { ColumnOperation } from "./column-operation";
 import "reflect-metadata";
 
-export class ColumnOptions<T = any, R = ForeignKeyOptions> {
+export class ColumnOptions<T = any, R = ForeignKeyOptions<T>> {
    
    /**
     * Class referenced to this column.
@@ -101,7 +101,7 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions> {
     */
    public readonly customOptions?: any;
 
-   constructor(options: Omit<ColumnOptions<T, ForeignKeyOptions>, "propertyType">) {
+   constructor(options: Omit<ColumnOptions<T, ForeignKeyOptions<T>>, "propertyType">) {
       this.target = options.target;
       this.propertyName = options.propertyName;
       this.propertyType = Reflect.getMetadata("design:type", this.target, this.propertyName)

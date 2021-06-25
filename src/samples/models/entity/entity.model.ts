@@ -1,4 +1,5 @@
 import { Column, ManyToOne, OneToMany, Entity } from "../../../decorators";
+import { EntityManager, EntityValues } from "../../../manager";
 import { QueryRunner } from "../../../query-runner";
 import { FileModel } from "../file/file.model";
 import { PatternModel } from "../pattern.model";
@@ -39,7 +40,7 @@ export class EntityModel extends PatternModel {
 	@OneToMany({ relation: { referencedEntity: 'EntityAddressModel', referencedColumn: 'entity', cascade: ['insert', 'update','remove'] } })
 	addresses?: Array<EntityAddressModel>;
 
-	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
+	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE', createEntity: (entity: EntityModel, values?: EntityValues<FileModel>) => entity.createFileModel(values) } })
 	photo?: FileModel;
 
 	constructor(object: any = null) {
@@ -74,6 +75,11 @@ export class EntityModel extends PatternModel {
 
 		return this.loadPrimaryKey(queryRunner, null);
 
+	}
+
+	public createFileModel(values?: EntityValues<FileModel>) {
+		delete values?.path;
+		return new FileModel('entities/photos');
 	}
 
 }

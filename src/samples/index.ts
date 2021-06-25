@@ -9,8 +9,6 @@ import { SellerModel } from './models/entity/seller.model';
 // eslint-disable-next-line
 export async function test() {
 
-	console.log(__dirname);
-
 	const connection: Connection = await CokeORM.connect();
 
 	const category = await connection.getEntityManager(CategoryModel).save({
@@ -83,7 +81,7 @@ export async function test() {
 	console.log(categories);
 
 	categories[0].name = categories[0].name + " 1";
-	categories[1].deleted = true;
+	categories.find((category: CategoryModel) => category.children == null).deleted = true;
 	await connection.getEntityManager(CategoryModel).save(categories, {
 		queryRunner: connection.queryRunner
 	});
@@ -203,6 +201,10 @@ export async function test() {
 					type: 1,
 				},
 			],
+			photo: {
+				path: 'batatinha_path',
+				privateUrl: '/temp/sasdaskdakdslakdsal.jpg'
+			}
 		},
 		comission: 10,
 		status: Status.active,

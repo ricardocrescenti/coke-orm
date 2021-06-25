@@ -41,8 +41,10 @@ export class EntityManager<T = any> {
     * @param values 
     * @returns 
     */
-   public create(values?: EntityValues<T>): T {
-      const object: T = new (this.metadata.target)();
+   public create(values?: EntityValues<T>): T;
+   public create(values?: EntityValues<T>, requestingEntityColumn?: ColumnMetadata, entity?: T): T;
+   public create(values?: EntityValues<T>, requestingEntityColumn?: ColumnMetadata, entity?: T): T {
+      const object: T = (requestingEntityColumn?.relation?.createEntity ? requestingEntityColumn?.relation?.createEntity(entity, values) : new (this.metadata.target)());
       if (values) {
          this.populate(object, values);
       }
@@ -75,9 +77,9 @@ export class EntityManager<T = any> {
                   if (!Array.isArray(values[columnMetadata.propertyName])) {
                      throw new InvalidEntityPropertyValueError(`The value of the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not an array`)
                   }
-                  object[columnMetadata.propertyName] = values[columnMetadata.propertyName].map((value: any) => relationEntityManager.create(value));
+                  object[columnMetadata.propertyName] = values[columnMetadata.propertyName].map((value: any) => relationEntityManager.create(value, columnMetadata, object));
                } else {
-                  object[columnMetadata.propertyName] = relationEntityManager.create(values[columnMetadata.propertyName]);
+                  object[columnMetadata.propertyName] = relationEntityManager.create(values[columnMetadata.propertyName], columnMetadata, object);
                }
             } else {
                object[columnMetadata.propertyName] = values[columnMetadata.propertyName];
