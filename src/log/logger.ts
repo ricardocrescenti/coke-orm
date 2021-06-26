@@ -11,9 +11,10 @@ export class Logger {
 	public active: boolean;
 	public storeOutput: boolean = true;
 
-	private readonly frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-	private readonly startTimes: SimpleMap<number> = {};
-	private readonly output: SimpleMap<string> = {};
+	// private readonly startTimes: SimpleMap<number> = {};
+	private steps: SimpleMap<LogStep> = {};
+	private stepsCount: number = 0;
+	private interval?: NodeJS.Timeout;
 
 	/**
 	 * Default class constructor
@@ -29,59 +30,83 @@ export class Logger {
 	}
 
 	/**
-	 * Print the log.
-	 * @param {string} step Log step. (Used only on connection to record the
-	 * current step)
-	 * @param {string} message Log result message in step informed.
-	 * @param {number} startTime Step start date.
-	 */
-	private printLog(step: string, message: string, startTime?: number): void {
-		if (!this.active) return;
-
-		if (startTime) {
-			this.startTimes[step] = startTime;
-		}
-
-		if (startTime) {
-
-			let frameIndex = 0;
-			const interval = setInterval(() => {
-
-				if (!this.startTimes[step]) {
-					clearTimeout(interval);
-					return;
-				}
-
-				if (frameIndex == this.frames.length) {
-					frameIndex = 0;
-				}
-
-				this.output[step] = `${this.frames[frameIndex++]} ${message}`;
-				logUpdate(Object.values(this.output).join('\n'));
-
-			}, 100);
-
-		} else {
-
-			delete this.startTimes[step];
-
-			if (this.storeOutput) {
-				this.output[step] = message;
-				logUpdate(Object.values(this.output).join('\n'));
-			} else {
-				console.log(message);
-			}
-
-		}
-	}
-
-	/**
 	 * Register the start of the step.
 	 * @param {LoggerStep} step Step to be registered
 	 * @param {string} message Log message.
 	 */
 	public start(step: LoggerStep, message?: string): void {
-		this.printLog(step, `${chalk.blue(message ?? step)}`, Date.now());
+		if (!this.active) return;
+
+		if (step === 'Query') {
+
+			if (this.interval != undefined) {
+				return;
+			}
+
+			message = `${step}: ${message}`;
+
+		}
+
+		let logStep: LogStep = this.steps[step];
+		if (!logStep) {
+
+			// create new step
+			logStep = new LogStep(step, Date.now(), message ?? step);
+			this.steps[step] = logStep;
+			this.stepsCount++;
+
+			// if its first step start print output interval
+			if (!this.interval) {
+				this.interval = setInterval(() => {
+
+					if (this.interval && this.stepsCount == 0) {
+						clearTimeout(this.interval);
+						this.interval = undefined;
+						return;
+					}
+
+					logUpdate(Object.values(this.steps).join('\n'));
+
+				}, 100);
+			}
+		}
+	}
+
+	/**
+	 *
+	 * @param {LoggerStep} step
+	 * @param {string} message
+	 * @param {Function} color
+	 */
+	private finish(step: LoggerStep, message: string, color: Function): void {
+		if (!this.active) return;
+
+		const logStep: LogStep = this.steps[step];
+		if (!logStep) return;
+
+		logStep.message = color(message);
+		logStep.endTime = Date.now();
+		this.stepsCount--;
+
+		if (this.stepsCount == 0) {
+			logUpdate(Object.values(this.steps).join('\n'));
+			logUpdate.done();
+			this.steps = {};
+		}
+	}
+
+	/**
+	 * Prints information added to the step.
+	 * @param {LoggerStep} step Step that will be inserted additional information.
+	 * @param {string} message Information message to be printed.
+	 */
+	public info(step: LoggerStep, message: string): void {
+		if (!this.active) return;
+
+		const logStep: LogStep = this.steps[step];
+		if (!logStep) return;
+
+		this.steps[step].steps.push(chalk.blue(` → ${message}`));
 	}
 
 	/**
@@ -90,8 +115,12 @@ export class Logger {
 	 * @param {string} message Log message.
 	 */
 	public sucess(step: LoggerStep, message?: string): void {
-		const currentTime: number = Date.now();
-		this.printLog(step, chalk.green(`✅ ${message ?? step} - ${(currentTime - this.startTimes[step])}ms`));
+		if (!this.active) return;
+
+		const logStep: LogStep = this.steps[step];
+		if (!logStep) return;
+
+		this.finish(step, `✅ ${message ?? logStep.message}`, chalk.green);
 	}
 
 	/**
@@ -100,6 +129,68 @@ export class Logger {
 	 * @param {string} message Log message.
 	 */
 	public error(step: LoggerStep, message?: string): void {
-		this.printLog(step, `❌ ${chalk.red(message?? step)}`);
+		if (!this.active) return;
+
+		const logStep: LogStep = this.steps[step];
+		if (!logStep) return;
+
+		this.finish(step, `❌ ${message?? logStep.message}`, chalk.red);
 	}
+}
+
+/**
+ *
+ */
+class LogStep {
+
+	public step: LoggerStep;
+	public startTime?: number;
+	public endTime?: number;
+	public message: string;
+	public steps: string[];
+
+	private frameIndex = 0;
+	private readonly frames: string[] = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+
+	/**
+	 *
+	 * @param {LoggerStep} step
+	 * @param {number} startTime
+	 * @param {string} message
+	 */
+	constructor(step: LoggerStep, startTime: number | undefined, message: string) {
+		this.step = step;
+		this.startTime = startTime;
+		this.message = message;
+		this.steps = [];
+
+		const interval = setInterval(() => {
+
+			this.frameIndex++;
+			if (this.frameIndex == this.frames.length) {
+				this.frameIndex = 0;
+			}
+
+			if (this.endTime) {
+				clearInterval(interval);
+			}
+
+		});
+	}
+
+	/**
+	 *
+	 * @return {string}
+	 */
+	public toString(): string {
+
+		const messages: string[] = [
+			(this.startTime ? (this.endTime ? `` : this.frames[this.frameIndex] + ' ') : '') + this.message + (this.startTime && this.endTime ? ` - ${this.endTime - this.startTime}ms` : ''),
+			...this.steps,
+		];
+		return messages.join('\n');
+
+	}
+
 }

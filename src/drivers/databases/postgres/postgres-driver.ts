@@ -304,7 +304,7 @@ export class PostgresDriver extends Driver {
       const extensions: string[] = await this.loadExtensions();
 
       /** */
-      this.connection.logger.sucess('Loading Schema')
+      this.connection.logger.sucess('Loading Schema');
 
       /** */
       this.connection.logger.start('Generating Migrations');

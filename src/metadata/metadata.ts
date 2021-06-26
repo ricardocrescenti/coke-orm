@@ -48,16 +48,19 @@ export class Metadata {
 		for (const entity of this.connection.options.entities) {
 
 			if (entity instanceof Function) {
+				this.connection.logger.info('Loading Entities', `${entity.constructor.name}`);
 				entities.push(entity);
 			} else {
 
-				const entityPath = OrmUtils.pathTo(entity);
-				const filesPath: string[] = glob.sync(entityPath);
+				const path = OrmUtils.pathTo(entity);
+				const filesPath: string[] = glob.sync(path);
+				this.connection.logger.info('Loading Entities', `${filesPath.length} Files in '${path}'`);
 
 				for (const filePath of filesPath) {
 					const file = require(filePath);
 					for (const key of Object.keys(file)) {
 						if (file.__esModule) {
+							this.connection.logger.info('Loading Entities', `${key} - ${filePath}`);
 							entities.push(file[key]);
 						}
 					}
@@ -82,11 +85,23 @@ export class Metadata {
 
 		for (const trigger of this.connection.options.triggers.filter((trigger) => typeof trigger == 'string')) {
 
-			const eventsPath = OrmUtils.pathTo(trigger as string);
-			const filesPath: string[] = glob.sync(eventsPath);
+			if (trigger instanceof Function) {
+				this.connection.logger.info('Loading Entities', `${trigger.constructor.name}`);
+			} else {
 
-			for (const filePath of filesPath) {
-				require(filePath);
+				const path = OrmUtils.pathTo(trigger as string);
+				const filesPath: string[] = glob.sync(path);
+				this.connection.logger.info('Loading Triggers', `${filesPath.length} Files in '${path}'`);
+
+				for (const filePath of filesPath) {
+					const file = require(filePath);
+					for (const key of Object.keys(file)) {
+						if (file.__esModule) {
+							this.connection.logger.info('Loading Triggers', `${key} - ${filePath}`);
+						}
+					}
+				}
+
 			}
 
 		}
@@ -104,11 +119,23 @@ export class Metadata {
 
 		for (const subscriber of this.connection.options.subscribers.filter((subscriber) => typeof subscriber == 'string')) {
 
-			const eventsPath = OrmUtils.pathTo(subscriber as string);
-			const filesPath: string[] = glob.sync(eventsPath);
+			if (subscriber instanceof Function) {
+				this.connection.logger.info('Loading Entities', `${subscriber.constructor.name}`);
+			} else {
 
-			for (const filePath of filesPath) {
-				require(filePath);
+				const path = OrmUtils.pathTo(subscriber as string);
+				const filesPath: string[] = glob.sync(path);
+				this.connection.logger.info('Loading Subscribers', `${filesPath.length} Files in '${path}'`);
+
+				for (const filePath of filesPath) {
+					const file = require(filePath);
+					for (const key of Object.keys(file)) {
+						if (file.__esModule) {
+							this.connection.logger.info('Loading Subscribers', `${key} - ${filePath}`);
+						}
+					}
+				}
+
 			}
 
 		}
@@ -120,19 +147,17 @@ export class Metadata {
 	 */
 	public loadMetadata(): void {
 
-		/** Entities subscriber loading start log */
-		this.connection.logger.start('Loading Subscribers');
-
-		/** load trigger classes */
-		this.loadTriggersClasses();
-
 		/** load subscriber classes */
+		this.connection.logger.start('Loading Subscribers');
 		this.loadSubscribersClasses();
-
-		/** Entities subscriber loading success log */
 		this.connection.logger.sucess('Loading Subscribers');
 
-		/** Entities loading start log */
+		/** load trigger classes */
+		this.connection.logger.start('Loading Triggers');
+		this.loadTriggersClasses();
+		this.connection.logger.sucess('Loading Triggers');
+
+		/** load entities classes */
 		this.connection.logger.start('Loading Entities');
 
 		const entitiesToLoad: Function[] = this.loadEntitiesClasses();
@@ -362,4 +387,5 @@ export class Metadata {
 		/** Entities loading success log */
 		this.connection.logger.sucess('Loading Entities');
 	}
+
 }

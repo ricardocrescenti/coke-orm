@@ -121,7 +121,8 @@ export class Connection {
 		this.logger.start('Connecting');
 
 		/** create query executor to verify that the connection was made successfully */
-		await this.queryRunner.initializeClient();
+		const client = await this.queryRunner.initializeClient();
+		this.driver.releaseQueryRunner(client);
 
 		/** set timezone */
 		if (this.options.timezone) {

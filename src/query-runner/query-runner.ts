@@ -140,7 +140,7 @@ export class QueryRunner {
 
 		} catch (error) {
 
-			this.connection.logger.error('Query', query);
+			this.connection.logger.error('Query');
 			throw error;
 
 		} finally {
@@ -151,7 +151,7 @@ export class QueryRunner {
 
 		}
 
-		this.connection.logger.sucess('Query', query);
+		this.connection.logger.sucess('Query');
 		return result.rows;
 	}
 
