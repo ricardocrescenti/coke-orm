@@ -36,6 +36,8 @@ export class Migrations {
 			return;
 		}
 
+		this.connection.logger.start('Synchronizing');
+
 		// create a query executor to execute the function in transaction, if the
 		// function throws an error, the transaction will be canceled
 		const queryRunner: QueryRunner = await this.connection.createQueryRunner();
@@ -44,6 +46,7 @@ export class Migrations {
 			await queryRunner.beginTransaction();
 
 			for (const sql of sqlsMigrations) {
+				this.connection.logger.info('Synchronizing', sql);
 				await queryRunner.query(sql);
 			}
 
@@ -52,9 +55,12 @@ export class Migrations {
 		} catch (error) {
 
 			await queryRunner.rollbackTransaction();
+			this.connection.logger.error('Synchronizing');
 			throw error;
 
 		}
+
+		this.connection.logger.sucess('Synchronizing');
 	}
 
 	/**

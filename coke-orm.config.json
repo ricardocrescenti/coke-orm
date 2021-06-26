@@ -10,6 +10,8 @@
    "triggers": ["lib/samples/triggers/**/*.trigger.js"],
    "migrations": {
       "synchronize": true,
+      "deleteColumns": true,
+      "deleteTables": true,
       "directory": "lib/samples/migrations/*.js"
    },
    "cli": {

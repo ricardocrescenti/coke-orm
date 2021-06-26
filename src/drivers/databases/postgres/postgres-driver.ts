@@ -330,6 +330,7 @@ export class PostgresDriver extends Driver {
 
       const sqlMigrationsDropColumns: string[] = [];
       const sqlMigrationsDropSequence: string[] = [];
+      const sqlMigrationsDropTables: string[] = [];
 
       const deletedForeignKeys: string[] = [];
       const deletedIndex: string[] = [];
@@ -498,6 +499,12 @@ export class PostgresDriver extends Driver {
                sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.deleteUniqueFromSchema(entityMetadata, entitySchema.uniques[uniqueName]))
             }
 
+            // Removes the table from the list of tables created in the
+            // database to delete tables not defined in entities. Tables will
+            // be deleted only if connection option 'migrations.deleteTables'
+            // property is 'true'.
+            delete tablesSchema[entityMetadata.name as string];
+
          }
 
          // check foreign keys
@@ -569,6 +576,12 @@ export class PostgresDriver extends Driver {
 
       }
 
+      if (this.connection.options.migrations?.deleteTables) {
+         for (const entitySchema of Object.values(tablesSchema)) {
+            sqlMigrationsDropTables.push(this.connection.driver.queryBuilder.deleteTableFromSchema(entitySchema));
+         }
+      }
+
       const sqlMigrations: string[] = [
          ...sqlMigrationsCreateExtension,
          ...sqlMigrationsDropTriggers,
@@ -577,6 +590,7 @@ export class PostgresDriver extends Driver {
          ...sqlMigrationsDropIndex,
          ...sqlMigrationsDropPrimaryKeys,
          ...sqlMigrationsDropColumns,
+         ...sqlMigrationsDropTables,
          ...sqlMigrationsCreateSequence,
          ...sqlMigrationsCreateTable,
          ...sqlMigrationsCreateColumns,
@@ -587,7 +601,7 @@ export class PostgresDriver extends Driver {
          ...sqlMigrationsCreateUniques,
          ...sqlMigrationsCreateIndexs,
          ...sqlMigrationsCreateForeignKeys,
-         ...sqlMigrationsCreateTriggers
+         ...sqlMigrationsCreateTriggers,
       ];
 
       /** */

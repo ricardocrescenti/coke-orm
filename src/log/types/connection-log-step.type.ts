@@ -5,4 +5,6 @@ export type ConnectionLogStep =
    'Loading Entities' |
    'Loading Schema' |
    'Generating Migrations' |
+   'Synchronizing' |
+   'Performing Migrations' |
    'Query';

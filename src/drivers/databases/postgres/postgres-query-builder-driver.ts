@@ -156,7 +156,7 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
    }
 
    public deleteTableFromSchema(entitySchema: EntitySchema): string {
-      return `DROP TABLE "${entitySchema.schema ?? 'public'}"."${entitySchema.name}";`;
+      return `DROP TABLE "${entitySchema.schema ?? 'public'}"."${entitySchema.name}" CASCADE;`;
    }
 
    public deleteColumnFromSchema(entityMetadata: EntityMetadata, columnMetadata: ColumnSchema): string {
