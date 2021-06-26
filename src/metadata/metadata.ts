@@ -333,9 +333,13 @@ export class Metadata {
 					throw new ColumnMetadataNotLocatedError(referencedEntity, referencedColumnName);
 				}
 
-				if (sourceColumnMetadata.relation?.type == 'OneToOne' || sourceColumnMetadata.relation?.type == 'ManyToOne') {
+				if (sourceColumnMetadata.relation?.type == 'OneToMany') {
 
-					sourceEntityMetadata.foreignKeys.push(sourceColumnMetadata.relation);
+					sourceEntityMetadata.childForeignKeys.push(sourceColumnMetadata.relation);
+
+				} else {
+
+					sourceEntityMetadata.foreignKeys.push(sourceColumnMetadata.relation as ForeignKeyMetadata);
 
 					if (sourceColumnMetadata.relation?.type == 'OneToOne') {
 

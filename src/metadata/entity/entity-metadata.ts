@@ -36,6 +36,11 @@ export class EntityMetadata extends EntityOptions {
    /**
     * 
     */
+   public readonly childForeignKeys: ForeignKeyMetadata[] = [];
+
+   /**
+    * 
+    */
    public readonly uniques: UniqueMetadata[] = [];
 
    /**
@@ -82,7 +87,7 @@ export class EntityMetadata extends EntityOptions {
     * 
     * @param options 
     */
-   constructor(options: Omit<EntityMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'uniques' | 'indexs'  | 'triggers' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getDeletedIndicatorColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
+   constructor(options: Omit<EntityMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'childForeignKeys'| 'uniques' | 'indexs'  | 'triggers' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getDeletedIndicatorColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
       super(options);
       this.connection = options.connection;
       this.subscriber = options.subscriber;

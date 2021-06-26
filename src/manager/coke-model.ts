@@ -620,8 +620,7 @@ export abstract class CokeModel {
    public async loadPrimaryKeyCascade(queryRunner: QueryRunner, loadChildrensPrimaryKey: boolean = true): Promise<void> {
       const entityManager: EntityManager<this> = this.getEntityManager(queryRunner);
       
-      const parentRelations: ForeignKeyMetadata[] = entityManager.metadata.foreignKeys.filter(foreignKey => foreignKey.type != 'OneToMany');
-      for (const relation of parentRelations) {
+      for (const relation of entityManager.metadata.foreignKeys) {
          
          let parent: CokeModel = (this as any)[relation.column.propertyName];
          if (parent) {
@@ -642,8 +641,7 @@ export abstract class CokeModel {
 
       if (loadChildrensPrimaryKey) {
 
-         const childRelations: ForeignKeyMetadata[] = entityManager.metadata.foreignKeys.filter(foreignKey => foreignKey.type == 'OneToMany');
-         for (const relation of childRelations) {
+         for (const relation of entityManager.metadata.childForeignKeys) {
             
             const children: CokeModel[] = ((this as any)[relation.column.propertyName] ?? []);
             for (let child of children) {
