@@ -18,7 +18,7 @@ export class CategoryModel extends PatternModel {
    @VirtualColumn()
    public virtual: string = 'batatinha';
 
-   @OneToMany({ relation: { referencedEntity: 'CategoryModel', referencedColumn: 'parent' } })
+   @OneToMany({ relation: { referencedEntity: 'CategoryModel', referencedColumn: 'parent', cascade: ['insert', 'update'] } })
    public children?: CategoryModel[];
 
 }

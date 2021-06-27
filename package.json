@@ -1,28 +1,11 @@
 {
   "name": "@ricardocrescenti/coke-orm",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "",
   "license": "BSD-3-Clause",
   "author": {
     "name": "Ricardo Crescenti",
     "email": "ricardo.crescenti@gmail.com"
-  },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "public"
-  },
-  "main": "./index.js",
-  "types": "lib/index.d.js",
-  "scripts": {
-    "prebuild": "rimraf lib",
-    "build": "tsc"
-  },
-  "bin": {
-    "coke-orm": "./lib/cli.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ricardocrescenti/coke-orm.git"
   },
   "keywords": [
     "orm",
@@ -36,6 +19,27 @@
     "url": "https://github.com/ricardocrescenti/coke-orm/issues"
   },
   "homepage": "https://github.com/ricardocrescenti/coke-orm#readme",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
+  "main": "./index.js",
+  "types": "lib/index.d.js",
+  "scripts": {
+    "prebuild": "rimraf lib",
+    "build": "tsc",
+    "test": "jest"
+  },
+  "bin": {
+    "coke-orm": "./lib/cli.js"
+  },
+  "jest": {
+    "verbose": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ricardocrescenti/coke-orm.git"
+  },
   "devDependencies": {
     "@types/glob": "^7.1.3",
     "@types/pg": "^7.14.9",
@@ -50,13 +54,17 @@
     "typescript": "^4.3.2"
   },
   "dependencies": {
+    "@types/jest": "^26.0.23",
     "chalk": "^4.1.1",
     "glob": "^7.1.7",
     "install": "^0.13.0",
+    "jest": "^27.0.5",
     "log-update": "^4.0.0",
     "npm": "^7.17.0",
     "reflect-metadata": "^0.1.13",
     "sha.js": "^2.4.11",
+    "ts-jest": "^27.0.3",
+    "ts-node": "^10.0.0",
     "uuid": "^8.3.2",
     "yargonaut": "^1.1.4",
     "yargs": "^17.0.1"
