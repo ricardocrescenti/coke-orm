@@ -237,7 +237,7 @@ export class EntityManager<T = any> {
          deletedObjects = await queryRunner.connection.transaction((queryRunner) => this.performDelete((Array.isArray(objects) ? objects : [objects]), { ...deleteOptions, queryRunner }));
       }
 
-      return (Array.isArray(objects) ? deletedObjects : deletedObjects[0]);
+      return (Array.isArray(objects) ? deletedObjects.length > 0 : OrmUtils.isNotEmpty(deletedObjects));
    }
 
    /**
