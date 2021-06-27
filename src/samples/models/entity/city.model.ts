@@ -1,5 +1,6 @@
-import { Column, Entity, Unique } from "../../../decorators";
-import { PatternModel } from "../pattern.model";
+/* eslint-disable require-jsdoc */
+import { Column, Entity, Unique } from '../../../decorators';
+import { PatternModel } from '../pattern.model';
 
 @Entity({ name: 'cities' })
 @Unique({ columns: ['name', 'state', 'country'] })

@@ -1,3 +1,4 @@
+/* eslint-disable require-jsdoc */
 import { Column, CreatedAtColumn, DeletedIndicator, PrimaryKeyColumn, Unique, UpdatedAtColumn } from '../../decorators';
 import { Generate } from '../../metadata';
 import { CokeModel } from '../../manager';

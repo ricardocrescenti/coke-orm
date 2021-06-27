@@ -6,7 +6,12 @@ describe('001 - Create test database', () => {
 	let connection: Connection;
 
 	beforeAll(async () => {
-		connection = await CokeORM.connect(connectionOptions);
+		connection = await CokeORM.connect({
+			...connectionOptions,
+			entities: [],
+			triggers: [],
+			subscribers: [],
+		});
 	});
 
 	it('Drop Current Schema', async () => {

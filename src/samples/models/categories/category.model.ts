@@ -1,3 +1,4 @@
+/* eslint-disable require-jsdoc */
 import { Column, DeletedIndicator, Entity, ManyToOne, OneToMany, Unique } from '../../../decorators';
 import { VirtualColumn } from '../../../decorators/columns/virtual-column';
 import { PatternModel } from '../pattern.model';
@@ -12,7 +13,7 @@ export class CategoryModel extends PatternModel {
    @Column()
    public name?: string;
 
-   @ManyToOne({ nullable: true, relation: { referencedEntity: 'CategoryModel', referencedColumn: 'id' } })
+   @ManyToOne({ nullable: true, relation: { referencedEntity: 'CategoryModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' } })
    public parent?: CategoryModel;
 
    @VirtualColumn()

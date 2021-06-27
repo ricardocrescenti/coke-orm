@@ -1,6 +1,7 @@
-import { Column, ManyToOne, Entity, Unique } from "../../../decorators";
-import { PatternModel } from "../pattern.model";
-import { EntityModel } from "./entity.model";
+/* eslint-disable require-jsdoc */
+import { Column, ManyToOne, Entity, Unique } from '../../../decorators';
+import { PatternModel } from '../pattern.model';
+import { EntityModel } from './entity.model';
 
 @Entity({ name: 'entities_documents' })
 @Unique({ columns: ['entity', 'type'] })

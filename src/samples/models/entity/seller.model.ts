@@ -1,7 +1,8 @@
-import { Column, OneToOne, Entity, Unique } from "../../../decorators";
-import { Status } from "../../enums/status.enum";
-import { PatternModel } from "../pattern.model";
-import { EntityModel } from "./entity.model";
+/* eslint-disable require-jsdoc */
+import { Column, OneToOne, Entity, Unique } from '../../../decorators';
+import { Status } from '../../enums/status.enum';
+import { PatternModel } from '../pattern.model';
+import { EntityModel } from './entity.model';
 
 @Entity({ name: 'sellers', orderBy: { 'comission': 'ASC' } })
 @Unique({ columns: ['entity'] })
@@ -13,7 +14,7 @@ export class SellerModel extends PatternModel {
 	@Column({ length: 18, precision: 5, nullable: true, default: 0 })
 	comission?: number;
 
-	@Column({ default: 1 }) //, enum: [Status]
+	@Column({ default: 1 }) // , enum: [Status]
 	status?: Status;
 
 }

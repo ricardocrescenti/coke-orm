@@ -1,7 +1,8 @@
-import { Column, ManyToOne, Entity, Unique } from "../../../decorators";
-import { PatternModel } from "../pattern.model";
-import { CityModel } from "./city.model";
-import { EntityModel } from "./entity.model";
+/* eslint-disable require-jsdoc */
+import { Column, ManyToOne, Entity, Unique } from '../../../decorators';
+import { PatternModel } from '../pattern.model';
+import { CityModel } from './city.model';
+import { EntityModel } from './entity.model';
 
 @Entity({ name: 'entities_addresses' })
 @Unique({ columns: ['contact', 'street', 'number', 'neighborhood', 'complement', 'city', 'zipCode', 'entity'] })

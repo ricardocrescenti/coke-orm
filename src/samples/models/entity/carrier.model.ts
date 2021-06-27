@@ -1,3 +1,4 @@
+/* eslint-disable require-jsdoc */
 import { Column, OneToOne, Entity, Unique } from '../../../decorators';
 import { Status } from '../../enums/status.enum';
 import { PatternModel } from '../pattern.model';
@@ -13,7 +14,7 @@ export class CarrierModel extends PatternModel {
 	@Column({ nullable: true })
 	site?: string;
 
-	@Column({ type: 'integer', default: 1 }) //enum: [Status], 
+	@Column({ type: 'integer', default: 1 }) // enum: [Status],
 	status?: Status;
 
 }

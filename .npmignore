@@ -1,5 +1,6 @@
 .github
 .vscode
+lib/__tests__
 lib/samples
 src
 coke-orm.config.json

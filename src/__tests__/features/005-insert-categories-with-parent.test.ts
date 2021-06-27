@@ -1,19 +1,18 @@
 import { CokeORM } from '../../coke-orm';
 import { Connection } from '../../connection';
+import { CategoryModel } from '../../samples/models/categories/category.model';
 import { connectionOptions } from './config/connection.options';
-import { CategoryEntity } from './models/category.entity';
 
 describe('005 - Insert categories with parent', () => {
 	let connection: Connection;
 
 	beforeAll(async () => {
-		connectionOptions.entities?.push(CategoryEntity);
 		connection = await CokeORM.connect(connectionOptions);
 	});
 
 	it('Insert categories with parent', async () => {
 
-		const categories: any = await connection.getEntityManager(CategoryEntity).save([
+		const categories: any = await connection.getEntityManager(CategoryModel).save([
 			{
 				name: 'Category 1.1',
 				parent: {

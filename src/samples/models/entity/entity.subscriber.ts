@@ -1,6 +1,7 @@
-import { EventsSubscriber } from "../../../decorators";
-import { EntitySubscriberInterface, UpdateEvent } from "../../../metadata";
-import { EntityModel } from "./entity.model";
+/* eslint-disable require-jsdoc */
+import { EventsSubscriber } from '../../../decorators';
+import { EntitySubscriberInterface, UpdateEvent } from '../../../metadata';
+import { EntityModel } from './entity.model';
 
 @EventsSubscriber(EntityModel)
 export class EntitySubscriber implements EntitySubscriberInterface<EntityModel> {

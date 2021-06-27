@@ -2,7 +2,6 @@
 
 ## Geral
 
-* Implementar função para construtor diferente dos models no campo de relation
 * No QueryBuilderDriver e PostgresQueryBuilderDriver mudar o prefixo "delete" das funções para "drop"
 * Implementar a opção "DeleteTables" no "MigrationOptions"
 * Adicionar uma validação para dar erro caso não ache alguma entidade solicitada no método Decorators.getEntities
