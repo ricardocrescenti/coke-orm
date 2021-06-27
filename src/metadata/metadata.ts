@@ -48,7 +48,7 @@ export class Metadata {
 		for (const entity of this.connection.options.entities) {
 
 			if (entity instanceof Function) {
-				this.connection.logger.info('Loading Entities', `${entity.constructor.name}`);
+				this.connection.logger.info('Loading Entities', `${entity.name}`);
 				entities.push(entity);
 			} else {
 
@@ -77,7 +77,7 @@ export class Metadata {
 	* Load the entity triggers classes defined in the [triggers] parameter of
 	* the connection options.
 	*/
-	public loadTriggersClasses(): void {
+	private loadTriggersClasses(): void {
 
 		if (!this.connection.options.triggers) {
 			return;
@@ -86,7 +86,7 @@ export class Metadata {
 		for (const trigger of this.connection.options.triggers.filter((trigger) => typeof trigger == 'string')) {
 
 			if (trigger instanceof Function) {
-				this.connection.logger.info('Loading Entities', `${trigger.constructor.name}`);
+				this.connection.logger.info('Loading Entities', `${trigger.name}`);
 			} else {
 
 				const path = OrmUtils.pathTo(trigger as string);
@@ -111,7 +111,7 @@ export class Metadata {
 	 * Load the entity subscribers classes defined in the [subscribers] parameter
 	 * of the connection options.
 	 */
-	public loadSubscribersClasses(): void {
+	private loadSubscribersClasses(): void {
 
 		if (!this.connection.options.subscribers) {
 			return;
@@ -120,7 +120,7 @@ export class Metadata {
 		for (const subscriber of this.connection.options.subscribers.filter((subscriber) => typeof subscriber == 'string')) {
 
 			if (subscriber instanceof Function) {
-				this.connection.logger.info('Loading Entities', `${subscriber.constructor.name}`);
+				this.connection.logger.info('Loading Entities', `${subscriber.name}`);
 			} else {
 
 				const path = OrmUtils.pathTo(subscriber as string);
