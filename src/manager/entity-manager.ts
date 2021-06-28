@@ -237,7 +237,7 @@ export class EntityManager<T = any> {
          deletedObjects = await queryRunner.connection.transaction((queryRunner) => this.performDelete((Array.isArray(objects) ? objects : [objects]), { ...deleteOptions, queryRunner }));
       }
 
-      return (Array.isArray(objects) ? deletedObjects.length > 0 : OrmUtils.isNotEmpty(deletedObjects));
+      return (deletedObjects.length > 0);
    }
 
    /**
@@ -251,9 +251,12 @@ export class EntityManager<T = any> {
       const deletedObjects: any[] = [];
       for (let object of objectToDelete) {
          object = this.create(object);
-         if (await (object as CokeModel).delete(deleteOptions)) {
+
+         const deleted: boolean = await (object as CokeModel).delete(deleteOptions);
+         if (deleted) {
             deletedObjects.push(object);
          }
+
       }
       return deletedObjects;
 
