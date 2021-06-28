@@ -1,143 +1,170 @@
-import { EntityMetadata, ColumnMetadata, ColumnOptions, ForeignKeyMetadata, IndexMetadata, UniqueMetadata, TriggerMetadata } from "../metadata";
-import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, UniqueSchema, TriggerSchema } from "../schema";
-import { Driver } from "./driver";
+import { EntityMetadata, ColumnMetadata, ColumnOptions, ForeignKeyMetadata, IndexMetadata, UniqueMetadata, TriggerMetadata } from '../metadata';
+import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, UniqueSchema, TriggerSchema } from '../schema';
+import { Driver } from './driver';
 
+/**
+ * Class responsible for determining the methods needed to generate query
+ * operations on the database.
+ */
 export abstract class QueryBuilderDriver {
 
-   /**
-    * 
-    */
-   protected readonly driver: Driver;
+	/**
+	 * Associated connection driver.
+	 */
+	protected readonly driver: Driver;
 
-   constructor(driver: Driver) {
-      this.driver = driver;
-   }
+	/**
+	 * Default class constructor.
+	 * @param {Driver} driver Associated connection driver.
+	 */
+	constructor(driver: Driver) {
+		this.driver = driver;
+	}
 
-   /**
-    * 
-    * @param column 
-    */
-   public abstract generateColumnTypeSQL(columnOptions: ColumnOptions): string;
+	/**
+	 * Get the field type for the database, used to create and change a field's
+	 * type.
+	 * @param {ColumnOptions} column Column Options.
+	 */
+	public abstract generateColumnTypeSQL(columnOptions: ColumnOptions): string;
 
-   /**
-    * 
-    * @param columnMetadata 
-    */
-   public abstract generateColumnDefaultValue(columnOptions: ColumnOptions): string;
+	/**
+	 * Generate the value needed to report in the column default created in the
+	 * database when the field is created or changed.
+	 * @param {ColumnOptions} columnMetadata Column Options.
+	 */
+	public abstract generateColumnDefaultValue(columnOptions: ColumnOptions): string;
 
-   /**
-    * 
-    */
-   public abstract createUUIDExtension(): string;
-   
-   /**
-    * 
-    */
-   public abstract createSequenceFromMetadata(columnMetadata: ColumnMetadata): string;
+	/**
+	 * Query to activate the extension that generates UUIDs.
+	 */
+	public abstract createUUIDExtension(): string;
 
-   /**
-    * 
-    * @param columnMetadata 
-    */
-   public abstract associateSequenceFromMetadata(columnMetadata: ColumnMetadata): string;
+	/**
+	 * Query to create a sequence in the database, used for auto-increment
+	 * columns.
+	 */
+	public abstract createSequenceFromMetadata(columnMetadata: ColumnMetadata): string;
 
-   /**
-    * 
-    * @param entityMetadata 
-    */
-   public abstract createTableFromMetadata(entityMetadata: EntityMetadata): string;
-   
-   /**
-    * 
-    * @param columnMetadata 
-    */
-   public abstract createColumnFromMetadata(columnMetadata: ColumnMetadata): string;
+	/**
+	 * Query to associate a sequence with a column, to indicate in which column
+	 * it is being used.
+	 * @param {ColumnMetadata} columnMetadata Column Matadata
+	 */
+	public abstract associateSequenceFromMetadata(columnMetadata: ColumnMetadata): string;
 
-   /**
-    * 
-    * @param columnMetadata 
-    * @param columnSchema 
-    */
-   public abstract alterColumnFromMatadata(columnMetadata: ColumnMetadata, columnSchema: ColumnSchema): string[];
-   
-   /**
-    * 
-    * @param entityMetadata
-    */
-   public abstract createPrimaryKeyFromMetadata(entityMetadata: EntityMetadata, alterTable: boolean): string;
-   
-   /**
-    * 
-    * @param indexMetadata 
-    */
-   public abstract createIndexFromMetadata(indexMetadata: IndexMetadata): string;
-   
-   /**
-    * 
-    * @param uniqueMetadata 
-    */
-   public abstract createUniqueFromMetadata(uniqueMetadata: UniqueMetadata, alterTable: boolean): string;
-   
-   /**
-    * 
-    * @param foreignKeyMetadata 
-    */
-   public abstract createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata): string;
+	/**
+	 * Query to create a table with your unique keys.
+	 * @param {EntityMetadata} entityMetadata Entity Metadada.
+	 */
+	public abstract createTableFromMetadata(entityMetadata: EntityMetadata): string;
 
-   /**
-    * 
-    * @param {TriggerMetadata} triggerMetadata 
-    */
-   public abstract createTriggerFromMetadata(triggerMetadata: TriggerMetadata): string[];
-   
-   /**
-    * 
-    */
-   public abstract deleteTableFromSchema(entitySchema: EntitySchema): string;
-   
-   /**
-    * 
-    * @param entityMetadata 
-    * @param columnMetadata 
-    */
-   public abstract deleteColumnFromSchema(entityMetadata: EntityMetadata, columnMetadata: ColumnSchema): string;
-   
-   /**
-    * 
-    * @param entityMetadata
-    */
-   public abstract deletePrimaryKeyFromSchema(entityMetadata: EntityMetadata): string;
-   
-   /**
-    * 
-    * @param entityMetadata 
-    * @param indexSchema 
-    */
-   public abstract deleteIndexFromSchema(entityMetadata: EntityMetadata, indexSchema: IndexSchema): string;
-   
-   /**
-    * 
-    * @param entityMetadata 
-    * @param uniqueSchema 
-    */
-   public abstract deleteUniqueFromSchema(entityMetadata: EntityMetadata, uniqueSchema: UniqueSchema): string;
-   
-   /**
-    * 
-    * @param entityMetadata 
-    * @param foreignKeySchema 
-    */
-   public abstract deleteForeignKeyFromSchema(entityMetadata: EntityMetadata, foreignKeySchema: ForeignKeySchema): string;
-   
-   /**
-    * 
-    */
-   public abstract deleteSequenceFromName(sequenceName: string): string;
-   
-   /**
-    * 
-    * @param triggerOptions 
-    */
-   public abstract deleteTriggerFromSchema(entityMetadata: EntityMetadata, triggerOptions: TriggerSchema): string[]
+	/**
+	 * Query to create a column.
+	 * @param {ColumnMetadata} columnMetadata Column Metadata
+	 */
+	public abstract createColumnFromMetadata(columnMetadata: ColumnMetadata): string;
+
+	/**
+	 * Query to change a column.
+	 * @param {ColumnMetadata} columnMetadata Column Metadata.
+	 * @param {ColumnSchema} currentColumnSchema Current column schema to detect changes.
+	 */
+	public abstract alterColumnFromMatadata(columnMetadata: ColumnMetadata, currentColumnSchema: ColumnSchema): string[];
+
+	/**
+	 * Query to create a primary key.
+	 * @param {EntityMetadata} entityMetadata Entity Metadata for which the
+	 * primary key will be created.
+	 * @param {boolean} alterTable Indicates whether the query will be used
+	 * to create the table, or to add a primary key to an existing table.
+	 */
+	public abstract createPrimaryKeyFromMetadata(entityMetadata: EntityMetadata, alterTable: boolean): string;
+
+	/**
+	 * Query to create an index.
+	 * @param {IndexMetadata} indexMetadata Index Metadada.
+	 */
+	public abstract createIndexFromMetadata(indexMetadata: IndexMetadata): string;
+
+	/**
+	 * Query to create a unique key.
+	 * @param {UniqueMetadata} uniqueMetadata Unique Metadata.
+	 * @param {boolean} alterTable Indicates whether the query will be used
+	 * to create the table, or to add a unique key to an existing table.
+	 */
+	public abstract createUniqueFromMetadata(uniqueMetadata: UniqueMetadata, alterTable: boolean): string;
+
+	/**
+	 *  Query to create a foreign key.
+	 * @param {ForeignKeyMetadata} foreignKeyMetadata Foreign Key Metadata
+	 */
+	public abstract createForeignKeyFromMetadata(foreignKeyMetadata: ForeignKeyMetadata): string;
+
+	/**
+	 * Query to create a trigger key.
+	 * @param {TriggerMetadata} triggerMetadata Trigger Metadata
+	 */
+	public abstract createTriggerFromMetadata(triggerMetadata: TriggerMetadata): string[];
+
+	/**
+	 * Query to drop an entity.
+	 * @param {EntitySchema} entitySchema Current entity schema
+	 */
+	public abstract dropTableFromSchema(entitySchema: EntitySchema): string;
+
+	/**
+	 * Query to drop a column.
+	 * @param {EntityMetadata} entityMetadata Entity Metadata that will have the
+	 * column dropped.
+	 * @param {ColumnSchema} columnMetadata Current schema of the column to be
+	 * dropped.
+	 */
+	public abstract dropColumnFromSchema(entityMetadata: EntityMetadata, columnMetadata: ColumnSchema): string;
+
+	/**
+	 * Query to drop a primary key.
+	 * @param {EntityMetadata} entityMetadata Entity Metadata that the primary
+	 * key will be dropped.
+	 */
+	public abstract dropPrimaryKeyFromSchema(entityMetadata: EntityMetadata): string;
+
+	/**
+	 * Query to drop a index.
+	 * @param {IndexSchema} indexSchema Current index schema to be dropped.
+	 */
+	public abstract dropIndexFromSchema(indexSchema: IndexSchema): string;
+
+	/**
+	 * Query to drop a unique key.
+	 * @param {EntityMetadata} entityMetadata Entity metadata that the unique
+	 * key will be dropped.
+	 * @param {UniqueSchema} uniqueSchema Current index schema to be dropped.
+	 */
+	public abstract dropUniqueFromSchema(entityMetadata: EntityMetadata, uniqueSchema: UniqueSchema): string;
+
+	/**
+	 * Query to drop a foreign key.
+	 * @param {EntityMetadata} entityMetadata Entity metadata that the foreign
+	 * key will be dropped.
+	 * @param {ForeignKeySchema} foreignKeySchema Current foreign key schema to
+	 * be dropped.
+	 */
+	public abstract dropForeignKeyFromSchema(entityMetadata: EntityMetadata, foreignKeySchema: ForeignKeySchema): string;
+
+	/**
+	 * Query to drop a sequence.
+	 * @param {string} sequenceName Sequence name to be deleted.
+	 */
+	public abstract dropSequenceFromName(sequenceName: string): string;
+
+	/**
+	 * Query to drop a trigger.
+	 * @param {EntityMetadata} entityMetadata Entity metadata that the trigger
+	 * will be dropped.
+	 * @param {TriggerSchema} triggerOptions Current trigger schema to
+	 * be dropped.
+	 */
+	public abstract dropTriggerFromSchema(entityMetadata: EntityMetadata, triggerOptions: TriggerSchema): string[]
 
 }

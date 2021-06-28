@@ -386,7 +386,7 @@ export class PostgresDriver extends Driver {
 
                   if (columnMetadata.type != columnSchema.type && !this.allowChangeColumnType(columnSchema.type, columnMetadata.type as string)) {
 
-                     sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.deleteColumnFromSchema(entityMetadata, columnSchema));
+                     sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.dropColumnFromSchema(entityMetadata, columnSchema));
                      sqlMigrationsCreateColumns.push(this.connection.driver.queryBuilder.createColumnFromMetadata(columnMetadata));
                      
                   } else if ((columnMetadata.type != columnSchema.type) ||
@@ -423,7 +423,7 @@ export class PostgresDriver extends Driver {
 
                         // check for other created sequences related to this column to delete them and leave only one
                         for (const sequenceNameSchema in columnSchema.sequences.filter(sequenceNameSchema => sequenceNameSchema != sequenceName)) {
-                           sqlMigrationsDropSequence.push(this.connection.driver.queryBuilder.deleteSequenceFromName(sequenceNameSchema));
+                           sqlMigrationsDropSequence.push(this.connection.driver.queryBuilder.dropSequenceFromName(sequenceNameSchema));
                         }
 
                      }
@@ -448,23 +448,23 @@ export class PostgresDriver extends Driver {
 
                   // delete the foreign keys related to this field
                   for (const foreignKeyName in columnSchema.foreignKeys) {
-                     sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(entityMetadata, entitySchema.foreignKeys[foreignKeyName]));
+                     sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.dropForeignKeyFromSchema(entityMetadata, entitySchema.foreignKeys[foreignKeyName]));
                      deletedForeignKeys.push(foreignKeyName);
                   }
 
                   // delete the uniques related to this field
                   for (const uniqueName in columnSchema.uniques) {
-                     sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.deleteUniqueFromSchema(entityMetadata, entitySchema.uniques[uniqueName]));
+                     sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.dropUniqueFromSchema(entityMetadata, entitySchema.uniques[uniqueName]));
                      deletedUniques.push(uniqueName);
                   }
 
                   // delete the indexs related to this field
                   for (const indexName in columnSchema.indexs) {
-                     sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.deleteIndexFromSchema(entityMetadata, entitySchema.indexs[indexName]));
+                     sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.dropIndexFromSchema(entitySchema.indexs[indexName]));
                      deletedIndex.push(indexName);
                   }
 
-                  sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.deleteColumnFromSchema(entityMetadata, columnSchema));
+                  sqlMigrationsDropColumns.push(this.connection.driver.queryBuilder.dropColumnFromSchema(entityMetadata, columnSchema));
                }
             }
 
@@ -472,10 +472,10 @@ export class PostgresDriver extends Driver {
             if (entityMetadata.primaryKey && !entitySchema.primaryKey) {
                sqlMigrationsCreatePrimaryKeys.push(this.connection.driver.queryBuilder.createPrimaryKeyFromMetadata(entityMetadata, true));
             } else if (!entityMetadata.primaryKey && entitySchema.primaryKey) {
-               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.deletePrimaryKeyFromSchema(entityMetadata));
+               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.dropPrimaryKeyFromSchema(entityMetadata));
             } else if (entityMetadata.primaryKey && entitySchema.primaryKey && (entityMetadata.primaryKey.columns.length != entitySchema.primaryKey.columns.length || entityMetadata.primaryKey.columns.every((columnMetadata) => (entitySchema.primaryKey?.columns?.indexOf(entityMetadata.columns[columnMetadata].name as string) ?? -1)))) {
                sqlMigrationsCreatePrimaryKeys.push(this.connection.driver.queryBuilder.createPrimaryKeyFromMetadata(entityMetadata, true));
-               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.deletePrimaryKeyFromSchema(entityMetadata));
+               sqlMigrationsDropPrimaryKeys.push(this.connection.driver.queryBuilder.dropPrimaryKeyFromSchema(entityMetadata));
             }
 
             // check uniques
@@ -496,7 +496,7 @@ export class PostgresDriver extends Driver {
    
             // delete uniques
             for (const uniqueName of pendingUniquesSchema) {
-               sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.deleteUniqueFromSchema(entityMetadata, entitySchema.uniques[uniqueName]))
+               sqlMigrationsDropUniques.push(this.connection.driver.queryBuilder.dropUniqueFromSchema(entityMetadata, entitySchema.uniques[uniqueName]))
             }
 
             // Removes the table from the list of tables created in the
@@ -516,7 +516,7 @@ export class PostgresDriver extends Driver {
 
             if (!foreignKeySchema || foreignKeyMetadata.onUpdate != foreignKeySchema.onUpdate || foreignKeyMetadata.onDelete != foreignKeySchema.onDelete || deletedForeignKeys.indexOf(foreignKeySchema.name) >= 0) {
                if (foreignKeySchema) {
-                  sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(entityMetadata, foreignKeySchema));
+                  sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.dropForeignKeyFromSchema(entityMetadata, foreignKeySchema));
                }
                sqlMigrationsCreateForeignKeys.push(this.connection.driver.queryBuilder.createForeignKeyFromMetadata(foreignKeyMetadata));
             }
@@ -528,7 +528,7 @@ export class PostgresDriver extends Driver {
 
          // delete foreign keys
          for (const foreignKeyName of pendingForeignKeysSchema) {
-            sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.deleteForeignKeyFromSchema(entityMetadata, entitySchema.foreignKeys[foreignKeyName]))
+            sqlMigrationsDropForeignKeys.push(this.connection.driver.queryBuilder.dropForeignKeyFromSchema(entityMetadata, entitySchema.foreignKeys[foreignKeyName]))
          }
 
          // check indexs
@@ -549,7 +549,7 @@ export class PostgresDriver extends Driver {
 
          // delete indexs
          for (const indexName of pendingIndexsSchema) {
-            sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.deleteIndexFromSchema(entityMetadata, entitySchema.indexs[indexName]))
+            sqlMigrationsDropIndex.push(this.connection.driver.queryBuilder.dropIndexFromSchema(entitySchema.indexs[indexName]))
          }
 
          // check triggers
@@ -571,14 +571,14 @@ export class PostgresDriver extends Driver {
 
          // delete triggers
          for (const triggerName of pendingTriggersSchema) {
-            sqlMigrationsDropTriggers.push(...this.connection.driver.queryBuilder.deleteTriggerFromSchema(entityMetadata, entitySchema.triggers[triggerName]))
+            sqlMigrationsDropTriggers.push(...this.connection.driver.queryBuilder.dropTriggerFromSchema(entityMetadata, entitySchema.triggers[triggerName]))
          }
 
       }
 
       if (this.connection.options.migrations?.deleteTables) {
          for (const entitySchema of Object.values(tablesSchema)) {
-            sqlMigrationsDropTables.push(this.connection.driver.queryBuilder.deleteTableFromSchema(entitySchema));
+            sqlMigrationsDropTables.push(this.connection.driver.queryBuilder.dropTableFromSchema(entitySchema));
          }
       }
 
