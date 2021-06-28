@@ -7,6 +7,7 @@ import { SaveOptions } from './options/save-options';
 import { EntityManager } from './entity-manager';
 import { DeleteOptions } from './options/delete-options';
 import { Connection } from '../connection';
+import { OrmUtils } from '../utils';
 
 /**
  * Base class used by all entities configured to perform save, delete and load
@@ -107,11 +108,6 @@ export abstract class CokeModel {
 				(objectToSave as any)[updatedAtColumn.propertyName] = 'now()';
 			}
 
-			// remove fields that cannot be updated
-			for (const columnMetadata of entityManager.metadata.getColumnsThatCannotBeUpdated()) {
-				delete (objectToSave as any)[columnMetadata.propertyName];
-			}
-
 			// load the object saved in the database to pass on events
 			if (subscriber?.beforeUpdate || subscriber?.afterUpdate || saveOptions?.subscriber?.beforeUpdate || saveOptions?.subscriber?.afterUpdate || hasTransactionEvents) {
 				databaseData = await entityManager.findOne({
@@ -137,12 +133,19 @@ export abstract class CokeModel {
 				}
 			}
 
+			// remove fields that cannot be updated
+			const columnsThatCannotBeUpdated: string[] = entityManager.metadata.getColumnsThatCannotBeUpdated().map((ColumnMetadata) => ColumnMetadata.propertyName);
+			const removedValues = OrmUtils.removeObjectProperties(objectToSave, columnsThatCannotBeUpdated);
+
 			// create and execute the query to update the record
 			const updateQuery: UpdateQueryBuilder<this> = entityManager.createUpdateQuery()
 				.set(objectToSave)
 				.where(where)
 				.returning(columnsToReturn);
 			await updateQuery.execute(saveOptions.queryRunner);
+
+			// restores removed properties on main object
+			OrmUtils.fillObject(objectToSave, removedValues);
 
 			// if the field related to the record change date is not informed,
 			// the link will be removed from the saved object in order not to
@@ -167,11 +170,6 @@ export abstract class CokeModel {
 				return objectToSave;
 			}
 
-			// remove fields that cannot be inserted
-			for (const columnMetadata of entityManager.metadata.getColumnsThatCannotBeInserted()) {
-				delete (objectToSave as any)[columnMetadata.propertyName];
-			}
-
 			const eventData: InsertEvent<any> | undefined = (subscriber?.beforeInsert || saveOptions?.subscriber?.beforeInsert || subscriber?.afterInsert || saveOptions?.subscriber?.afterInsert ? {
 				connection: saveOptions.queryRunner.connection,
 				queryRunner: saveOptions.queryRunner,
@@ -189,6 +187,10 @@ export abstract class CokeModel {
 				}
 			}
 
+			// remove fields that cannot be inserted
+			const columnsThatCannotBeInserted: string[] = entityManager.metadata.getColumnsThatCannotBeInserted().map((ColumnMetadata) => ColumnMetadata.propertyName);
+			const removedValues = OrmUtils.removeObjectProperties(objectToSave, columnsThatCannotBeInserted);
+
 			// create and execute the query to insert the record
 			const insertQuery: InsertQueryBuilder<this> = entityManager.createInsertQuery()
 				.values(objectToSave)
@@ -197,6 +199,9 @@ export abstract class CokeModel {
 
 			// fill in the sent object to be saved the primary key of the registry
 			entityManager.populate(objectToSave, insertedObject[0]);
+
+			// restores removed properties on main object
+			OrmUtils.fillObject(objectToSave, removedValues);
 
 			// run event before saving
 			if (eventData) {
@@ -568,6 +573,7 @@ export abstract class CokeModel {
 		const indexes: ConcatArray<string[]> = entityManager.metadata.indexs.filter((index) => index.unique).map((index) => index.columns);
 		const uniques: ConcatArray<string[]> = entityManager.metadata.uniques.map((index) => index.columns);
 
+		// eslint-disable-next-line no-array-constructor
 		for (const columns of (new Array<string[]>()).concat([primaryKeys], indexes, uniques)) {
 
 			// create the condition using the first unique index or unique key to

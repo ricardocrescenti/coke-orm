@@ -14,7 +14,6 @@ export class OrmUtils {
 	 */
 	private constructor() {}
 
-
 	/**
 	 * Create the path to the specified folder from the project's root folder.
 	 * @param {string} dir Final path to be requested.
@@ -87,6 +86,37 @@ export class OrmUtils {
 	 */
 	public static isNotEmpty(value: any): boolean {
 		return !this.isEmpty(value);
+	}
+
+	/**
+	 * Removes the properties of the object passed by parameter and returns
+	 * another object with the properties deleted.
+	 * @param {any} originalObject Original object to remove properties.
+	 * @param {string[]} propertiesToRemove Properties to be removed.
+	 * @return {any} Object with deleted properties.
+	 */
+	public static removeObjectProperties(originalObject: any, propertiesToRemove: string[]): any {
+		const object: any = {};
+
+		for (const property of propertiesToRemove) {
+			object[property] = originalObject[property];
+			delete originalObject[property];
+		}
+
+		return object;
+	}
+
+	/**
+	 * Fill the values in the object passed by parameter.
+	 * @param {any} object Object that values will be inserted.
+	 * @param {any} values Values that will be inserted into the object.
+	 */
+	public static fillObject(object: any, values: any): void {
+		const properties: string[] = Object.keys(values);
+
+		for (const property of properties) {
+			object[property] = values[property];
+		}
 	}
 
 }
