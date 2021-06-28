@@ -398,9 +398,10 @@ export abstract class CokeModel {
 					(objectToSave as any)[columnChildRelation.propertyName][childIndex] = childObject;
 
 					// removes the saved object from the list of objects to be removed
-					childrenToRemove?.splice(childrenToRemove.findIndex((child: any) => {
-						return child[columnChildRelation.relation?.referencedEntityManager.metadata.primaryKey?.columns[0] as string] == (childObject as any)[columnChildRelation.relation?.referencedEntityManager.metadata.primaryKey?.columns[0] as string];
-					}), 1);
+					const currentChildIndex: number = childrenToRemove?.findIndex((child: any) => child[columnChildRelation.relation?.referencedEntityManager.metadata.primaryKey?.columns[0] as string] == (childObject as any)[columnChildRelation.relation?.referencedEntityManager.metadata.primaryKey?.columns[0] as string]) ?? -1;
+					if (currentChildIndex >= 0) {
+						childrenToRemove?.splice(currentChildIndex, 1);
+					}
 
 				}
 

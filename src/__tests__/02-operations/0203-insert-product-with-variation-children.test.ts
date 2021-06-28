@@ -10,7 +10,7 @@ describe('Insert product with variations children', () => {
 		connection = await CokeORM.connect(connectionOptions);
 	});
 
-	it('Insert product with variations', async () => {
+	it('Insert product with variations children', async () => {
 
 		const product: any = await connection.getEntityManager(ProductModel).save({
 			name: 'Product 4',
