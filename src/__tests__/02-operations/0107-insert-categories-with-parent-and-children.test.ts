@@ -1,7 +1,7 @@
 import { CokeORM } from '../../coke-orm';
 import { Connection } from '../../connection';
-import { CategoryModel } from '../../samples/models/categories/category.model';
-import { connectionOptions } from './config/connection.options';
+import { connectionOptions } from '../config/connection.options';
+import { CategoryModel } from '../models/category.model';
 
 describe('007 - Insert categories with parent and children', () => {
 	let connection: Connection;

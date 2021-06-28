@@ -1,6 +1,6 @@
 import { CokeORM } from '../../coke-orm';
 import { Connection } from '../../connection';
-import { connectionOptions } from './config/connection.options';
+import { connectionOptions } from '../config/connection.options';
 
 describe('002 - Synchronizing entities with the database', () => {
 	let connection: Connection;
