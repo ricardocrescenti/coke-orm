@@ -3,7 +3,7 @@ import { Connection } from '../../connection';
 import { connectionOptions } from '../config/connection.options';
 import { CategoryModel } from '../models/category.model';
 
-describe('008 - Delete category', () => {
+describe('Delete category', () => {
 	let connection: Connection;
 
 	beforeAll(async () => {

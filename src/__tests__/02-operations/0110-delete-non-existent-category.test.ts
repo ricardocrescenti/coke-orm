@@ -28,7 +28,7 @@ describe('Delete non-existent category', () => {
 			SELECT COUNT(*)
 			FROM categories`);
 
-		expect(query[0]['count']).toEqual('17');
+		expect(query[0]['count']).toEqual('19');
 
 	});
 

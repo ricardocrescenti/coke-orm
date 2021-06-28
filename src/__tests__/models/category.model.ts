@@ -1,13 +1,10 @@
 /* eslint-disable require-jsdoc */
-import { Column, DeletedIndicator, Entity, ManyToOne, OneToMany, Unique, VirtualColumn } from '../../decorators';
+import { Column, Entity, ManyToOne, OneToMany, Unique, VirtualColumn } from '../../decorators';
 import { PatternModel } from './pattern.model';
 
 @Entity({ name: 'categories' })
 @Unique({ columns: ['name'] })
 export class CategoryModel extends PatternModel {
-
-   @DeletedIndicator()
-   public deleted?: boolean;
 
    @Column()
    public name?: string;
@@ -16,7 +13,7 @@ export class CategoryModel extends PatternModel {
    public parent?: CategoryModel;
 
    @VirtualColumn()
-   public virtual: string = 'batatinha';
+   public virtual: string = 'Virtual column';
 
    @OneToMany({ relation: { referencedEntity: 'CategoryModel', referencedColumn: 'parent', cascade: ['insert', 'update'] } })
    public children?: CategoryModel[];

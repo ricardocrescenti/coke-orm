@@ -3,7 +3,7 @@ import { Connection } from '../../connection';
 import { connectionOptions } from '../config/connection.options';
 import { CategoryModel } from '../models/category.model';
 
-describe('007 - Insert categories with parent and children', () => {
+describe('Insert categories with parent and children', () => {
 	let connection: Connection;
 
 	beforeAll(async () => {
@@ -38,9 +38,18 @@ describe('007 - Insert categories with parent and children', () => {
 					},
 				],
 			},
+			{
+				name: 'Category 9',
+			},
+			{
+				name: 'Category 9.1',
+				parent: {
+					name: 'Category 9',
+				},
+			},
 		]);
 
-		expect(categories.length).toBe(2);
+		expect(categories.length).toBe(4);
 		expect(categories[0].id).toEqual('15');
 		expect(categories[0].parent.id).toEqual('5');
 		expect(categories[0].children[0].id).toEqual('16');

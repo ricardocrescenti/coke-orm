@@ -3,7 +3,7 @@ import { Connection } from '../../connection';
 import { connectionOptions } from '../config/connection.options';
 import { CategoryModel } from '../models/category.model';
 
-describe('006 - Insert categories with children', () => {
+describe('Insert categories with children', () => {
 	let connection: Connection;
 
 	beforeAll(async () => {

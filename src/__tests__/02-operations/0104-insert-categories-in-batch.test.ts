@@ -3,7 +3,7 @@ import { Connection } from '../../connection';
 import { connectionOptions } from '../config/connection.options';
 import { CategoryModel } from '../models/category.model';
 
-describe('004 - Insert categories in batch', () => {
+describe('Insert categories in batch', () => {
 	let connection: Connection;
 
 	beforeAll(async () => {
