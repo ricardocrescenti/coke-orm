@@ -1,6 +1,6 @@
 /* eslint-disable require-jsdoc */
 import { Column, ManyToOne, Entity } from '../../../decorators';
-import { PatternModel } from '../pattern.model';
+import { PatternModel } from '../../../__tests__/models/pattern.model';
 
 @Entity({ name: 'prices_lists' })
 export class PriceListModel extends PatternModel {

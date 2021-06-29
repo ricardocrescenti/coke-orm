@@ -2,6 +2,10 @@
 
 ## Geral
 
+* Verificar o método loadPrimaryKey para não criar as classes porque o objeto inteiro deveria estar criado pelo método EntityManager.create.
+* Associar ao método createEntity o método EntityManager.create para que não seja necessário passar parametros adicionais no método create.
+* Criar um erro quando o método createEntity da relation não retornar nada.
+* Mudar o nome do EntitySubscriberInterface para EventsInterface que ai fica parecido com o EventsSubscriber.
 * Adicionar uma validação para dar erro caso não ache alguma entidade solicitada no método Decorators.getEntities
 * Conferir todas as classes de Schema se elas tem a propriedade "schema" para usar na hora de deletar os objetos
 * Testar o operador 'DeletedIndicator'
@@ -9,6 +13,7 @@
 * Ajustar para o tipo do campo ficar por padrão integer quando a propriedade for number e não tiver precision
 * Implementar as rules a nivel de linha
 * Implementar o operador not no where
+* Melhorar o método create que pode ser mudado criando pela relation.createEntity
 
 * **02** - [x] Nas relaçòes com filhos quando salvar, se não mandar um objeto que tinha antes, deletar ele, se tiver cascade['delete']
 * **03** - [x] Permitir inicializar o CokeORM a partir de um arquivo de configuração

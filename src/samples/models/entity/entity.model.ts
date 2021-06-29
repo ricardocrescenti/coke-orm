@@ -2,8 +2,8 @@
 import { Column, ManyToOne, OneToMany, Entity } from '../../../decorators';
 import { EntityManager, EntityValues } from '../../../manager';
 import { QueryRunner } from '../../../query-runner';
-import { FileModel } from '../file/file.model';
-import { PatternModel } from '../pattern.model';
+import { FileModel } from '../../../__tests__/models/file.model';
+import { PatternModel } from '../../../__tests__/models/pattern.model';
 import { EntityAddressModel } from './entity-address.model';
 import { EntityDocumentModel } from './entity-document.model';
 import { EntityPhoneModel } from './entity-phone.model';
@@ -79,8 +79,8 @@ export class EntityModel extends PatternModel {
 	}
 
 	public createFileModel(entityManager: EntityManager, values?: EntityValues<FileModel>) {
-		const file: FileModel = entityManager.connection.getEntityManager('FileModel').create();
-		file.path = 'entities/photos';
+		const file: FileModel = entityManager.connection.getEntityManager('FileModel').create(values);
+		file.test = 'entities/photos';
 		return file;
 	}
 

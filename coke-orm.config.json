@@ -5,9 +5,18 @@
    "user": "devmaster",
    "password": "supadm",
    "database": "devmaster",
-   "entities": ["lib/samples/models/**/*.model.js"],
-   "subscribers": ["lib/samples/models/**/*.subscriber.js"],
-   "triggers": ["lib/samples/triggers/**/*.trigger.js"],
+   "entities": [
+      "lib/samples/models/**/*.model.js",
+      "lib/__tests__/models/*.model.js"
+   ],
+   "subscribers": [
+      "lib/samples/models/**/*.subscriber.js",
+      "lib/__tests__/models/*.subscriber.js"
+   ],
+   "triggers": [
+      "lib/samples/triggers/**/*.trigger.js",
+      "lib/__tests__/triggers/*.trigger.js"
+   ],
    "migrations": {
       "synchronize": true,
       "deleteColumns": true,

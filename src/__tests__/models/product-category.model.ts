@@ -1,6 +1,6 @@
 /* eslint-disable require-jsdoc */
 import { Entity, ManyToOne, Unique } from '../../decorators';
-import { CategoryModel } from '../../samples/models/categories/category.model';
+import { CategoryModel } from './category.model';
 import { PatternModel } from './pattern.model';
 import { ProductModel } from './product.model';
 

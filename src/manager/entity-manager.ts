@@ -42,17 +42,23 @@ export class EntityManager<T = any> {
     * @returns 
     */
    public create(values?: EntityValues<T>, requestingEntityColumn?: ColumnMetadata, entity?: T): T {
-      const object: T = (requestingEntityColumn?.relation?.createEntity ? requestingEntityColumn?.relation?.createEntity(this, entity, values) : new (this.metadata.target)());
+
+      if (requestingEntityColumn?.relation?.createEntity) {
+         return requestingEntityColumn?.relation?.createEntity(this, entity, values);
+      }
+
+      const object: T = new (this.metadata.target)();
       if (values) {
-         this.populate(object, values);
+         this.createCascade(object, values);
       }
       return object;
+
    }
 
    /**
     * 
     */
-   public populate(object: any, values: any): void {
+   private createCascade(object: any, values: any): void {
       
       /// get the properties of the object that contains the values that will
       /// be loaded into the object
@@ -86,6 +92,7 @@ export class EntityManager<T = any> {
             } else {
                object[columnMetadata.propertyName] = values[columnMetadata.propertyName];
             }
+
          } else {
             object[columnMetadata.propertyName] = values[columnMetadata.propertyName];
          }
@@ -202,7 +209,7 @@ export class EntityManager<T = any> {
       const savedObjects: any[] = [];
       for (let object of objectToSave) {
          object = this.create(object);
-         savedObjects.push(await (object as CokeModel).save(saveOptions));
+         savedObjects.push(await (object as CokeModel).save({ ...saveOptions, recreateObjects: false }));
       }
       return savedObjects;
 

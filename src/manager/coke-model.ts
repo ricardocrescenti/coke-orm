@@ -29,20 +29,22 @@ export abstract class CokeModel {
 	 * @param {SaveOptions} saveOptions Save options
 	 */
 	public async save(saveOptions: SaveOptions): Promise<this> {
-		const queryRunner: QueryRunner = saveOptions.queryRunner;
+
+		// create the save options if not already created
+		saveOptions = (saveOptions instanceof SaveOptions ? saveOptions : new SaveOptions(saveOptions));
 
 		// get the entity manager to perform the processes below
-		const entityManager: EntityManager<this> = this.getEntityManager(queryRunner.connection);
+		const entityManager: EntityManager<this> = this.getEntityManager(saveOptions.queryRunner.connection);
 
 		let savedObject;
-		if (queryRunner.inTransaction) {
-			savedObject = await this.performSave(entityManager, { ...saveOptions, queryRunner });
+		if (saveOptions.queryRunner.inTransaction) {
+			savedObject = await this.performSave(entityManager, { ...saveOptions, queryRunner: saveOptions.queryRunner });
 		} else {
-			savedObject = await queryRunner.connection.transaction((queryRunner) => this.performSave(entityManager, { ...saveOptions, queryRunner }));
+			savedObject = await saveOptions.queryRunner.connection.transaction((queryRunner) => this.performSave(entityManager, { ...saveOptions, queryRunner }));
 		}
 
 		// populate in the primary keys in the main object
-		entityManager.populate(this, savedObject);
+		OrmUtils.fillObject(this, savedObject);
 
 		return this;
 	}
@@ -57,7 +59,7 @@ export abstract class CokeModel {
 
 		// create a copy of the object so as not to modify the object passed
 		// by parameter
-		const objectToSave: this = entityManager.create({ ...this });
+		const objectToSave: this = (saveOptions.recreateObjects ? entityManager.create({ ...this }) : this);
 
 		// get the columns of the object being saved to see below the columns
 		// that have relations with parent and child entities
@@ -198,7 +200,7 @@ export abstract class CokeModel {
 			const insertedObject: this[] = await insertQuery.execute(saveOptions.queryRunner);
 
 			// fill in the sent object to be saved the primary key of the registry
-			entityManager.populate(objectToSave, insertedObject[0]);
+			OrmUtils.fillObject(objectToSave, insertedObject[0]);
 
 			// restores removed properties on main object
 			OrmUtils.fillObject(objectToSave, removedValues);
@@ -319,6 +321,7 @@ export abstract class CokeModel {
 					queryRunner: saveOptions.queryRunner,
 					relation: columnParentRelation.relation,
 					requester: objectToSave,
+					recreateObjects: false,
 				});
 				(objectToSave as any)[columnParentRelation.propertyName] = parentObject;
 			}
@@ -392,6 +395,7 @@ export abstract class CokeModel {
 						queryRunner: saveOptions.queryRunner,
 						relation: columnChildRelation.relation,
 						requester: objectToSave,
+						recreateObjects: false,
 					});
 
 					// remove the object used to relate it to the current object
@@ -429,15 +433,17 @@ export abstract class CokeModel {
 	 * @param {DeleteOptions} deleteOptions Delete options
 	 */
 	public async delete(deleteOptions: DeleteOptions): Promise<boolean> {
-		const queryRunner: QueryRunner = deleteOptions.queryRunner;
+
+		// create the delete options if not already created
+		deleteOptions = (deleteOptions instanceof DeleteOptions ? deleteOptions : new DeleteOptions(deleteOptions));
 
 		// get the entity manager to perform the processes below
-		const entityManager: EntityManager<this> = this.getEntityManager(queryRunner.connection);
+		const entityManager: EntityManager<this> = this.getEntityManager(deleteOptions.queryRunner.connection);
 
-		if (queryRunner.inTransaction) {
-			return await this.performDelete(entityManager, { ...deleteOptions, queryRunner });
+		if (deleteOptions.queryRunner.inTransaction) {
+			return await this.performDelete(entityManager, { ...deleteOptions, queryRunner: deleteOptions.queryRunner });
 		} else {
-			return await queryRunner.connection.transaction((queryRunner) => this.performDelete(entityManager, { ...deleteOptions, queryRunner }));
+			return await deleteOptions.queryRunner.connection.transaction((queryRunner) => this.performDelete(entityManager, { ...deleteOptions, queryRunner }));
 		}
 
 	}

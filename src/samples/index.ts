@@ -1,8 +1,8 @@
 /* eslint-disable require-jsdoc */
 import { CokeORM } from '../coke-orm';
 import { Connection } from '../connection';
+import { ProductModel } from '../__tests__/models/product.model';
 import { Status } from './enums/status.enum';
-import { CategoryModel } from './models/categories/category.model';
 import { CityModel } from './models/entity/city.model';
 import { EntityAddressModel } from './models/entity/entity-address.model';
 import { SellerModel } from './models/entity/seller.model';
@@ -13,29 +13,37 @@ export async function test() {
 	const connection: Connection = await CokeORM.connect();
 
 	// Clean up the database to start testing
-	await connection.queryRunner.query(`
-		DELETE FROM carriers;
-		DELETE FROM categories;
-		DELETE FROM collaborators;
-		DELETE FROM companies;
-		DELETE FROM customers;
-		DELETE FROM sellers;
-		DELETE FROM entities_addresses;
-		DELETE FROM entities_documents;
-		DELETE FROM entities_phones;
-		DELETE FROM entities;
-		DELETE FROM prices_lists;
-		DELETE FROM cities;
-		DELETE FROM files;`);
+	// await connection.queryRunner.query(`
+	// 	DELETE FROM carriers;
+	// 	DELETE FROM categories;
+	// 	DELETE FROM collaborators;
+	// 	DELETE FROM companies;
+	// 	DELETE FROM customers;
+	// 	DELETE FROM sellers;
+	// 	DELETE FROM entities_addresses;
+	// 	DELETE FROM entities_documents;
+	// 	DELETE FROM entities_phones;
+	// 	DELETE FROM entities;
+	// 	DELETE FROM prices_lists;
+	// 	DELETE FROM cities;
+	// 	DELETE FROM files;`);
 
-	await insertCategories(connection);
-	await insertCategoryChild(connection);
-	await intertCategoriesWithChildren(connection);
-	await deleteCategoryByDelete(connection);
-	await deleteCategoryBySave(connection);
-	await deleteCategoryChild(connection);
-	await loadCategoryPrimaryKey(connection);
-	await loadCategoryPrimaryKey(connection);
+	let product = await connection.getEntityManager(ProductModel).save({
+		name: 'Product With Image Debug 1',
+		image: {
+			privateUrl: 'privateurl/image1.jpg',
+		},
+	});
+	console.log(product);
+
+	product = await connection.getEntityManager(ProductModel).create({
+		name: 'Product With Image Debug 2',
+		image: {
+			privateUrl: 'privateurl/image2.jpg',
+		},
+	});
+	await product.save({ queryRunner: connection.queryRunner });
+	console.log(product);
 
 	await insertCity(connection);
 
@@ -147,9 +155,6 @@ export async function test() {
 				},
 			],
 			photo: {
-				path: 'batatinha_path',
-				content: 'teste',
-				type: 0,
 				privateUrl: '/temp/sasdaskdakdslakdsal.jpg',
 				publicUrl: '/temp/sasdaskdakdslakdsal.jpg',
 			},
@@ -339,174 +344,6 @@ export async function test() {
 		},
 	});
 	console.log('find', sellers);
-
-}
-
-async function insertCategories(connection: Connection) {
-
-	await connection.getEntityManager(CategoryModel).save({
-		name: 'Category 1',
-	});
-	await connection.getEntityManager(CategoryModel).save({
-		name: 'Category 2',
-	});
-	await connection.getEntityManager(CategoryModel).save({
-		name: 'Category 3',
-	});
-	await connection.getEntityManager(CategoryModel).save({
-		name: 'Category 4',
-	});
-
-	const categories: CategoryModel[] = await connection.getEntityManager(CategoryModel).find();
-	if (categories.length != 4) {
-		throw new Error('insertCategories - Not all categories have been entered');
-	}
-
-}
-async function insertCategoryChild(connection: Connection) {
-
-	await connection.getEntityManager(CategoryModel).save({
-		name: 'Category 4.1',
-		parent: {
-			name: 'Category 4',
-		},
-	});
-
-	const categories: CategoryModel[] = await connection.getEntityManager(CategoryModel).find({
-		relations: [
-			'parent',
-			'children',
-		],
-	});
-	if (categories.length != 5) {
-		throw new Error('insertCategoryChild - Not all categories have been entered');
-	}
-
-	if (categories[3].children?.length != 1) {
-		throw new Error('insertCategoryChild - The category does not have a child category');
-	}
-
-	if (!categories[4].parent) {
-		throw new Error('insertCategoryChild - Category has no parent category');
-	}
-
-}
-async function intertCategoriesWithChildren(connection: Connection) {
-
-	await connection.getEntityManager(CategoryModel).save({
-		name: 'Category 5',
-		children: [
-			{
-				name: 'Category 5.1',
-			},
-			{
-				name: 'Category 5.2',
-			},
-		],
-	});
-
-	const categories: CategoryModel[] = await connection.getEntityManager(CategoryModel).find({
-		relations: [
-			'parent',
-			'children',
-		],
-	});
-
-	if (categories.length != 8) {
-		throw new Error('intertCategoriesWithChildren - Not all categories have been entered');
-	}
-
-	if (categories[5].children?.length != 2) {
-		throw new Error('intertCategoriesWithChildren - The category does not have a child category');
-	}
-
-}
-async function deleteCategoryByDelete(connection: Connection) {
-
-	await connection.getEntityManager(CategoryModel).delete({
-		name: 'Category 1',
-	});
-
-	const categories: CategoryModel[] = await connection.getEntityManager(CategoryModel).find();
-
-	if (categories.length != 7) {
-		throw new Error('deleteCategoryByDelete - Not all categories have been deleted');
-	}
-
-}
-async function deleteCategoryBySave(connection: Connection) {
-
-	await connection.getEntityManager(CategoryModel).save({
-		deleted: true,
-		name: 'Category 2',
-	});
-
-	const categories: CategoryModel[] = await connection.getEntityManager(CategoryModel).find();
-
-	if (categories.length != 6) {
-		throw new Error('deleteCategoryBySave - Not all categories have been deleted');
-	}
-
-}
-async function deleteCategoryChild(connection: Connection) {
-
-	await connection.getEntityManager(CategoryModel).save({
-		name: 'Category 5',
-		children: [
-			{
-				name: 'Category 5.1',
-			},
-			{
-				deleted: true,
-				name: 'Category 5.2',
-			},
-		],
-	});
-
-	const categories: CategoryModel[] = await connection.getEntityManager(CategoryModel).find();
-
-	if (categories.length != 5) {
-		throw new Error('deleteCategoryChild - Not all categories have been deleted');
-	}
-
-}
-async function loadCategoryPrimaryKey(connection: Connection) {
-
-	const category = connection.getEntityManager(CategoryModel).create({
-		name: 'Category 5',
-		parent: {
-			name: 'Category 4',
-		},
-		children: [
-			{
-				name: 'Category 5.1',
-			},
-			{
-				name: 'Category 5.2',
-			},
-		],
-	});
-	await category.loadPrimaryKeyCascade(connection.queryRunner);
-
-	if (!category.id) {
-		throw new Error('loadCategoryPrimaryKey - The category did not load its id');
-	}
-
-	if (!category.parent?.id) {
-		throw new Error(`loadCategoryPrimaryKey - Parent category '${category.parent?.name}' did not load its ID`);
-	}
-
-	if (category.children) {
-
-		if (!category.children[0].id) {
-			throw new Error(`loadCategoryPrimaryKey - Child category '${category.children[0].name}' did not load its ID`);
-		}
-
-		if (category.children[1].id) {
-			throw new Error(`loadCategoryPrimaryKey - The child category '${category.children[1].name}' has loaded its ID but it should be reported`);
-		}
-
-	}
 
 }
 

@@ -1,7 +1,7 @@
 /* eslint-disable require-jsdoc */
 import { Column, OneToOne, Entity, Unique } from '../../../decorators';
 import { Status } from '../../enums/status.enum';
-import { PatternModel } from '../pattern.model';
+import { PatternModel } from '../../../__tests__/models/pattern.model';
 import { EntityModel } from './entity.model';
 
 @Entity({ name: 'companies' })
