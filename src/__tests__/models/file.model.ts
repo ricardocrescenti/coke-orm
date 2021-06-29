@@ -5,7 +5,7 @@ import { PatternModel } from './pattern.model';
 @Entity({ name: 'files' })
 export class FileModel extends PatternModel {
 
-	@VirtualColumn()
+	@VirtualColumn({ canPopulate: false })
 	test?: string;
 
 	@Column()

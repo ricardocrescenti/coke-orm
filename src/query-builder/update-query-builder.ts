@@ -39,7 +39,7 @@ export class UpdateQueryBuilder<T> extends QueryBuilder<T> {
       let values: string = ''
       for (const column in this.queryManager.values) {
          const param = this.queryManager.registerParameter((this.queryManager.values as any)[column]);
-         values += (values.length > 0 ? ', ' : '') + `${column} = $${param}`;
+         values += (values.length > 0 ? ', ' : '') + `"${column}" = $${param}`;
       }
 
       return values;

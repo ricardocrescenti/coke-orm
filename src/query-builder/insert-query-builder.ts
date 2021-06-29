@@ -27,7 +27,7 @@ export class InsertQueryBuilder<T> extends QueryBuilder<T> {
 
       let columns: string = '';
       for (const column in this.queryManager.values) {
-         columns += (columns.length > 0 ? ', ' : '') + column;
+         columns += (columns.length > 0 ? ', ' : '') + `"${column}"`;
          this.queryManager.registerParameter((this.queryManager.values as any)[column]);
       }
 
