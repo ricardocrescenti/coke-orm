@@ -22,9 +22,11 @@ export class ProductModel extends PatternModel {
 	@OneToMany({ relation: { referencedEntity: 'ProductAttributeOptionModel', referencedColumn: 'product', cascade: ['insert', 'update', 'remove'] } })
 	public attributesOptions?: ProductAttributeOptionModel[];
 
+	@Column({ length: 18, precision: 5, default: 0 })
+	public cost?: number;
+
 	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE', cascade: ['insert', 'update'], createEntity: (entityManager, entity, values) => {
 
-		console.log('##>>', 'file created');
 		const file = entityManager.connection.getEntityManager(FileModel).create(values);
 		file.test = '1';
 		return file;

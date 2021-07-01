@@ -8,19 +8,20 @@ import { QueryBuilderDriver } from '../../query-builder-driver';
 export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 
 	public generateColumnTypeSQL(columnOptions: ColumnOptions): string {
-		let type: string = columnOptions.type as string;
+		const type: string = columnOptions.type as string;
+		let mountedType = type;
 
 		if ((this.driver.columnTypesWithLength.indexOf(type) >= 0 || this.driver.columnTypesWithPrecision.indexOf(type) >= 0) && (columnOptions.length ?? 0) > 0) {
 
-			type += '(' + columnOptions.length;
+			mountedType += '(' + columnOptions.length;
 			if (this.driver.columnTypesWithPrecision.indexOf(type) >= 0) {
-				type += ',' + columnOptions.precision;
+				mountedType += ',' + columnOptions.precision;
 			}
-			type += ')';
+			mountedType += ')';
 
 		}
 
-		return type;
+		return mountedType;
 	}
 
 	public generateColumnDefaultValue(columnMetadata: ColumnMetadata): string {
@@ -61,7 +62,7 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 			}
 
 			const notNull: string = (!column.nullable ? ` NOT NULL` : '');
-			const defaultValue: string = (column.default ? ` DEFAULT ${column.default}` : '');
+			const defaultValue: string = (column.default != null ? ` DEFAULT ${column.default}` : '');
 			columns.push(`"${column.name}" ${this.generateColumnTypeSQL(column)}${notNull}${defaultValue}`);
 		}
 
@@ -77,7 +78,7 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 	}
 
 	public createColumnFromMetadata(columnMetadata: ColumnMetadata): string {
-		return `ALTER TABLE "${columnMetadata.entity.connection.options.schema ?? 'public'}"."${columnMetadata.entity.name}" ADD COLUMN "${columnMetadata.name}" ${this.generateColumnTypeSQL(columnMetadata)}${!columnMetadata.nullable ? ' NOT NULL' : ''}${columnMetadata.default ? ` DEFAULT ${(columnMetadata.default.value ?? columnMetadata.default)}` : ''};`;
+		return `ALTER TABLE "${columnMetadata.entity.connection.options.schema ?? 'public'}"."${columnMetadata.entity.name}" ADD COLUMN "${columnMetadata.name}" ${this.generateColumnTypeSQL(columnMetadata)}${!columnMetadata.nullable ? ' NOT NULL' : ''}${columnMetadata.default != null ? ` DEFAULT ${(columnMetadata.default.value ?? columnMetadata.default)}` : ''};`;
 	}
 
 	public alterColumnFromMatadata(columnMetadata: ColumnMetadata, currentColumnSchema: ColumnSchema): string[] {
