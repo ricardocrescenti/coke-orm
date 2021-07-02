@@ -314,7 +314,7 @@ export class EntityManager<T = any> {
 		// create a copy of findOptions to not modify the original and help to
 		// copy it with the standard data needed to find the records
 		findOptions = new FindOptions(findOptions);
-		FindOptions.loadDefaultOrderBy(this.metadata, findOptions);
+		this.setFindOptionsOrderBy(findOptions);
 
 		// obtain the list of columns to be consulted in the main entity (if the
 		// list of columns is not informed in the find options, all columns that
@@ -730,6 +730,43 @@ export class EntityManager<T = any> {
 
 		return where;
 
+	}
+
+	/**
+	 * Define the order of the table if it is not informed.
+	 * @param {FindOptions<any>} findOptions Find Options.
+	 */
+	public setFindOptionsOrderBy(findOptions: FindOptions<any>): void {
+		let orderBy: any = findOptions.orderBy;
+
+		if (!orderBy) {
+
+			orderBy = this.metadata.orderBy;
+			if (!orderBy) {
+
+				orderBy = {};
+				for (const columnPropertyName of this.metadata.primaryKey?.columns as string[]) {
+					orderBy[columnPropertyName] = 'ASC';
+				}
+
+			}
+
+		}
+
+		for (const columnPropertyName in orderBy) {
+
+			const columnMetadata = this.metadata.columns[columnPropertyName];
+			const relationMetadata: ForeignKeyMetadata | undefined = columnMetadata.relation;
+
+			if (relationMetadata) {
+				if (relationMetadata.type == 'OneToMany') {
+					delete (orderBy as any)[columnPropertyName];
+				}
+			}
+
+		}
+
+		findOptions.orderBy = orderBy;
 	}
 
 	/**

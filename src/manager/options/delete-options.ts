@@ -1,14 +1,27 @@
-import { QueryRunner } from "../../query-runner";
-import { EntitySubscriberInterface } from "../../metadata/event";
+import { QueryRunner } from '../../query-runner';
+import { EntitySubscriberInterface } from '../../metadata/event';
 
+/**
+ * Options for delete a record
+ */
 export class DeleteOptions<T = any> {
-   queryRunner: QueryRunner;
-   requester?: any;
-   subscriber?: EntitySubscriberInterface<T>;
 
-   constructor(options: DeleteOptions) {
-      this.queryRunner = options.queryRunner;
-      this.requester = options.requester;
-      this.subscriber = options.subscriber;
-   }
+	/**
+	 * Query Executor used for the operation.
+	 */
+	queryRunner: QueryRunner;
+
+	/**
+	 * Subscriber with events to be executed when deleting the record.
+	 */
+	subscriber?: EntitySubscriberInterface<T>;
+
+	/**
+	 * Default class constructor
+	 * @param {DeleteOptions} options Delete Options
+	 */
+	constructor(options: DeleteOptions) {
+		this.queryRunner = options.queryRunner;
+		this.subscriber = options.subscriber;
+	}
 }
