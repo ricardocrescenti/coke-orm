@@ -130,17 +130,16 @@ export class EntityManager<T = any> {
 	/**
 	 * Query and return the first record that matches the query criteria.
 	 * @param {FindOptions<T>} findOptions Find Options.
-	 * @param {QueryRunner} queryRunner Query Runner used to perform the query.
-	 * @param {boolean} runEventAfterLoad Indicates whether the load events of
-	 * subscribers can be performed.
 	 * @return {Promise<T>} First record found in database.
 	 */
-	public async findOne(findOptions: FindOptions<T>, queryRunner?: QueryRunner, runEventAfterLoad: boolean = true): Promise<T> {
+	public async findOne(findOptions: FindOptions<T>): Promise<T> {
 
 		const [result]: any = await this.find({
 			...findOptions,
+			queryRunner: findOptions.queryRunner,
 			limit: 1,
-		}, queryRunner, runEventAfterLoad);
+			runAfterLoadEvent: findOptions.runAfterLoadEvent,
+		});
 
 		return result;
 
@@ -154,18 +153,24 @@ export class EntityManager<T = any> {
 	 * @param {boolean} runEventAfterLoad Indicates whether the load events of
 	 * subscribers can be performed.
 	 */
-	public async find(findOptions?: FindOptions<T>, queryRunner?: QueryRunner, runEventAfterLoad = true): Promise<T[]> {
+	public async find(findOptions?: FindOptions<T>): Promise<T[]> {
+
+		// create an internal find options to not modify the passed by parameter
+		findOptions = new FindOptions({
+			...findOptions,
+			queryRunner: findOptions?.queryRunner ?? this.connection.queryRunner,
+		});
 
 		// create the query
 		const query: SelectQueryBuilder<T> = this.createSelectQuery(findOptions, 0);
 
 		// run the query to get the result
-		const result: T[] = await query.execute(queryRunner);
+		const result: T[] = await query.execute(findOptions.queryRunner);
 
 		if (result.length > 0) {
 
 			// create the entity-related subscriber to run the events
-			const subscriber: EntitySubscriberInterface<T> | undefined = (runEventAfterLoad ? this.createEntitySubscriber() : undefined);
+			const subscriber: EntitySubscriberInterface<T> | undefined = (findOptions.runAfterLoadEvent ? this.createEntitySubscriber() : undefined);
 
 			// transform the query result into its specific classes
 			for (let i = 0; i < result.length; i++) {
@@ -173,8 +178,8 @@ export class EntityManager<T = any> {
 
 				if (subscriber?.afterLoad) {
 					await subscriber.afterLoad({
-						connection: (queryRunner?.connection ?? this.connection),
-						queryRunner: (queryRunner instanceof QueryRunner ? queryRunner : undefined),
+						connection: (findOptions.queryRunner?.connection ?? this.connection),
+						queryRunner: findOptions.queryRunner,
 						manager: this,
 						findOptions: findOptions,
 						entity: result[i],

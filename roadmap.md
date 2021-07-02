@@ -2,7 +2,6 @@
 
 ## Geral
 
-* No FindOptions passar internamente o queryRunner utilizado, igual ao que é feito com o método save e delete.
 * No FindOne colocar o parâmetro 'runEventAfterLoad' dentro do findOptions e mudar o nome para 'allowSubscriber'.
 * No FindOptions where poder usar um valor de relação que dai pegaria automaticamente o campo relacionado para fazer o where.
 * Verificar o método loadPrimaryKey para não criar as classes porque o objeto inteiro deveria estar criado pelo método EntityManager.create.

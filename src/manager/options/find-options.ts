@@ -1,10 +1,16 @@
 import { QueryOrder, QueryWhere } from '../../query-builder';
+import { QueryRunner } from '../../query-runner';
 import { FindSelect } from '../types/find-select';
 
 /**
  * Options for query a record
  */
 export class FindOptions<T> {
+
+	/**
+	 * Query Executor used for the operation.
+	 */
+	queryRunner?: QueryRunner;
 
 	/**
 	 * Fields to be consulted.
@@ -45,19 +51,24 @@ export class FindOptions<T> {
 	roles?: string[];
 
 	/**
-	 * Default class constructor.
-	 * @param {FindOptions<T>} findOptions Find Options
+	 * Indicates whether load events should be executed.
 	 */
-	constructor(findOptions?: FindOptions<T>) {
-		if (findOptions) {
-			this.select = findOptions.select;
-			this.relations = findOptions.relations;
-			this.where = findOptions.where;
-			this.orderBy = findOptions.orderBy;
-			this.skip = findOptions.skip;
-			this.limit = findOptions.limit;
-			this.roles = findOptions.roles;
-		}
+	runAfterLoadEvent?: boolean = true
+
+	/**
+	 * Default class constructor.
+	 * @param {FindOptions<T>} options Find Options
+	 */
+	constructor(options?: FindOptions<T>) {
+		this.queryRunner = options?.queryRunner;
+		this.select = options?.select;
+		this.relations = options?.relations;
+		this.where = options?.where;
+		this.orderBy = options?.orderBy;
+		this.skip = options?.skip;
+		this.limit = options?.limit;
+		this.roles = options?.roles;
+		this.runAfterLoadEvent = options?.runAfterLoadEvent ?? true;
 	}
 
 }

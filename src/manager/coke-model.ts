@@ -362,9 +362,10 @@ export abstract class CokeModel {
 			let childrenToRemove: CokeModel[] | undefined = undefined;
 			if (columnChildRelation.relation?.canRemove) {
 				childrenToRemove = await columnChildRelation.relation.referencedEntityManager.find({
+					queryRunner: saveOptions.queryRunner,
 					relations: [columnChildRelation.relation.referencedColumn],
 					where: JSON.parse(JSON.stringify(childRelationColumn)),
-				}, saveOptions.queryRunner) as any[];
+				}) as any[];
 			}
 
 			// go through the current children to check if they exist and perform
@@ -596,10 +597,12 @@ export abstract class CokeModel {
 
 			// run the query to verify the object and verify that it exists
 			const result: any = await entityManager.findOne({
+				queryRunner,
 				select: primaryKeys,
 				where: where,
 				orderBy: orderBy,
-			}, queryRunner, false);
+				runAfterLoadEvent: false,
+			});
 
 			// If the requested object exists in the database, the primary keys will
 			// be loaded into the current object
