@@ -12,7 +12,7 @@ describe('Insert categories with parent', () => {
 
 	it('Insert categories with parent', async () => {
 
-		const categories: any = await connection.getEntityManager(CategoryModel).save([
+		const categories: CategoryModel[] = await connection.getEntityManager(CategoryModel).save([
 			{
 				name: 'Category 1.1',
 				parent: {
@@ -29,9 +29,9 @@ describe('Insert categories with parent', () => {
 
 		expect(categories.length).toBe(2);
 		expect(categories[0].id).toEqual('9');
-		expect(categories[0].parent.id).toEqual('1');
+		expect(categories[0].parent?.id).toEqual('1');
 		expect(categories[1].id).toEqual('10');
-		expect(categories[1].parent.id).toEqual('2');
+		expect(categories[1].parent?.id).toEqual('2');
 
 	});
 

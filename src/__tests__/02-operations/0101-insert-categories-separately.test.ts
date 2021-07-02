@@ -11,7 +11,7 @@ describe('Insert categories separately', () => {
 	});
 
 	it('Insert categories separately', async () => {
-		let category;
+		let category: CategoryModel;
 
 		category = await connection.getEntityManager(CategoryModel).save({
 			name: 'Category 1',

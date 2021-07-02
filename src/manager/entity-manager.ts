@@ -189,19 +189,19 @@ export class EntityManager<T = any> {
 	}
 
 	/**
-	 * Save an object to the database
-	 * @param {EntityValues<T>} object Object to be saved in the database.
-	 * @param {SaveOptions} saveOptions Save options.
-	 * @return {Promise<T>} Object reference saved in the database.
-	 */
-	public async save(object: EntityValues<T>, saveOptions?: SaveOptions): Promise<T>;
-	/**
 	 * Save objects to the database
 	 * @param {EntityValues<T>} objects Objects to be saved in the database.
 	 * @param {SaveOptions} saveOptions Save options.
 	 * @return {Promise<T>} Objects reference saved in the database.
 	 */
 	public async save(objects: EntityValues<T>[], saveOptions?: SaveOptions): Promise<T[]>;
+	/**
+	 * Save an object to the database
+	 * @param {EntityValues<T>} object Object to be saved in the database.
+	 * @param {SaveOptions} saveOptions Save options.
+	 * @return {Promise<T>} Object reference saved in the database.
+	 */
+	public async save(object: EntityValues<T>, saveOptions?: SaveOptions): Promise<T>;
 	/**
 	 * Save an object or multiple objects to the database.
 	 * @param {EntityValues<T>} objects Objects to be saved in the database.
@@ -246,19 +246,19 @@ export class EntityManager<T = any> {
 	}
 
 	/**
-	 * Delete an object from the database.
-	 * @param {EntityValues<T>} object Object to be deleted.
-	 * @param {DeleteOptions} deleteOptions Deletion Options.
-	 * @return {Promise<boolean>} True if object has been deleted
-	 */
-	public async delete(object: EntityValues<T>, deleteOptions?: DeleteOptions): Promise<boolean>;
-	/**
 	 * Delete multiple objects from the database.
 	 * @param {EntityValues<T>[]} objects Objects to be deleted.
 	 * @param {DeleteOptions} deleteOptions Deletion Options.
 	 * @return {Promise<boolean>} True if objects have been deleted.
 	 */
 	public async delete(objects: EntityValues<T>[], deleteOptions?: DeleteOptions): Promise<boolean>;
+	/**
+	 * Delete an object from the database.
+	 * @param {EntityValues<T>} object Object to be deleted.
+	 * @param {DeleteOptions} deleteOptions Deletion Options.
+	 * @return {Promise<boolean>} True if object has been deleted
+	 */
+	public async delete(object: EntityValues<T>, deleteOptions?: DeleteOptions): Promise<boolean>;
 	/**
 	 * Delete an object or multiple objects from the database
 	 * @param {EntityValues<T> | EntityValues<T>[]} objects Object or objects to be deleted

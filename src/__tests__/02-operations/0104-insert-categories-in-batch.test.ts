@@ -12,7 +12,7 @@ describe('Insert categories in batch', () => {
 
 	it('Insert categories in batch', async () => {
 
-		const categories: any = await connection.getEntityManager(CategoryModel).save([
+		const categories: CategoryModel[] = await connection.getEntityManager(CategoryModel).save([
 			{
 				name: 'Category 5',
 			},
