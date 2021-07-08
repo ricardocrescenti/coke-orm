@@ -231,38 +231,62 @@ export abstract class CokeModel {
 
 			// events related to transaction commit
 			if (subscriber?.beforeTransactionCommit) {
-				const beforeTransactionCommit = subscriber.beforeTransactionCommit;
-				saveOptions.queryRunner.beforeTransactionCommit.push(() => beforeTransactionCommit(event));
+				saveOptions.queryRunner.beforeTransactionCommit.push(() => {
+					if (subscriber?.beforeTransactionCommit) {
+						subscriber.beforeTransactionCommit(event);
+					}
+				});
 			}
 			if (saveOptions?.subscriber?.beforeTransactionCommit) {
-				const beforeTransactionCommit = saveOptions.subscriber.beforeTransactionCommit;
-				saveOptions.queryRunner.beforeTransactionCommit.push(() => beforeTransactionCommit(event));
+				saveOptions.queryRunner.beforeTransactionCommit.push(() => {
+					if (saveOptions?.subscriber?.beforeTransactionCommit) {
+						saveOptions.subscriber.beforeTransactionCommit(event);
+					}
+				});
 			}
 			if (subscriber?.afterTransactionCommit) {
-				const afterTransactionCommit = subscriber.afterTransactionCommit;
-				saveOptions.queryRunner.afterTransactionCommit.push(() => afterTransactionCommit(event));
+				saveOptions.queryRunner.afterTransactionCommit.push(() => {
+					if (subscriber?.afterTransactionCommit) {
+						subscriber.afterTransactionCommit(event);
+					}
+				});
 			}
 			if (saveOptions?.subscriber?.afterTransactionCommit) {
-				const afterTransactionCommit = saveOptions?.subscriber.afterTransactionCommit;
-				saveOptions.queryRunner.afterTransactionCommit.push(() => afterTransactionCommit(event));
+				saveOptions.queryRunner.afterTransactionCommit.push(() => {
+					if (saveOptions?.subscriber?.afterTransactionCommit) {
+						saveOptions.subscriber.afterTransactionCommit(event);
+					}
+				});
 			}
 
 			// events related to transaction rollback
 			if (subscriber?.beforeTransactionRollback) {
-				const beforeTransactionRollback = subscriber.beforeTransactionRollback;
-				saveOptions.queryRunner.beforeTransactionRollback.push(() => beforeTransactionRollback(event));
+				saveOptions.queryRunner.beforeTransactionRollback.push(() => {
+					if (subscriber?.beforeTransactionRollback) {
+						subscriber.beforeTransactionRollback(event);
+					}
+				});
 			}
 			if (saveOptions?.subscriber?.beforeTransactionRollback) {
-				const beforeTransactionRollback = saveOptions?.subscriber.beforeTransactionRollback;
-				saveOptions.queryRunner.beforeTransactionRollback.push(() => beforeTransactionRollback(event));
+				saveOptions.queryRunner.beforeTransactionRollback.push(() => {
+					if (saveOptions?.subscriber?.beforeTransactionRollback) {
+						saveOptions?.subscriber.beforeTransactionRollback(event);
+					}
+				});
 			}
 			if (subscriber?.afterTransactionRollback) {
-				const afterTransactionRollback = subscriber.afterTransactionRollback;
-				saveOptions.queryRunner.afterTransactionRollback.push(() => afterTransactionRollback(event));
+				saveOptions.queryRunner.afterTransactionRollback.push(() => {
+					if (subscriber?.afterTransactionRollback) {
+						subscriber.afterTransactionRollback(event);
+					}
+				});
 			}
 			if (saveOptions?.subscriber?.afterTransactionRollback) {
-				const afterTransactionRollback = saveOptions?.subscriber.afterTransactionRollback;
-				saveOptions.queryRunner.afterTransactionRollback.push(() => afterTransactionRollback(event));
+				saveOptions.queryRunner.afterTransactionRollback.push(() => {
+					if (saveOptions?.subscriber?.afterTransactionRollback) {
+						saveOptions?.subscriber.afterTransactionRollback(event);
+					}
+				});
 			}
 
 		}
