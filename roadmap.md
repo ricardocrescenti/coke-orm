@@ -2,8 +2,6 @@
 
 ## Geral
 
-* Esta dando alguns erros de release, pesquisar.
-* Tem erro ao gerar as migrations quando tem mais de uma variavel, tem que replicar o DECLARE e remover o nome trigger do final do nome
 * Validar quando são enviados valores em campos com padrão sequencia.
 * Validar no FindOptions.orderBy colunas que não existem.
 * No FindOptios.where quando for filho, filtrar os filhos também.

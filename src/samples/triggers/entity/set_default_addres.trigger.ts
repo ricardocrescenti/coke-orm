@@ -7,12 +7,13 @@ import { EntityAddressModel } from '../../models/entity/entity-address.model';
  * Test Trigger
  */
 @Trigger(EntityAddressModel, { fires: 'BEFORE', events: ['INSERT', 'UPDATE'] })
-export class SetDefaultAddress implements TriggerInterface {
+export class SetDefaultAddressTrigger implements TriggerInterface {
 
 	// when = `OLD is null or OLD.is_default <> NEW.is_default`;
 
 	variables = [
 		{ name: 'hasAddress', type: 'INTEGER' },
+		{ name: 'hasAddressTest', type: 'INTEGER' },
 	]
 
 	code = ` 
