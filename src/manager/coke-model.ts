@@ -231,38 +231,62 @@ export abstract class CokeModel {
 
 			// events related to transaction commit
 			if (subscriber?.beforeTransactionCommit) {
-				const beforeTransactionCommit = subscriber.beforeTransactionCommit;
-				saveOptions.queryRunner.beforeTransactionCommit.push(() => beforeTransactionCommit(event));
+				saveOptions.queryRunner.beforeTransactionCommit.push(() => {
+					if (subscriber?.beforeTransactionCommit) {
+						subscriber.beforeTransactionCommit(event);
+					}
+				});
 			}
 			if (saveOptions?.subscriber?.beforeTransactionCommit) {
-				const beforeTransactionCommit = saveOptions.subscriber.beforeTransactionCommit;
-				saveOptions.queryRunner.beforeTransactionCommit.push(() => beforeTransactionCommit(event));
+				saveOptions.queryRunner.beforeTransactionCommit.push(() => {
+					if (saveOptions?.subscriber?.beforeTransactionCommit) {
+						saveOptions.subscriber.beforeTransactionCommit(event);
+					}
+				});
 			}
 			if (subscriber?.afterTransactionCommit) {
-				const afterTransactionCommit = subscriber.afterTransactionCommit;
-				saveOptions.queryRunner.afterTransactionCommit.push(() => afterTransactionCommit(event));
+				saveOptions.queryRunner.afterTransactionCommit.push(() => {
+					if (subscriber?.afterTransactionCommit) {
+						subscriber.afterTransactionCommit(event);
+					}
+				});
 			}
 			if (saveOptions?.subscriber?.afterTransactionCommit) {
-				const afterTransactionCommit = saveOptions?.subscriber.afterTransactionCommit;
-				saveOptions.queryRunner.afterTransactionCommit.push(() => afterTransactionCommit(event));
+				saveOptions.queryRunner.afterTransactionCommit.push(() => {
+					if (saveOptions?.subscriber?.afterTransactionCommit) {
+						saveOptions.subscriber.afterTransactionCommit(event);
+					}
+				});
 			}
 
 			// events related to transaction rollback
 			if (subscriber?.beforeTransactionRollback) {
-				const beforeTransactionRollback = subscriber.beforeTransactionRollback;
-				saveOptions.queryRunner.beforeTransactionRollback.push(() => beforeTransactionRollback(event));
+				saveOptions.queryRunner.beforeTransactionRollback.push(() => {
+					if (subscriber?.beforeTransactionRollback) {
+						subscriber.beforeTransactionRollback(event);
+					}
+				});
 			}
 			if (saveOptions?.subscriber?.beforeTransactionRollback) {
-				const beforeTransactionRollback = saveOptions?.subscriber.beforeTransactionRollback;
-				saveOptions.queryRunner.beforeTransactionRollback.push(() => beforeTransactionRollback(event));
+				saveOptions.queryRunner.beforeTransactionRollback.push(() => {
+					if (saveOptions?.subscriber?.beforeTransactionRollback) {
+						saveOptions?.subscriber.beforeTransactionRollback(event);
+					}
+				});
 			}
 			if (subscriber?.afterTransactionRollback) {
-				const afterTransactionRollback = subscriber.afterTransactionRollback;
-				saveOptions.queryRunner.afterTransactionRollback.push(() => afterTransactionRollback(event));
+				saveOptions.queryRunner.afterTransactionRollback.push(() => {
+					if (subscriber?.afterTransactionRollback) {
+						subscriber.afterTransactionRollback(event);
+					}
+				});
 			}
 			if (saveOptions?.subscriber?.afterTransactionRollback) {
-				const afterTransactionRollback = saveOptions?.subscriber.afterTransactionRollback;
-				saveOptions.queryRunner.afterTransactionRollback.push(() => afterTransactionRollback(event));
+				saveOptions.queryRunner.afterTransactionRollback.push(() => {
+					if (saveOptions?.subscriber?.afterTransactionRollback) {
+						saveOptions?.subscriber.afterTransactionRollback(event);
+					}
+				});
 			}
 
 		}
@@ -362,9 +386,10 @@ export abstract class CokeModel {
 			let childrenToRemove: CokeModel[] | undefined = undefined;
 			if (columnChildRelation.relation?.canRemove) {
 				childrenToRemove = await columnChildRelation.relation.referencedEntityManager.find({
+					queryRunner: saveOptions.queryRunner,
 					relations: [columnChildRelation.relation.referencedColumn],
 					where: JSON.parse(JSON.stringify(childRelationColumn)),
-				}, saveOptions.queryRunner) as any[];
+				}) as any[];
 			}
 
 			// go through the current children to check if they exist and perform
@@ -596,10 +621,12 @@ export abstract class CokeModel {
 
 			// run the query to verify the object and verify that it exists
 			const result: any = await entityManager.findOne({
+				queryRunner,
 				select: primaryKeys,
 				where: where,
 				orderBy: orderBy,
-			}, queryRunner, false);
+				runAfterLoadEvent: false,
+			});
 
 			// If the requested object exists in the database, the primary keys will
 			// be loaded into the current object

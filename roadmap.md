@@ -2,6 +2,9 @@
 
 ## Geral
 
+* No FindOptios.where quando for filho, filtrar os filhos também.
+* No FindOne colocar o parâmetro 'runEventAfterLoad' dentro do findOptions e mudar o nome para 'allowSubscriber'.
+* No FindOptions where poder usar um valor de relação que dai pegaria automaticamente o campo relacionado para fazer o where.
 * Verificar o método loadPrimaryKey para não criar as classes porque o objeto inteiro deveria estar criado pelo método EntityManager.create.
 * Associar ao método createEntity o método EntityManager.create para que não seja necessário passar parametros adicionais no método create.
 * Criar um erro quando o método createEntity da relation não retornar nada.

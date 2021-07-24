@@ -73,7 +73,13 @@ export class NamingStrategy {
       if (triggerOptions.name) {
          return triggerOptions.name;
       }
-      return `${entityMetadata.name}_${StringUtils.snakeCase(triggerOptions.trigger.constructor.name)}`;
+
+      let triggerName: string = `tgg_${entityMetadata.name}_${StringUtils.snakeCase(triggerOptions.trigger.constructor.name)}`;
+      if (triggerName.endsWith('trigger')) {
+         triggerName = triggerName.substring(0, triggerName.lastIndexOf('trigger') - 1);
+      }
+
+      return triggerName;
    }
 
    /**
