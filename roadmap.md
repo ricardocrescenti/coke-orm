@@ -2,8 +2,6 @@
 
 ## Geral
 
-* Validar quando são enviados valores em campos com padrão sequencia.
-* Validar no FindOptions.orderBy colunas que não existem.
 * No FindOptios.where quando for filho, filtrar os filhos também.
 * No FindOne colocar o parâmetro 'runEventAfterLoad' dentro do findOptions e mudar o nome para 'allowSubscriber'.
 * No FindOptions where poder usar um valor de relação que dai pegaria automaticamente o campo relacionado para fazer o where.

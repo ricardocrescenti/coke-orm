@@ -72,6 +72,9 @@ export async function test() {
 	console.log('loadPrimaryKey', city);
 
 	const cities = await connection.getEntityManager(CityModel).find({
+		select: [
+			'name',
+		],
 		where: [
 			{
 				name: { equal: 'Guaporé' },
@@ -90,7 +93,10 @@ export async function test() {
 				],
 			},
 		],
-	});
+		orderBy: {
+			name: 'ASC',
+		},
+	} as any);
 	console.log('find', cities);
 
 	city = connection.getEntityManager(CityModel).create({
@@ -309,12 +315,12 @@ export async function test() {
 				},
 			},
 			{
-				id: 6,
+				id: 149,
 			},
 			{
 				id: {
 					greaterThanOrEqual: 0,
-					lessThanOrEqual: 50,
+					lessThanOrEqual: 200,
 				},
 			},
 		],

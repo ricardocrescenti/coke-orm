@@ -316,10 +316,14 @@ export class EntityManager<T = any> {
 	 */
 	public createSelectQuery(findOptions?: FindOptions<T>, level?: number, relationMetadata?: ForeignKeyMetadata): SelectQueryBuilder<T> {
 
-		// create a copy of findOptions to not modify the original and help to
-		// copy it with the standard data needed to find the records
+		// create a copy of findOptions to not modify the original
 		findOptions = new FindOptions(findOptions);
-		this.setFindOptionsOrderBy(findOptions);
+
+		// Validate the data entered in findOptions
+		this.validateFindOptions(findOptions);
+
+		// Set default ordering findOptions has no ordering set
+		this.setFindOptionsDefaultOrderBy(findOptions);
 
 		// obtain the list of columns to be consulted in the main entity (if the
 		// list of columns is not informed in the find options, all columns that
@@ -433,10 +437,6 @@ export class EntityManager<T = any> {
 
 			const columnData: [string, FindSelect] = (typeof columnStructure == 'string' ? [columnStructure, []] : columnStructure) as [string, FindSelect];
 			const columnMetadata: ColumnMetadata = this.metadata.columns[columnData[0]];
-
-			if (!columnMetadata) {
-				throw new ColumnMetadataNotLocatedError(this.metadata.className, columnData[0]);
-			}
 
 			if (queryColumns[columnData[0]]) {
 				throw new DuplicateColumnInQuery(columnMetadata);
@@ -741,7 +741,7 @@ export class EntityManager<T = any> {
 	 * Define the order of the table if it is not informed.
 	 * @param {FindOptions<any>} findOptions Find Options.
 	 */
-	public setFindOptionsOrderBy(findOptions: FindOptions<any>): void {
+	public setFindOptionsDefaultOrderBy(findOptions: FindOptions<any>): void {
 		let orderBy: any = findOptions.orderBy;
 
 		if (!orderBy) {
@@ -772,6 +772,59 @@ export class EntityManager<T = any> {
 		}
 
 		findOptions.orderBy = orderBy;
+	}
+
+	/**
+	 * Validate the data entered in FindOptions
+	 * @param {FindOptions} findOptions FindOptions to be validated
+	 */
+	public validateFindOptions(findOptions: FindOptions<any>) {
+
+		if (findOptions.select) {
+			for (const column of findOptions.select) {
+				const columnPropertyName = (Array.isArray(column) ? column[0] : column);
+				if (!this.metadata.columns[columnPropertyName]) {
+					throw new ColumnMetadataNotLocatedError(this.metadata.className, columnPropertyName, `'select' of the 'FindOptions'`);
+				}
+			}
+		}
+
+		if (findOptions.relations) {
+			for (const columnPropertyName of findOptions.relations) {
+				if (!this.metadata.columns[columnPropertyName.split('.')[0]]) {
+					throw new ColumnMetadataNotLocatedError(this.metadata.className, columnPropertyName, `'relations' of the 'FindOptions'`);
+				}
+			}
+		}
+
+		if (findOptions.where) {
+
+			const validation = (metadata: EntityMetadata, where: any) => {
+				where = (Array.isArray(where) ? where : [where]);
+				for (let i = 0; i < where.length; i++) {
+					for (const columnPropertyName of Object.keys(where[i])) {
+						if (columnPropertyName == 'AND') {
+							validation(metadata, where[i][columnPropertyName]);
+						} else {
+							if (!metadata.columns[columnPropertyName] && Object.values(metadata.columns).filter((columnMetadata) => columnMetadata.name == columnPropertyName).length == 0) {
+								throw new ColumnMetadataNotLocatedError(metadata.className, columnPropertyName, `'where' of the 'FindOptions'`);
+							}
+						}
+					}
+				}
+			};
+			validation(this.metadata, findOptions.where);
+
+		}
+
+		if (findOptions.orderBy) {
+			for (const columnPropertyName of Object.keys(findOptions.orderBy)) {
+				if (!this.metadata.columns[columnPropertyName]) {
+					throw new ColumnMetadataNotLocatedError(this.metadata.className, columnPropertyName, `'orderBy' of the 'FindOptions'`);
+				}
+			}
+		}
+
 	}
 
 	/**

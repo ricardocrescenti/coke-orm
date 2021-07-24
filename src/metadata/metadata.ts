@@ -3,7 +3,7 @@ import { SimpleMap } from '../common';
 import { Connection } from '../connection';
 import { DecoratorsStore } from '../decorators';
 import { DefaultColumnOptions } from '../drivers';
-import { ColumnMetadataNotLocatedError, EntityHasNoPrimaryKeyError, EntityMetadataNotLocatedError, InvalidTriggerOptionError, ReferencedColumnMetadataNotLocatedError, ReferencedEntityMetadataNotLocatedError } from '../errors';
+import { EntityHasNoPrimaryKeyError, EntityMetadataNotLocatedError, InvalidTriggerOptionError, ReferencedColumnMetadataNotLocatedError, ReferencedEntityMetadataNotLocatedError } from '../errors';
 import { MigrationModel } from '../migration';
 import { NamingStrategy } from '../naming-strategy';
 import { OrmUtils } from '../utils';
@@ -206,7 +206,7 @@ export class Metadata {
 
 					referencedColumnOptions = DecoratorsStore.getColumn(referencedEntityOptions.inheritances, columnOption.relation.referencedColumn);
 					if (!referencedColumnOptions) {
-						throw new ReferencedColumnMetadataNotLocatedError(entityMetadata.className, columnOption.relation.referencedEntity, columnOption.relation.referencedColumn);
+						throw new ReferencedColumnMetadataNotLocatedError(entityMetadata.className, columnOption.propertyName, columnOption.relation.referencedEntity, columnOption.relation.referencedColumn);
 					}
 
 					referencedDefaultColumnOptions = this.connection.driver.detectColumnDefaults(referencedColumnOptions);
@@ -330,7 +330,7 @@ export class Metadata {
 				const referencedColumnMetadata: ColumnMetadata = referencedEntityMetadata.columns[referencedColumnName];
 
 				if (!referencedColumnMetadata) {
-					throw new ColumnMetadataNotLocatedError(referencedEntity, referencedColumnName);
+					throw new ReferencedColumnMetadataNotLocatedError(entityClassName, columnPropertyName, referencedEntity, referencedColumnName);
 				}
 
 				if (sourceColumnMetadata.relation?.type == 'OneToMany') {
