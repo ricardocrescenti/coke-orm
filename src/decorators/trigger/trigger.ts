@@ -9,7 +9,7 @@ import { CokeModel } from '../../manager';
  * @param {TriggerOptions} options trigger options.
  * @return {ClassDecorator} Class related to class decorators.
  */
-export function Trigger(entity: ConstructorTo<CokeModel>, options: Omit<TriggerOptions, 'target' | 'trigger'>): ClassDecorator {
+export function Trigger(entity: ConstructorTo<CokeModel>, options?: Omit<TriggerOptions, 'target' | 'trigger'>): ClassDecorator {
 	return function(target: Function) {
 		DecoratorsStore.addTrigger({
 			...options,

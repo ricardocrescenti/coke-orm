@@ -1,11 +1,11 @@
 import { MigrationInterface } from "../../migration";
 import { QueryRunner } from "../../query-runner";
 
-export class migration202107240606290048 implements MigrationInterface {
+export class migration202107241101120999 implements MigrationInterface {
 
 	public async up(queryRunner: QueryRunner): Promise<void> {
-		await queryRunner.query(`DROP TRIGGER "tgg_entities_addresses_set_default_address_trigger_test" ON "public"."entities_addresses";`);
-		await queryRunner.query(`DROP FUNCTION "public"."tgg_entities_addresses_set_default_address_trigger_test"();`);
+		await queryRunner.query(`DROP TRIGGER "tgg_entities_addresses_set_default_address" ON "public"."entities_addresses";`);
+		await queryRunner.query(`DROP FUNCTION "public"."tgg_entities_addresses_set_default_address"();`);
 		await queryRunner.query(`CREATE FUNCTION "public"."tgg_entities_addresses_set_default_address"() RETURNS trigger LANGUAGE 'plpgsql' VOLATILE AS $BODY$ DECLARE hasAddress INTEGER; DECLARE hasAddressTest INTEGER; BEGIN  
 		hasAddress = 0;
 		
@@ -27,7 +27,7 @@ export class migration202107240606290048 implements MigrationInterface {
 		
 		RETURN NEW; END $BODY$;`);
 		await queryRunner.query(`CREATE TRIGGER "tgg_entities_addresses_set_default_address" BEFORE INSERT OR UPDATE ON "public"."entities_addresses" FOR EACH ROW  EXECUTE FUNCTION "public"."tgg_entities_addresses_set_default_address"();`);
-		await queryRunner.query(`COMMENT ON TRIGGER "tgg_entities_addresses_set_default_address" ON "public"."entities_addresses" IS '803ada6edd6f520eb2c5da7961ea659e9a13530b';`);
+		await queryRunner.query(`COMMENT ON TRIGGER "tgg_entities_addresses_set_default_address" ON "public"."entities_addresses" IS 'e17d8f5ba266d5e8eacfe4477b5458c2424c6e19';`);
 	}
 
 	public async down(queryRunner: QueryRunner): Promise<void> {

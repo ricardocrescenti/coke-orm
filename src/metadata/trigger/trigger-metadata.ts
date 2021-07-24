@@ -25,7 +25,7 @@ export class TriggerMetadata extends TriggerOptions {
 	constructor(options: Omit<TriggerMetadata, 'hash'>) {
 		super(options);
 		this.entity = options.entity;
-		this.hash = StringUtils.sha1((this.trigger.when ?? '') + (this.trigger.variables ?? []) + this.trigger.code);
+		this.hash = StringUtils.sha1(this.trigger.fires + this.trigger.events.join(';') + (this.trigger.when ?? '') + (this.trigger.variables ?? []) + this.trigger.code);
 	}
 
 }
