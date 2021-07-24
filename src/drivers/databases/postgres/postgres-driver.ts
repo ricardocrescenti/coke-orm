@@ -61,7 +61,7 @@ export class PostgresDriver extends Driver {
    }
    
    public async releaseQueryRunner(client: any): Promise<void> {
-      await client.release();
+      await client?.release();
    }
    
    public async disconnect(): Promise<void> {

@@ -211,7 +211,6 @@ export class Connection {
 	 */
 	public async transaction<T = any>(transactionProcess: TransactionProcess<T>): Promise<T> {
 
-
 		const queryRunner: QueryRunner = await this.createQueryRunner();
 
 		try {
@@ -229,8 +228,10 @@ export class Connection {
 			if (queryRunner.inTransaction) {
 				await queryRunner.commitTransaction();
 			}
-			await queryRunner.release();
+			// await queryRunner.release();
+
 		}
+
 	}
 
 }
