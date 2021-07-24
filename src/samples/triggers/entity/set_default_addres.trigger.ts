@@ -1,13 +1,19 @@
 /* eslint-disable require-jsdoc */
 import { Trigger } from '../../../decorators';
-import { TriggerInterface } from '../../../metadata';
+import { TriggerEvent, TriggerFire, TriggerInterface } from '../../../metadata';
 import { EntityAddressModel } from '../../models/entity/entity-address.model';
 
 /**
  * Test Trigger
  */
-@Trigger(EntityAddressModel, { fires: 'BEFORE', events: ['INSERT', 'UPDATE'] })
+@Trigger(EntityAddressModel)
 export class SetDefaultAddressTrigger implements TriggerInterface {
+
+	fires = TriggerFire.BEFORE;
+	events = [
+		TriggerEvent.INSERT,
+		TriggerEvent.UPDATE,
+	];
 
 	// when = `OLD is null or OLD.is_default <> NEW.is_default`;
 

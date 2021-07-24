@@ -21,18 +21,6 @@ export class TriggerOptions {
 	public readonly trigger: TriggerInterface;
 
 	/**
-	 * Indicates whether the trigger will fire BEFORE or AFTER a specified
-	 * event.
-	 */
-	public readonly fires: 'AFTER' | 'BEFORE';
-
-	/**
-	 * Indicates in which event the trigger will be fired, which can be INSERT,
-	 * UPDATE or DELETE.
-	 */
-	public readonly events: ('INSERT' | 'UPDATE' | 'DELETE')[];
-
-	/**
 	 * Default class constructor
 	 * @param {TriggerOptions} options Trigger Options.
 	 */
@@ -40,8 +28,6 @@ export class TriggerOptions {
 		this.target = options.target;
 		this.name = options.name;
 		this.trigger = options.trigger;
-		this.fires = options.fires;
-		this.events = options.events;
 	}
 
 }

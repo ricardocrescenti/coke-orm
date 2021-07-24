@@ -290,10 +290,10 @@ export class Metadata {
 			// get triggers to this entity
 			for (const triggerOptions of DecoratorsStore.getTriggers(entityOptions.target)) {
 
-				if (!triggerOptions.events || triggerOptions.events.length == 0) {
+				if (!triggerOptions.trigger.events || triggerOptions.trigger.events.length == 0) {
 					throw new InvalidTriggerOptionError(`The '${triggerOptions.trigger.constructor.name}' trigger of the '${entityMetadata.className}' entity does not have the 'events' option indicating when it will be triggered`);
 				}
-				if (triggerOptions.trigger.when && (triggerOptions.events.length > 1 || triggerOptions.events[0] != 'UPDATE')) {
+				if (triggerOptions.trigger.when && (triggerOptions.trigger.events.length > 1 || triggerOptions.trigger.events[0] != 'UPDATE')) {
 					throw new InvalidTriggerOptionError(`The '${triggerOptions.trigger.constructor.name}' trigger of the '${entityMetadata.className}' entity has the 'when' property informed and is not only executed on update`);
 				}
 
