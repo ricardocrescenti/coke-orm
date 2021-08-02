@@ -135,7 +135,7 @@ export class PostgresDriver extends Driver {
 
          -- load triggers
          LEFT JOIN (
-            SELECT trigger_catalog, trigger_schema, trigger_name, event_object_table, JSON_AGG(g.trigger) as triggers
+            SELECT trigger_catalog, trigger_schema, event_object_table, JSON_AGG(g.trigger) as triggers
             FROM (
                SELECT trigger_catalog, trigger_schema, trigger_name, event_object_table, json_build_object('trigger_name', trigger_name, 'event_manipulation', ARRAY_AGG(event_manipulation), 'action_timing', action_timing, 'comment', pg_description.description) as trigger
                FROM information_schema.triggers g
@@ -143,7 +143,7 @@ export class PostgresDriver extends Driver {
                INNER JOIN pg_catalog.pg_depend ON (pg_depend.refobjid = pg_trigger.tgfoid)
                INNER JOIN pg_catalog.pg_description ON (pg_description.objoid = pg_depend.objid)
                GROUP BY trigger_catalog, trigger_schema, trigger_name, event_object_table, action_timing, pg_description.description) g
-            GROUP BY trigger_catalog, trigger_schema, trigger_name, event_object_table) g on (g.trigger_catalog = t.table_catalog and g.trigger_schema = t.table_schema and g.event_object_table = t.table_name)
+            GROUP BY trigger_catalog, trigger_schema, event_object_table) g on (g.trigger_catalog = t.table_catalog and g.trigger_schema = t.table_schema and g.event_object_table = t.table_name)
          
          WHERE t.table_schema = '${this.connection.options.schema ?? 'public'}'
          ${(entitiesToLoad ?? []).length > 0 ? `AND t.table_name in ('${entitiesToLoad?.join(`','`)}')` : ''}

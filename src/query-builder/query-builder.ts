@@ -56,8 +56,9 @@ export abstract class QueryBuilder<T> {
       const query: string = this.mountQuery(mainQueryManager);
       const params: string[] = this.getParams();
 
-      return `${query}
-      ${params.length > 0 ? '-- 1: ' + params.reduce((previousValues, currentValue, currentIndex) => previousValues + (currentIndex > 0 ? ', ' : '') + ((currentIndex + 1) + ': ' + currentValue)) : ''}`;
+      return query;
+      // return `${query}
+      // ${params.length > 0 ? '-- 1: ' + params.reduce((previousValues, currentValue, currentIndex) => previousValues + (currentIndex > 0 ? ', ' : '') + ((currentIndex + 1) + ': ' + currentValue)) : ''}`;
    }
 
    /**
