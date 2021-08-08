@@ -74,7 +74,7 @@ export class NamingStrategy {
          return triggerOptions.name;
       }
 
-      let triggerName: string = `tgg_${entityMetadata.name}_${StringUtils.snakeCase(triggerOptions.trigger.constructor.name)}`;
+      let triggerName: string = `tgg_${StringUtils.snakeCase(triggerOptions.trigger.constructor.name)}`;
       if (triggerName.endsWith('trigger')) {
          triggerName = triggerName.substring(0, triggerName.lastIndexOf('trigger') - 1);
       }
