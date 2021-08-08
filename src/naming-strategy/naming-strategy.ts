@@ -105,11 +105,10 @@ export class NamingStrategy {
 			date.getMinutes().toString().padStart(2, '0') + '-' +
 			date.getSeconds().toString().padStart(2, '0') + '-' +
 			date.getMilliseconds().toString().padStart(4, '0'));
-      const formatedName = StringUtils.camelCase(name, true);
 
       return (forFile 
-         ? formatedDate + '-' + formatedName 
-         : (formatedName.replace(new RegExp('-', 'g'), '') + formatedDate)
+         ? formatedDate + '-' + StringUtils.snakeCase(name).replace(new RegExp('_', 'g'), '-')
+         : StringUtils.camelCase(name.replace(new RegExp('-', 'g'), '_'), true) + formatedDate
       );
    }
 

@@ -9,11 +9,16 @@ export class StringUtils {
     * @see http://stackoverflow.com/questions/2970525/converting-any-string-into-camel-case
     */
    public static camelCase(str: string, firstCapital: boolean = false): string {
-      return str.replace(/^([A-Z])|[\s-_](\w)/g, function (match, p1, p2, offset) {
-         if (firstCapital === true && offset === 0) return p1;
+      str = str.replace(/^([A-Z])|[\s-_](\w)/g, function (match, p1, p2, offset) {
          if (p2) return p2.toUpperCase();
          return p1.toLowerCase();
       });
+
+      if (firstCapital === true) {
+         str = str.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1));
+      }
+
+      return str;
    }
 
    /**
