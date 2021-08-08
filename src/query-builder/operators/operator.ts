@@ -12,7 +12,7 @@ export abstract class Operator {
    constructor(column: string, values: any | any[]) {
       this.column = column;
 
-      if (values == null || values?.length == 0) {
+      if (values == null || (Array.isArray(values) && values.length == 0)) {
          throw new UndefinedQueryConditionOperatorError(this);
       }
 
