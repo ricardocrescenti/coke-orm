@@ -231,60 +231,60 @@ export abstract class CokeModel {
 
 			// events related to transaction commit
 			if (subscriber?.beforeTransactionCommit) {
-				saveOptions.queryRunner.beforeTransactionCommit.push(() => {
+				saveOptions.queryRunner.beforeTransactionCommit.push(async () => {
 					if (subscriber?.beforeTransactionCommit) {
-						subscriber.beforeTransactionCommit(event);
+						await subscriber.beforeTransactionCommit(event);
 					}
 				});
 			}
 			if (saveOptions?.subscriber?.beforeTransactionCommit) {
-				saveOptions.queryRunner.beforeTransactionCommit.push(() => {
+				saveOptions.queryRunner.beforeTransactionCommit.push(async () => {
 					if (saveOptions?.subscriber?.beforeTransactionCommit) {
-						saveOptions.subscriber.beforeTransactionCommit(event);
+						await saveOptions.subscriber.beforeTransactionCommit(event);
 					}
 				});
 			}
 			if (subscriber?.afterTransactionCommit) {
-				saveOptions.queryRunner.afterTransactionCommit.push(() => {
+				saveOptions.queryRunner.afterTransactionCommit.push(async () => {
 					if (subscriber?.afterTransactionCommit) {
-						subscriber.afterTransactionCommit(event);
+						await subscriber.afterTransactionCommit(event);
 					}
 				});
 			}
 			if (saveOptions?.subscriber?.afterTransactionCommit) {
-				saveOptions.queryRunner.afterTransactionCommit.push(() => {
+				saveOptions.queryRunner.afterTransactionCommit.push(async () => {
 					if (saveOptions?.subscriber?.afterTransactionCommit) {
-						saveOptions.subscriber.afterTransactionCommit(event);
+						await saveOptions.subscriber.afterTransactionCommit(event);
 					}
 				});
 			}
 
 			// events related to transaction rollback
 			if (subscriber?.beforeTransactionRollback) {
-				saveOptions.queryRunner.beforeTransactionRollback.push(() => {
+				saveOptions.queryRunner.beforeTransactionRollback.push(async () => {
 					if (subscriber?.beforeTransactionRollback) {
-						subscriber.beforeTransactionRollback(event);
+						await subscriber.beforeTransactionRollback(event);
 					}
 				});
 			}
 			if (saveOptions?.subscriber?.beforeTransactionRollback) {
-				saveOptions.queryRunner.beforeTransactionRollback.push(() => {
+				saveOptions.queryRunner.beforeTransactionRollback.push(async () => {
 					if (saveOptions?.subscriber?.beforeTransactionRollback) {
-						saveOptions?.subscriber.beforeTransactionRollback(event);
+						await saveOptions?.subscriber.beforeTransactionRollback(event);
 					}
 				});
 			}
 			if (subscriber?.afterTransactionRollback) {
-				saveOptions.queryRunner.afterTransactionRollback.push(() => {
+				saveOptions.queryRunner.afterTransactionRollback.push(async () => {
 					if (subscriber?.afterTransactionRollback) {
-						subscriber.afterTransactionRollback(event);
+						await subscriber.afterTransactionRollback(event);
 					}
 				});
 			}
 			if (saveOptions?.subscriber?.afterTransactionRollback) {
-				saveOptions.queryRunner.afterTransactionRollback.push(() => {
+				saveOptions.queryRunner.afterTransactionRollback.push(async () => {
 					if (saveOptions?.subscriber?.afterTransactionRollback) {
-						saveOptions?.subscriber.afterTransactionRollback(event);
+						await saveOptions?.subscriber.afterTransactionRollback(event);
 					}
 				});
 			}
