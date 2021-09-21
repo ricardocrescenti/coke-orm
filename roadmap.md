@@ -2,6 +2,9 @@
 
 ## Geral
 
+* Analisar a validação dos enumerados, quando passa o indice dele em formato de string
+* Da erro quando uma query param tem quebra de linha.
+* Está dando conflito nos relations quando tem o select informado, ele ignora as relations que as vezes são usados no where
 * No FindOptios.where quando for filho, filtrar os filhos também.
 * No FindOne colocar o parâmetro 'runEventAfterLoad' dentro do findOptions e mudar o nome para 'allowSubscriber'.
 * No FindOptions where poder usar um valor de relação que dai pegaria automaticamente o campo relacionado para fazer o where.

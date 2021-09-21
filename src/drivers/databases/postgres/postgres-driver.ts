@@ -8,10 +8,9 @@ import { QueryBuilderDriver } from "../../query-builder-driver";
 import { PostgresQueryBuilderDriver } from "./postgres-query-builder-driver";
 import { ForeignKeyMetadata, TriggerMetadata } from "../../../metadata";
 import { ColumnMetadata, ColumnOperation, IndexMetadata, UniqueMetadata, EntityMetadata } from "../../../metadata";
-import { InvalidColumnOptionError } from "../../../errors";
+import { InvalidColumnOptionError, InvalidTriggerOptionError } from "../../../errors";
 import { Generate } from "../../../metadata";
 import { QueryResult } from "../../../query-builder";
-import { StringUtils } from "../../../utils";
 
 export class PostgresDriver extends Driver {
 
@@ -561,6 +560,10 @@ export class PostgresDriver extends Driver {
             const triggerChanged: boolean = (triggerSchema && triggerMetadata.hash != triggerSchema.comment);
 
             if (!triggerSchema || triggerChanged) {
+               if ((triggerMetadata.name ?? '').length > 63) {
+                  throw new InvalidTriggerOptionError(`The trigger name '${triggerMetadata.name}' cannot exceed 63 characters`);
+               }
+
                sqlMigrationsCreateTriggers.push(...this.connection.driver.queryBuilder.createTriggerFromMetadata(triggerMetadata));
             }
 

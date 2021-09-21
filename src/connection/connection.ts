@@ -216,7 +216,13 @@ export class Connection {
 		try {
 
 			await queryRunner.beginTransaction();
-			return await transactionProcess(queryRunner);
+			const result = await transactionProcess(queryRunner);
+
+			if (queryRunner.inTransaction) {
+				await queryRunner.commitTransaction();
+			}
+
+			return result;
 
 		} catch (error) {
 
@@ -224,12 +230,7 @@ export class Connection {
 			throw error;
 
 		} finally {
-
-			if (queryRunner.inTransaction) {
-				await queryRunner.commitTransaction();
-			}
 			// await queryRunner.release();
-
 		}
 
 	}
