@@ -17,7 +17,6 @@ import { NonExistentObjectOfRelationError } from './non-existent-object-of-relat
 import { QueryExecutionError } from './query-execution.error';
 import { ReferencedColumnMetadataNotLocatedError } from './referenced_column_metadata_not_located.error';
 import { ReferencedEntityMetadataNotLocatedError } from './referenced_entity_metadata_not_located.error';
-import { SubscriberAlreadyInformedError } from './subscriber-already-informed.error';
 import { UndefinedQueryConditionOperatorError } from './undefined_query_condition_operator.error';
 
 export {
@@ -40,6 +39,5 @@ export {
 	QueryExecutionError,
 	ReferencedColumnMetadataNotLocatedError,
 	ReferencedEntityMetadataNotLocatedError,
-	SubscriberAlreadyInformedError,
 	UndefinedQueryConditionOperatorError,
 };

@@ -72,8 +72,8 @@ export abstract class CokeModel {
 		const columnsToReturn = entityManager.metadata.primaryKey?.columns.map((columnPropertyName) => `${entityManager.metadata.columns[columnPropertyName].name} as "${columnPropertyName}"`);
 
 		// create the entity-related subscriber to run the events
-		const subscriber: EntitySubscriberInterface<this> | undefined = entityManager.createEntitySubscriber();
-		const hasTransactionEvents: boolean = (subscriber?.afterTransactionCommit || subscriber?.beforeTransactionCommit || subscriber?.afterTransactionRollback || subscriber?.beforeTransactionRollback ? true : false);
+		const subscribers: EntitySubscriberInterface<this>[] = entityManager.createEntitySubscribers();
+		const hasTransactionEvents: boolean = subscribers.some((subscriber) => (subscriber?.afterTransactionCommit || subscriber?.beforeTransactionCommit || subscriber?.afterTransactionRollback || subscriber?.beforeTransactionRollback ? true : false));
 
 		// object saved in the database to pass on events
 		let databaseData: this | undefined = undefined;
@@ -111,13 +111,13 @@ export abstract class CokeModel {
 			}
 
 			// load the object saved in the database to pass on events
-			if (subscriber?.beforeUpdate || subscriber?.afterUpdate || saveOptions?.subscriber?.beforeUpdate || saveOptions?.subscriber?.afterUpdate || hasTransactionEvents) {
+			if (subscribers.some((subscriber) => subscriber?.beforeUpdate || subscriber?.afterUpdate) || saveOptions?.subscriber?.beforeUpdate || saveOptions?.subscriber?.afterUpdate || hasTransactionEvents) {
 				databaseData = await entityManager.findOne({
 					where: where,
 				});
 			}
 
-			const eventData: UpdateEvent<any> | undefined = (subscriber?.beforeInsert || saveOptions?.subscriber?.beforeInsert || subscriber?.afterInsert || saveOptions?.subscriber?.afterInsert ? {
+			const eventData: UpdateEvent<any> | undefined = (subscribers.some((subscriber) => subscriber?.beforeInsert || subscriber?.afterInsert) || saveOptions?.subscriber?.beforeInsert || saveOptions?.subscriber?.afterInsert ? {
 				connection: saveOptions.queryRunner.connection,
 				queryRunner: saveOptions.queryRunner,
 				manager: entityManager,
@@ -127,8 +127,10 @@ export abstract class CokeModel {
 
 			// run event before saving
 			if (eventData) {
-				if (subscriber?.beforeUpdate) {
-					await subscriber.beforeUpdate(eventData);
+				for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeUpdate)) {
+					if (subscriber?.beforeUpdate) {
+						await subscriber.beforeUpdate(eventData);
+					}
 				}
 				if (saveOptions?.subscriber?.beforeUpdate) {
 					await saveOptions.subscriber.beforeUpdate(eventData);
@@ -158,8 +160,10 @@ export abstract class CokeModel {
 
 			// run event after saving
 			if (eventData) {
-				if (subscriber?.afterUpdate) {
-					await subscriber.afterUpdate(eventData);
+				for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterUpdate)) {
+					if (subscriber?.afterUpdate) {
+						await subscriber.afterUpdate(eventData);
+					}
 				}
 				if (saveOptions?.subscriber?.afterUpdate) {
 					saveOptions.subscriber.afterUpdate(eventData);
@@ -172,7 +176,7 @@ export abstract class CokeModel {
 				return objectToSave;
 			}
 
-			const eventData: InsertEvent<any> | undefined = (subscriber?.beforeInsert || saveOptions?.subscriber?.beforeInsert || subscriber?.afterInsert || saveOptions?.subscriber?.afterInsert ? {
+			const eventData: InsertEvent<any> | undefined = (subscribers.some((subscriber) => subscriber?.beforeInsert || subscriber?.afterInsert) || saveOptions?.subscriber?.beforeInsert || saveOptions?.subscriber?.afterInsert ? {
 				connection: saveOptions.queryRunner.connection,
 				queryRunner: saveOptions.queryRunner,
 				manager: entityManager,
@@ -181,8 +185,10 @@ export abstract class CokeModel {
 
 			// run event before saving
 			if (eventData) {
-				if (subscriber?.beforeInsert) {
-					await subscriber.beforeInsert(eventData);
+				for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeInsert)) {
+					if (subscriber?.beforeInsert) {
+						await subscriber.beforeInsert(eventData);
+					}
 				}
 				if (saveOptions?.subscriber?.beforeInsert) {
 					await saveOptions.subscriber.beforeInsert(eventData);
@@ -207,8 +213,10 @@ export abstract class CokeModel {
 
 			// run event before saving
 			if (eventData) {
-				if (subscriber?.afterInsert) {
-					await subscriber.afterInsert(eventData);
+				for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterInsert)) {
+					if (subscriber?.afterInsert) {
+						await subscriber.afterInsert(eventData);
+					}
 				}
 				if (saveOptions?.subscriber?.afterInsert) {
 					await saveOptions.subscriber.afterInsert(eventData);
@@ -230,12 +238,14 @@ export abstract class CokeModel {
 			};
 
 			// events related to transaction commit
-			if (subscriber?.beforeTransactionCommit) {
-				saveOptions.queryRunner.beforeTransactionCommit.push(async () => {
-					if (subscriber?.beforeTransactionCommit) {
-						await subscriber.beforeTransactionCommit(event);
-					}
-				});
+			for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeTransactionCommit)) {
+				if (subscriber?.beforeTransactionCommit) {
+					saveOptions.queryRunner.beforeTransactionCommit.push(async () => {
+						if (subscriber?.beforeTransactionCommit) {
+							await subscriber.beforeTransactionCommit(event);
+						}
+					});
+				}
 			}
 			if (saveOptions?.subscriber?.beforeTransactionCommit) {
 				saveOptions.queryRunner.beforeTransactionCommit.push(async () => {
@@ -244,12 +254,14 @@ export abstract class CokeModel {
 					}
 				});
 			}
-			if (subscriber?.afterTransactionCommit) {
-				saveOptions.queryRunner.afterTransactionCommit.push(async () => {
-					if (subscriber?.afterTransactionCommit) {
-						await subscriber.afterTransactionCommit(event);
-					}
-				});
+			for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterTransactionCommit)) {
+				if (subscriber?.afterTransactionCommit) {
+					saveOptions.queryRunner.afterTransactionCommit.push(async () => {
+						if (subscriber?.afterTransactionCommit) {
+							await subscriber.afterTransactionCommit(event);
+						}
+					});
+				}
 			}
 			if (saveOptions?.subscriber?.afterTransactionCommit) {
 				saveOptions.queryRunner.afterTransactionCommit.push(async () => {
@@ -260,12 +272,14 @@ export abstract class CokeModel {
 			}
 
 			// events related to transaction rollback
-			if (subscriber?.beforeTransactionRollback) {
-				saveOptions.queryRunner.beforeTransactionRollback.push(async () => {
-					if (subscriber?.beforeTransactionRollback) {
-						await subscriber.beforeTransactionRollback(event);
-					}
-				});
+			for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeTransactionRollback)) {
+				if (subscriber?.beforeTransactionRollback) {
+					saveOptions.queryRunner.beforeTransactionRollback.push(async () => {
+						if (subscriber?.beforeTransactionRollback) {
+							await subscriber.beforeTransactionRollback(event);
+						}
+					});
+				}
 			}
 			if (saveOptions?.subscriber?.beforeTransactionRollback) {
 				saveOptions.queryRunner.beforeTransactionRollback.push(async () => {
@@ -274,12 +288,14 @@ export abstract class CokeModel {
 					}
 				});
 			}
-			if (subscriber?.afterTransactionRollback) {
-				saveOptions.queryRunner.afterTransactionRollback.push(async () => {
-					if (subscriber?.afterTransactionRollback) {
-						await subscriber.afterTransactionRollback(event);
-					}
-				});
+			for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterTransactionRollback)) {
+				if (subscriber?.afterTransactionRollback) {
+					saveOptions.queryRunner.afterTransactionRollback.push(async () => {
+						if (subscriber?.afterTransactionRollback) {
+							await subscriber.afterTransactionRollback(event);
+						}
+					});
+				}
 			}
 			if (saveOptions?.subscriber?.afterTransactionRollback) {
 				saveOptions.queryRunner.afterTransactionRollback.push(async () => {
@@ -488,25 +504,27 @@ export abstract class CokeModel {
 			const where: QueryWhere<this> | undefined = entityManager.createWhereFromColumns(objectToDelete, entityManager.metadata.primaryKey?.columns ?? []);
 
 			// create the entity-related subscriber to run the events
-			const subscriber: EntitySubscriberInterface<this> | undefined = entityManager.createEntitySubscriber();
-			const hasTransactionEvents: boolean = (subscriber?.afterTransactionCommit || subscriber?.beforeTransactionCommit || subscriber?.afterTransactionRollback || subscriber?.beforeTransactionRollback ? true : false);
+			const subscribers: EntitySubscriberInterface<this>[] = entityManager.createEntitySubscribers();
+			const hasTransactionEvents: boolean = subscribers.some((subscriber) => subscriber?.afterTransactionCommit || subscriber?.beforeTransactionCommit || subscriber?.afterTransactionRollback || subscriber?.beforeTransactionRollback);
 
 			// load the object saved in the database to pass the events before and after saving
 			let databaseData: this | undefined = undefined;
-			if (subscriber?.beforeUpdate || subscriber?.afterUpdate || subscriber?.afterTransactionCommit || subscriber?.beforeTransactionCommit || subscriber?.afterTransactionRollback || subscriber?.beforeTransactionRollback) {
+			if (subscribers.some((subscriber) => subscriber?.beforeUpdate || subscriber?.afterUpdate || subscriber?.afterTransactionCommit || subscriber?.beforeTransactionCommit || subscriber?.afterTransactionRollback || subscriber?.beforeTransactionRollback)) {
 				databaseData = await entityManager.findOne({
 					where: where,
 				});
 			}
 
 			// run event before saving
-			if (subscriber?.beforeDelete) {
-				await subscriber.beforeDelete({
-					connection: deleteOptions.queryRunner.connection,
-					queryRunner: deleteOptions.queryRunner,
-					manager: entityManager,
-					databaseEntity: databaseData as this,
-				});
+			for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeDelete)) {
+				if (subscriber?.beforeDelete) {
+					await subscriber.beforeDelete({
+						connection: deleteOptions.queryRunner.connection,
+						queryRunner: deleteOptions.queryRunner,
+						manager: entityManager,
+						databaseEntity: databaseData as this,
+					});
+				}
 			}
 
 			if (entityManager.metadata.getDeletedAtColumn()) {
@@ -530,13 +548,15 @@ export abstract class CokeModel {
 			}
 
 			// run event before saving
-			if (subscriber?.afterDelete) {
-				await subscriber.afterDelete({
-					connection: deleteOptions.queryRunner.connection,
-					queryRunner: deleteOptions.queryRunner,
-					manager: entityManager,
-					databaseEntity: databaseData as this,
-				});
+			for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterDelete)) {
+				if (subscriber?.afterDelete) {
+					await subscriber.afterDelete({
+						connection: deleteOptions.queryRunner.connection,
+						queryRunner: deleteOptions.queryRunner,
+						manager: entityManager,
+						databaseEntity: databaseData as this,
+					});
+				}
 			}
 
 			// run transaction events if have any informed
@@ -551,23 +571,31 @@ export abstract class CokeModel {
 				};
 
 				// events related to transaction commit
-				if (subscriber?.beforeTransactionCommit) {
-					const beforeTransactionCommit = subscriber.beforeTransactionCommit;
-					deleteOptions.queryRunner.beforeTransactionCommit.push(() => beforeTransactionCommit(event));
+				for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeTransactionCommit)) {
+					if (subscriber?.beforeTransactionCommit) {
+						const beforeTransactionCommit = subscriber.beforeTransactionCommit;
+						deleteOptions.queryRunner.beforeTransactionCommit.push(() => beforeTransactionCommit(event));
+					}
 				}
-				if (subscriber?.afterTransactionCommit) {
-					const afterTransactionCommit = subscriber.afterTransactionCommit;
-					deleteOptions.queryRunner.afterTransactionCommit.push(() => afterTransactionCommit(event));
+				for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterTransactionCommit)) {
+					if (subscriber?.afterTransactionCommit) {
+						const afterTransactionCommit = subscriber.afterTransactionCommit;
+						deleteOptions.queryRunner.afterTransactionCommit.push(() => afterTransactionCommit(event));
+					}
 				}
 
 				// events related to transaction rollback
-				if (subscriber?.beforeTransactionRollback) {
-					const beforeTransactionRollback = subscriber.beforeTransactionRollback;
-					deleteOptions.queryRunner.beforeTransactionRollback.push(() => beforeTransactionRollback(event));
+				for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeTransactionRollback)) {
+					if (subscriber?.beforeTransactionRollback) {
+						const beforeTransactionRollback = subscriber.beforeTransactionRollback;
+						deleteOptions.queryRunner.beforeTransactionRollback.push(() => beforeTransactionRollback(event));
+					}
 				}
-				if (subscriber?.afterTransactionRollback) {
-					const afterTransactionRollback = subscriber.afterTransactionRollback;
-					deleteOptions.queryRunner.afterTransactionRollback.push(() => afterTransactionRollback(event));
+				for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterTransactionRollback)) {
+					if (subscriber?.afterTransactionRollback) {
+						const afterTransactionRollback = subscriber.afterTransactionRollback;
+						deleteOptions.queryRunner.afterTransactionRollback.push(() => afterTransactionRollback(event));
+					}
 				}
 
 			}
