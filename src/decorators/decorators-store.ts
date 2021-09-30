@@ -1,4 +1,3 @@
-import { SubscriberAlreadyInformedError } from '../errors';
 import { EntityOptions, ColumnOptions, IndexOptions, UniqueOptions, TriggerOptions } from '../metadata';
 import { SubscriberOptions } from '../metadata/event/subscriber-options';
 
@@ -108,11 +107,6 @@ export class DecoratorsStore {
 	 * @param {SubscriberOptions} subscriber Subscriber options
 	 */
 	public static addSubscriber(subscriber: SubscriberOptions): void {
-		const currentSubscriber = this.getSubscriber(subscriber.target);
-		if (currentSubscriber) {
-			throw new SubscriberAlreadyInformedError(subscriber);
-		}
-
 		DecoratorsStore.subscribers.push(subscriber);
 	}
 
@@ -121,9 +115,8 @@ export class DecoratorsStore {
 	 * @param {Function} target Class that will be obtained from the subscriber.
 	 * @return {SubscriberOptions} Subscriber options
 	 */
-	public static getSubscriber(target: Function): SubscriberOptions | undefined {
-		const [event] = DecoratorsStore.subscribers.filter((event) => target == event.target);
-		return event;
+	public static getSubscribers(target: Function): SubscriberOptions[] {
+		return DecoratorsStore.subscribers.filter((event) => event.target == null || event.target == target);
 	}
 
 	/**

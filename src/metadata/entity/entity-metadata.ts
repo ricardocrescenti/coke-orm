@@ -56,7 +56,7 @@ export class EntityMetadata extends EntityOptions {
    /**
     * 
     */
-   public readonly subscriber?: ConstructorTo<EntitySubscriberInterface<any>>;
+   public readonly subscribers?: ConstructorTo<EntitySubscriberInterface<any>>[];
    
    /**
     * 
@@ -90,7 +90,7 @@ export class EntityMetadata extends EntityOptions {
    constructor(options: Omit<EntityMetadata, 'manager' | 'columns' | 'primaryKey' | 'foreignKeys' | 'childForeignKeys'| 'uniques' | 'indexs'  | 'triggers' | 'getColumn' | 'getUpdatedAtColumn' | 'getDeletedAtColumn' | 'getDeletedIndicatorColumn' | 'getColumnsThatCannotBeInserted' | 'getColumnsThatCannotBeUpdated'>) {
       super(options);
       this.connection = options.connection;
-      this.subscriber = options.subscriber;
+      this.subscribers= options.subscribers;
    }
 
    /**

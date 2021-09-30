@@ -170,20 +170,22 @@ export class EntityManager<T = any> {
 		if (result.length > 0) {
 
 			// create the entity-related subscriber to run the events
-			const subscriber: EntitySubscriberInterface<T> | undefined = (findOptions.runAfterLoadEvent ? this.createEntitySubscriber() : undefined);
+			const subscribers: EntitySubscriberInterface<T>[] = (findOptions.runAfterLoadEvent ? this.createEntitySubscribers() : []);
 
 			// transform the query result into its specific classes
 			for (let i = 0; i < result.length; i++) {
 				result[i] = this.create(result[i]);
 
-				if (subscriber?.afterLoad) {
-					await subscriber.afterLoad({
-						connection: (findOptions.queryRunner?.connection ?? this.connection),
-						queryRunner: findOptions.queryRunner,
-						manager: this,
-						findOptions: findOptions,
-						entity: result[i],
-					});
+				for (const subscriber of (subscribers.filter((subscriber) => subscriber.afterLoad != undefined))) {
+					if (subscriber.afterLoad) {
+						await subscriber.afterLoad({
+							connection: (findOptions.queryRunner?.connection ?? this.connection),
+							queryRunner: findOptions.queryRunner,
+							manager: this,
+							findOptions: findOptions,
+							entity: result[i],
+						});
+					}
 				}
 			}
 			return result;
@@ -831,10 +833,7 @@ export class EntityManager<T = any> {
 	 * Create the entity-related subscriber to run the events.
 	 * @return {EntitySubscriberInterface<T>} Subscriber instance.
 	 */
-	public createEntitySubscriber(): EntitySubscriberInterface<T> | undefined {
-		if (this.metadata.subscriber) {
-			return new (this.metadata.subscriber)();
-		}
-		return undefined;
+	public createEntitySubscribers(): EntitySubscriberInterface<T>[] {
+		return (this.metadata.subscribers ?? []).map((subscriber) => new (subscriber)());
 	}
 }

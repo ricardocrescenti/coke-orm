@@ -172,14 +172,14 @@ export class Metadata {
 		for (const entityOptions of entitiesOptions) {
 
 			// get subscriber to this entity
-			const subscriberOptions = DecoratorsStore.getSubscriber(entityOptions.target);
+			const subscribersOptions = DecoratorsStore.getSubscribers(entityOptions.target);
 
 			// create entity metadata
 			const entityMetadata: EntityMetadata = new EntityMetadata({
 				...entityOptions,
 				connection: this.connection,
 				name: (entityOptions.target == MigrationModel ? this.connection.options.migrations?.tableName : namingStrategy.tableName(entityOptions)),
-				subscriber: subscriberOptions?.subscriber,
+				subscribers: subscribersOptions.map((subscriberOptions) => subscriberOptions.subscriber),
 			});
 			this.connection.entities[entityOptions.target.name] = entityMetadata;
 
