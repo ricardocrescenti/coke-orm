@@ -356,7 +356,7 @@ export abstract class CokeModel {
 
 			// check if the object can be inserted or updated to perform the
 			// necessary operation
-			if (columnParentRelation.relation?.canInsert || (parentExists && columnParentRelation.relation?.canUpdate)) {
+			if ((!parentExists && columnParentRelation.relation?.canInsert) || (parentExists && columnParentRelation.relation?.canUpdate)) {
 				await parentObject.save({
 					queryRunner: saveOptions.queryRunner,
 					relation: columnParentRelation.relation,
