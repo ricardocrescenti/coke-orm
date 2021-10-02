@@ -1,6 +1,7 @@
 import { ForeignKeyMetadata } from '../../metadata';
 import { QueryRunner } from '../../query-runner';
 import { EntitySubscriberInterface } from '../../metadata/event';
+import { CokeModel } from '../coke-model';
 
 /**
  * Options for save a record
@@ -15,7 +16,7 @@ export class SaveOptions<T = any> {
 	/**
 	 * Entity requesting record saving.
 	 */
-	requester?: any;
+	requester?: CokeModel;
 
 	/**
 	 * Relation of the table that requested the save to the table to be saved.
