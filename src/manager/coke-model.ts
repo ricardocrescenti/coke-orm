@@ -346,7 +346,7 @@ export abstract class CokeModel {
 
 			// get the parent object and load the primary key to check if it exists
 			const parentObject: CokeModel = (objectToSave as any)[columnParentRelation.propertyName];
-			const parentExists: boolean = await parentObject.loadPrimaryKey(saveOptions.queryRunner);
+			const parentExists: boolean = await parentObject.loadPrimaryKey(saveOptions.queryRunner, objectToSave);
 
 			// if the parent does not exist, and the relation is not configured
 			// to insert, an error will be returned
@@ -356,7 +356,7 @@ export abstract class CokeModel {
 
 			// check if the object can be inserted or updated to perform the
 			// necessary operation
-			if (columnParentRelation.relation?.canInsert || columnParentRelation.relation?.canUpdate) {
+			if (columnParentRelation.relation?.canInsert || (parentExists && columnParentRelation.relation?.canUpdate)) {
 				await parentObject.save({
 					queryRunner: saveOptions.queryRunner,
 					relation: columnParentRelation.relation,
@@ -418,8 +418,7 @@ export abstract class CokeModel {
 				Object.assign(childObject, childRelationColumn);
 
 				// load the primary key to verify that it exists
-				await childObject.loadPrimaryKey(saveOptions.queryRunner, false);
-				const childExists: boolean = await childObject.loadPrimaryKey(saveOptions.queryRunner, false);
+				const childExists: boolean = await childObject.loadPrimaryKey(saveOptions.queryRunner, objectToSave);
 
 				// if the child does not exist, and the relation is not configured
 				// to insert, an error will be returned
@@ -461,7 +460,10 @@ export abstract class CokeModel {
 			// not been loaded will be removed
 			if (childrenToRemove) {
 				for (const childToRemove of childrenToRemove) {
-					await childToRemove.delete({ queryRunner: saveOptions.queryRunner });
+					await childToRemove.delete({
+						queryRunner: saveOptions.queryRunner,
+						requester: objectToSave,
+					});
 				}
 			}
 
@@ -498,7 +500,7 @@ export abstract class CokeModel {
 	public async performDelete(entityManager: EntityManager<this>, deleteOptions: DeleteOptions): Promise<boolean> {
 
 		const objectToDelete: CokeModel = entityManager.create(this);
-		const objectExists: boolean = await objectToDelete.loadPrimaryKey(deleteOptions.queryRunner);
+		const objectExists: boolean = await objectToDelete.loadPrimaryKey(deleteOptions.queryRunner, deleteOptions?.requester);
 		if (objectExists) {
 
 			const where: QueryWhere<this> | undefined = entityManager.createWhereFromColumns(objectToDelete, entityManager.metadata.primaryKey?.columns ?? []);
@@ -613,7 +615,7 @@ export abstract class CokeModel {
 	 * @param {QueryRunner} queryRunner Connection Query Runner.
 	 * @param {any} requester Object requesting primary key loading.
 	 */
-	public async loadPrimaryKey(queryRunner: QueryRunner, requester: any = null): Promise<boolean> {
+	public async loadPrimaryKey(queryRunner: QueryRunner, requester?: CokeModel): Promise<boolean> {
 
 		// get the entity manager to perform the processes below
 		const entityManager: EntityManager<this> = this.getEntityManager(queryRunner.connection);
@@ -673,8 +675,9 @@ export abstract class CokeModel {
 	/**
 	 * Load the primary key of the main object and its relationships.
 	 * @param {QueryRunner} queryRunner Connection Query Runner.
+	 * @param {any} requester Object requesting primary key loading.
 	 */
-	public async loadPrimaryKeyCascade(queryRunner: QueryRunner): Promise<void> {
+	public async loadPrimaryKeyCascade(queryRunner: QueryRunner, requester?: CokeModel): Promise<void> {
 		const entityManager: EntityManager<this> = this.getEntityManager(queryRunner.connection);
 
 		for (const relation of entityManager.metadata.foreignKeys) {
@@ -688,13 +691,13 @@ export abstract class CokeModel {
 					parent = relationEntityManager.create(parent, relation.column, this);
 				}
 
-				await parent.loadPrimaryKeyCascade(queryRunner);
+				await parent.loadPrimaryKeyCascade(queryRunner, this);
 
 			}
 
 		}
 
-		await this.loadPrimaryKey(queryRunner);
+		await this.loadPrimaryKey(queryRunner, requester);
 
 		for (const relation of entityManager.metadata.childForeignKeys) {
 
@@ -707,7 +710,7 @@ export abstract class CokeModel {
 					child = childEntityManager.create(parent, relation.column, this);
 				}
 
-				await child.loadPrimaryKeyCascade(queryRunner);
+				await child.loadPrimaryKeyCascade(queryRunner, this);
 
 			}
 		}
