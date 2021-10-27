@@ -637,6 +637,17 @@ export abstract class CokeModel {
 		// eslint-disable-next-line no-array-constructor
 		for (const columns of (new Array<string[]>()).concat([primaryKeys], indexes, uniques)) {
 
+			// get the unique key fields to check if they are related to load the
+			// first key of them before doing the query.
+			for (const column of columns) {
+				if (entityManager.metadata.columns[column].relation) {
+					const value = (this as any)[column];
+					if (value instanceof CokeModel) {
+						await (value as CokeModel).loadPrimaryKey(queryRunner, this);
+					}
+				}
+			}
+
 			// create the condition using the first unique index or unique key to
 			// query the object
 			const where: QueryWhere<this> | undefined = entityManager.createWhereFromColumns(this, columns);
