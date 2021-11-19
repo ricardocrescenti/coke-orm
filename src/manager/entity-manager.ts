@@ -383,6 +383,10 @@ export class EntityManager<T = any> {
 			query.where();
 		}
 
+		if (relationMetadata?.type == 'ManyToOne') {
+			query.orderBy();
+		}
+
 		return query;
 
 	}
