@@ -1,6 +1,7 @@
 /* eslint-disable require-jsdoc */
 import { Column, ManyToOne, OneToMany, Entity } from '../../../decorators';
 import { EntityManager, EntityValues } from '../../../manager';
+import { ColumnMetadata } from '../../../metadata';
 import { QueryRunner } from '../../../query-runner';
 import { FileModel } from '../../../__tests__/models/file.model';
 import { PatternModel } from '../../../__tests__/models/pattern.model';
@@ -41,7 +42,7 @@ export class EntityModel extends PatternModel {
 	@OneToMany({ relation: { referencedEntity: 'EntityAddressModel', referencedColumn: 'entity', cascade: ['insert', 'update', 'remove'] } })
 	addresses?: Array<EntityAddressModel>;
 
-	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE', createEntity: (entityManager: EntityManager, entity: EntityModel, values?: EntityValues<FileModel>) => entity.createFileModel(entityManager, values) } })
+	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', cascade: ['insert', 'update'], onDelete: 'RESTRICT', onUpdate: 'CASCADE' }, parseValue: (entityManager: EntityManager, columnMetadata: ColumnMetadata, entity: EntityModel, values?: EntityValues<FileModel>) => entity.createFileModel(entityManager, values) })
 	photo?: FileModel;
 
 	constructor(object: any = null) {

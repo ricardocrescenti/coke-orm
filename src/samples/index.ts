@@ -33,6 +33,9 @@ export async function test() {
 		image: {
 			privateUrl: 'privateurl/image1.jpg',
 		},
+		releaseDate: new Date(2022, 1, 7),
+		releasedForSale: true,
+		price: 89.90,
 	});
 	console.log(product);
 
@@ -44,6 +47,25 @@ export async function test() {
 	});
 	await product.save({ queryRunner: connection.queryRunner });
 	console.log(product);
+
+	await connection.getEntityManager(ProductModel).find({
+		relations: [
+			'children',
+		],
+		where: {
+			parent: { isNull: true },
+			AND: [
+				{
+					name: { iLike: 'lalala%' },
+				},
+				{
+					children: {
+						name: { iLike: 'lalala%' },
+					} as any,
+				},
+			],
+		},
+	});
 
 	await insertCity(connection);
 

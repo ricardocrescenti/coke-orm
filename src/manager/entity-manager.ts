@@ -52,11 +52,7 @@ export class EntityManager<T = any> {
 	 * of this entity's class.
 	 * @return {T} Instance of this managed class.
 	 */
-	public create(values?: EntityValues<T>, requestingEntityColumn?: ColumnMetadata, entity?: T): T {
-
-		if (requestingEntityColumn?.relation?.createEntity) {
-			return requestingEntityColumn?.relation?.createEntity(this, entity, values);
-		}
+	public create(values?: EntityValues<T>): T {
 
 		const object: T = new (this.metadata.target)();
 		if (values) {
@@ -77,12 +73,10 @@ export class EntityManager<T = any> {
 
 		// get the properties of the object that contains the values that will
 		// be loaded into the object
-
 		const objectKeys = Object.keys(values);
 
 		// get only the entity columns that are in the values object to be
 		// populated in the main object
-
 		const columnsMetadata: ColumnMetadata[] = Object.values(this.metadata.columns).filter((columnMetadata) => objectKeys.indexOf(columnMetadata.propertyName) >= 0);
 
 		// load the values into the main object
@@ -92,39 +86,147 @@ export class EntityManager<T = any> {
 				continue;
 			}
 
-			if (columnMetadata.relation) {
-
-				if (values[columnMetadata.propertyName]) {
-					const relationEntityManager: EntityManager<any> = this.connection.getEntityManager(columnMetadata.relation.referencedEntity);
-					if (columnMetadata.relation.type == 'OneToMany') {
-						if (!Array.isArray(values[columnMetadata.propertyName])) {
-							throw new InvalidEntityPropertyValueError(`The value of the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not an array`);
-						}
-						instance[columnMetadata.propertyName] = values[columnMetadata.propertyName].map((value: any) => relationEntityManager.create(value, columnMetadata, instance));
-					} else {
-						instance[columnMetadata.propertyName] = relationEntityManager.create(values[columnMetadata.propertyName], columnMetadata, instance);
-					}
-				} else {
-					instance[columnMetadata.propertyName] = values[columnMetadata.propertyName];
-				}
-
-			} else {
-				instance[columnMetadata.propertyName] = values[columnMetadata.propertyName];
-			}
-
-			if (columnMetadata.enum && instance[columnMetadata.propertyName] != null) {
-
-				if (typeof instance[columnMetadata.propertyName] == 'string') {
-					instance[columnMetadata.propertyName] = columnMetadata.enum[instance[columnMetadata.propertyName]];
-				}
-
-				if (!columnMetadata.enum[instance[columnMetadata.propertyName]]) {
-					throw new InvalidEntityPropertyValueError(`The value of the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' does not contain a valid value for the enumerated`);
-				}
-
-			}
+			// set the object value by making the necessary conversions
+			instance[columnMetadata.propertyName] = this.parseColumnValue(columnMetadata, instance, values);
 
 		}
+	}
+
+	/**
+	 * Converter um valor para o tipo da coluna
+	 * @param {ColumnMetadata} columnMetadata
+	 * @param {T} entity
+	 * @param {EntityValues} values
+	 * @return {any} Retorna o valor da coluna
+	 */
+	public parseColumnValue(columnMetadata: ColumnMetadata, entity: T, values: EntityValues<any>): any {
+
+		// get the current value
+		let value = values[columnMetadata.propertyName];
+
+		if (value == null) {
+
+			// cases where the value is null or undefined
+			return value;
+
+		} else if (columnMetadata.relation) {
+
+			const relationEntityManager: EntityManager<any> = this.connection.getEntityManager(columnMetadata.relation.referencedEntity);
+			if (columnMetadata.relation.type == 'OneToMany') {
+
+				// OneToMany
+				if (!Array.isArray(values[columnMetadata.propertyName])) {
+					throw new InvalidEntityPropertyValueError(`The value informed in then property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not an array`);
+				}
+
+				return values[columnMetadata.propertyName].map((value: any) => {
+
+					if (columnMetadata.parseValue) {
+						return columnMetadata.parseValue(this, columnMetadata, entity, value);
+					} else {
+						return relationEntityManager.create(value);
+					}
+
+				});
+
+			} else {
+
+				// ManyToOne
+				if (columnMetadata.parseValue) {
+					return columnMetadata.parseValue(this, columnMetadata, entity, values[columnMetadata.propertyName]);
+				} else {
+					return relationEntityManager.create(values[columnMetadata.propertyName]);
+				}
+
+			}
+
+
+		} else if (columnMetadata.parseValue) {
+
+			// return converted value with user-defined custom function
+			return columnMetadata.parseValue(this, columnMetadata, entity, values);
+
+		} else if (this.connection.options.additional?.automaticParseValues) {
+
+			// if column type an enumerated, it will be validated if the value is correct
+			if (columnMetadata.enum) {
+				value = this.parseEnumValue(columnMetadata, value);
+			}
+
+			const currentType: string = (typeof value).toLocaleLowerCase();
+			const columnType: string = columnMetadata.propertyType.name.toLowerCase();
+
+			// a data vem como object, ver como pegar este tipo
+
+			if ((currentType == columnType) || (currentType == 'object' && value.constructor.name.toLocaleLowerCase() == columnType)) {
+
+				// returns the original value as it is already in the expected type
+				return value;
+
+			}
+
+			// return the converted value according to the column type
+			switch (columnType) {
+
+				case 'string':
+					return value.toString();
+
+				case 'number':
+				case 'bigint':
+					if (isNaN(value)) {
+						throw new InvalidEntityPropertyValueError(`The value '${value}' informed in the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not a valid number`);
+					}
+					return parseFloat(value.toString());
+
+				case 'boolean':
+					switch (value.toString().toLocaleLowerCase()) {
+						case 'true': return true;
+						case 'false': return false;
+						default: throw new InvalidEntityPropertyValueError(`The value '${value}' informed in the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not a valid boolean`);
+					}
+
+				case 'date':
+					const length = value.toString().length;
+					if (length !== 10 && length < 19) {
+						throw new InvalidEntityPropertyValueError(`The value '${value}' informed in the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not a valid date`);
+					}
+					const date = new Date(value.toString());
+					if (date.toString().startsWith('I')) {
+						throw new InvalidEntityPropertyValueError(`The value '${value}' informed in the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not a valid date`);
+					}
+					return date;
+
+				default: return value;
+			}
+
+		} else {
+
+			// return original value without conversion
+			return value;
+
+		}
+
+	}
+
+	/**
+	 *
+	 * @param {ColumnMetadata} columnMetadata
+	 * @param {any} value
+	 * @return {any}
+	 */
+	public parseEnumValue(columnMetadata: ColumnMetadata, value: any): any {
+
+		// if column type an enumerated, it will be validated if the value is correct
+		if (typeof value == 'string') {
+			value = columnMetadata.enum[value];
+		}
+
+		if (!columnMetadata.enum[value]) {
+			throw new InvalidEntityPropertyValueError(`The value '${value}' informed in the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' does not contain a valid value for the enumerated`);
+		}
+
+		return value;
+
 	}
 
 	/**

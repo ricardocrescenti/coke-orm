@@ -2,6 +2,11 @@
 
 ## Geral
 
+* Validar se vai gerar duas tabelas com o mesmo nome
+* Analisar porque ele mandar deletar PK nas migrations sem ter elas criadas em alguns casos (marketplace)
+* Validar caso seja adicionado uma mesma unique ou indice na mesma tabela
+* Colocar parâmetro para que caso uma coluna não esteja mapeada e seja NOT NULL, alterar ela e permitir NULL.
+* Quando é atualizadca uma tabela que já existe pode dar erro na hora de apagar as chaves primeiras, exemplo alteração da order_invoice
 * Analisar a validação dos enumerados, quando passa o indice dele em formato de string
 * Da erro quando uma query param tem quebra de linha.
 * Está dando conflito nos relations quando tem o select informado, ele ignora as relations que as vezes são usados no where
