@@ -25,14 +25,23 @@ export class ProductModel extends PatternModel {
 	@Column({ length: 18, precision: 5, default: 0 })
 	public cost?: number;
 
-	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE', cascade: ['insert', 'update'], createEntity: (entityManager, entity, values) => {
+	@ManyToOne({ nullable: true, relation: { referencedEntity: 'FileModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE', cascade: ['insert', 'update'] }, parseValue: (entityManager, columnMetadata, entity, values) => {
 
 		const file = entityManager.connection.getEntityManager(FileModel).create(values);
 		file.test = '1';
 		return file;
 
-	} } })
+	} })
 	public image?: FileModel;
+
+	@Column({ nullable: true })
+	public releaseDate?: Date;
+
+	@Column({ nullable: true })
+	public releasedForSale?: boolean;
+
+	@Column({ nullable: true })
+	public price?: number;
 
 	@ManyToOne({ nullable: true, relation: { referencedEntity: 'ProductModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' } })
 	public parent?: ProductModel;

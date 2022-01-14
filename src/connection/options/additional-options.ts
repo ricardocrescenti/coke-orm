@@ -27,6 +27,17 @@ export class AdditionalOptions {
 	public readonly allowNullInUniqueKeyColumn?: boolean;
 
 	/**
+	 * Indicates whether values should be automatically converted to the basic
+	 * types defined in each field, this will only be done for fields of type
+	 * string, number, boolean and Date. (Default: true)
+	 *
+	 * This parameter will be ignored in columns that have the `parseValue`
+	 * option and will always execute the conversion function entered by the
+	 * user.
+	 */
+	public readonly automaticParseValues?: boolean;
+
+	/**
 	 * Default class constructor
 	 * @param {AdditionalOptions} options The additional options to be used
 	 */
@@ -35,6 +46,7 @@ export class AdditionalOptions {
 		// this.sourceDir = options?.sourceDir ?? 'src';
 		// this.outDir = options?.outDir ?? 'lib';
 		this.allowNullInUniqueKeyColumn = options?.allowNullInUniqueKeyColumn ?? false;
+		this.automaticParseValues = options?.automaticParseValues ?? true;
 	}
 
 }

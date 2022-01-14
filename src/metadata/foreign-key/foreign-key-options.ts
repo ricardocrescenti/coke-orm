@@ -1,5 +1,3 @@
-import { ConstructorTo } from '../../common';
-import { EntityManager, EntityValues } from '../../manager';
 import { ForeignKeyAction } from './foreign-key-action';
 import { ForeignKeyType } from './foreign-key-type';
 
@@ -55,11 +53,6 @@ export class ForeignKeyOptions<T = any> {
 	public readonly eager?: boolean;
 
 	/**
-	 * Allows you to specify a custom builder for entity creation.
-	 */
-	public readonly createEntity?: (entityManager: EntityManager, entity: any, values?: EntityValues<any>) => any;
-
-	/**
 	 * Default class constructor.
 	 * @param {ForeignKeyOptions} options Foreign Key Options.
 	 */
@@ -73,6 +66,5 @@ export class ForeignKeyOptions<T = any> {
 		this.onDelete = options.onDelete ?? 'NO ACTION';
 		this.onUpdate = options.onUpdate ?? 'NO ACTION';
 		this.eager = options.eager ?? false;
-		this.createEntity = options.createEntity;
 	}
 }

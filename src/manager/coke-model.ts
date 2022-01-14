@@ -699,10 +699,8 @@ export abstract class CokeModel {
 			let parent: CokeModel = (this as any)[relation.column.propertyName];
 			if (parent) {
 
-				const relationEntityManager = queryRunner.connection.getEntityManager(relation.referencedEntity);
-
 				if (!(parent instanceof CokeModel)) {
-					parent = relationEntityManager.create(parent, relation.column, this);
+					parent = entityManager.parseColumnValue(relation.column, this, parent);
 				}
 
 				await parent.loadPrimaryKeyCascade(queryRunner, this);
@@ -718,10 +716,8 @@ export abstract class CokeModel {
 			const children: CokeModel[] = ((this as any)[relation.column.propertyName] ?? []);
 			for (let child of children) {
 
-				const childEntityManager = queryRunner.connection.getEntityManager(relation.referencedEntity);
-
 				if (!(child instanceof CokeModel)) {
-					child = childEntityManager.create(parent, relation.column, this);
+					child = entityManager.parseColumnValue(relation.column, this, parent);
 				}
 
 				await child.loadPrimaryKeyCascade(queryRunner, this);
