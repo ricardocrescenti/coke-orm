@@ -217,7 +217,7 @@ export class EntityManager<T = any> {
 	public parseEnumValue(columnMetadata: ColumnMetadata, value: any): any {
 
 		// if column type an enumerated, it will be validated if the value is correct
-		if (typeof value == 'string') {
+		if (isNaN(value)) {
 			value = columnMetadata.enum[value];
 		}
 
