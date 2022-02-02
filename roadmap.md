@@ -2,6 +2,10 @@
 
 ## Geral
 
+* Implementar o método "validade" no subscriber
+* Quando o default do campo é uma string, não está adicionando as aspas simples na migration
+* Mensagem customizada de erro das relations
+* Implementar 'validators' nas colunas
 * Validar se vai gerar duas tabelas com o mesmo nome
 * Analisar porque ele mandar deletar PK nas migrations sem ter elas criadas em alguns casos (marketplace)
 * Validar caso seja adicionado uma mesma unique ou indice na mesma tabela
