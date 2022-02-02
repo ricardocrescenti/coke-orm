@@ -190,8 +190,8 @@ export abstract class Driver {
             throw new InvalidColumnOptionError(`The '${column.propertyName}' property of the '${entityMetadata.className}' entity has a unique key or unique index and is not mandatory, if one of the columns is null the record may be duplicated`);
          }
 
-         if (column.enum && ',integer,bigint'.indexOf(',' + column.type) < 0) {
-            throw new InvalidColumnOptionError(`The '${column.propertyName}' property of the '${entityMetadata.className}' with the enum '${column.enum}' must be of type 'integer' or 'bigint'`);
+         if (column.enum && ',integer,integer[],bigint,bigint[]'.indexOf(',' + column.type) < 0) {
+            throw new InvalidColumnOptionError(`The '${column.propertyName}' property of the '${entityMetadata.className}' with the enum '${column.enum}' must be of type 'integer', 'integer[]', 'bigint' or 'bigint[]'`);
          }
          
       }
