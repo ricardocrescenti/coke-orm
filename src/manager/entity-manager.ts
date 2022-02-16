@@ -173,7 +173,7 @@ export class EntityManager<T = any> {
 
 				case 'number':
 				case 'bigint':
-					if (isNaN(value)) {
+					if (isNaN(value) || isNaN(parseFloat(value.toString()))) {
 						throw new InvalidEntityPropertyValueError(`The value '${value}' informed in the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' is not a valid number`);
 					}
 					return parseFloat(value.toString());
@@ -216,16 +216,25 @@ export class EntityManager<T = any> {
 	 */
 	public parseEnumValue(columnMetadata: ColumnMetadata, value: any): any {
 
-		// if column type an enumerated, it will be validated if the value is correct
-		if (isNaN(value)) {
-			value = columnMetadata.enum[value];
+		const isArray = Array.isArray(value);
+
+		const originalValue = (isArray ? value : [value]);
+		const parsedValue: any[] = [...originalValue];
+
+		for (let i = 0; i < originalValue.length; i++) {
+
+			// if column type an enumerated, it will be validated if the value is correct
+			if (isNaN(originalValue[i])) {
+				parsedValue[i] = columnMetadata.enum[originalValue[i]];
+			}
+
+			if (!columnMetadata.enum[parsedValue[i]]) {
+				throw new InvalidEntityPropertyValueError(`The value '${value}' informed in the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' does not contain a valid value for the enumerated`);
+			}
+
 		}
 
-		if (!columnMetadata.enum[value]) {
-			throw new InvalidEntityPropertyValueError(`The value '${value}' informed in the property '${columnMetadata.propertyName}' of the entity '${this.metadata.className}' does not contain a valid value for the enumerated`);
-		}
-
-		return value;
+		return (isArray ? parsedValue : parsedValue[0]);
 
 	}
 
