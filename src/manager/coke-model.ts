@@ -113,6 +113,7 @@ export abstract class CokeModel {
 			// load the object saved in the database to pass on events
 			if (subscribers.some((subscriber) => subscriber?.beforeUpdate || subscriber?.afterUpdate) || saveOptions?.subscriber?.beforeUpdate || saveOptions?.subscriber?.afterUpdate || hasTransactionEvents) {
 				databaseData = await entityManager.findOne({
+					queryRunner: saveOptions.queryRunner,
 					where: where,
 				});
 			}
@@ -239,69 +240,53 @@ export abstract class CokeModel {
 
 			// events related to transaction commit
 			for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeTransactionCommit)) {
-				if (subscriber?.beforeTransactionCommit) {
-					saveOptions.queryRunner.beforeTransactionCommit.push(async () => {
-						if (subscriber?.beforeTransactionCommit) {
-							await subscriber.beforeTransactionCommit(event);
-						}
-					});
-				}
+				saveOptions.queryRunner.beforeTransactionCommit.push({
+					subscriber,
+					event,
+				});
 			}
 			if (saveOptions?.subscriber?.beforeTransactionCommit) {
-				saveOptions.queryRunner.beforeTransactionCommit.push(async () => {
-					if (saveOptions?.subscriber?.beforeTransactionCommit) {
-						await saveOptions.subscriber.beforeTransactionCommit(event);
-					}
+				saveOptions.queryRunner.beforeTransactionCommit.push({
+					subscriber: saveOptions?.subscriber,
+					event,
 				});
 			}
 			for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterTransactionCommit)) {
-				if (subscriber?.afterTransactionCommit) {
-					saveOptions.queryRunner.afterTransactionCommit.push(async () => {
-						if (subscriber?.afterTransactionCommit) {
-							await subscriber.afterTransactionCommit(event);
-						}
-					});
-				}
+				saveOptions.queryRunner.afterTransactionCommit.push({
+					subscriber,
+					event,
+				});
 			}
 			if (saveOptions?.subscriber?.afterTransactionCommit) {
-				saveOptions.queryRunner.afterTransactionCommit.push(async () => {
-					if (saveOptions?.subscriber?.afterTransactionCommit) {
-						await saveOptions.subscriber.afterTransactionCommit(event);
-					}
+				saveOptions.queryRunner.afterTransactionCommit.push({
+					subscriber: saveOptions?.subscriber,
+					event,
 				});
 			}
 
 			// events related to transaction rollback
 			for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeTransactionRollback)) {
-				if (subscriber?.beforeTransactionRollback) {
-					saveOptions.queryRunner.beforeTransactionRollback.push(async () => {
-						if (subscriber?.beforeTransactionRollback) {
-							await subscriber.beforeTransactionRollback(event);
-						}
-					});
-				}
+				saveOptions.queryRunner.beforeTransactionRollback.push({
+					subscriber,
+					event,
+				});
 			}
 			if (saveOptions?.subscriber?.beforeTransactionRollback) {
-				saveOptions.queryRunner.beforeTransactionRollback.push(async () => {
-					if (saveOptions?.subscriber?.beforeTransactionRollback) {
-						await saveOptions?.subscriber.beforeTransactionRollback(event);
-					}
+				saveOptions.queryRunner.beforeTransactionRollback.push({
+					subscriber: saveOptions?.subscriber,
+					event,
 				});
 			}
 			for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterTransactionRollback)) {
-				if (subscriber?.afterTransactionRollback) {
-					saveOptions.queryRunner.afterTransactionRollback.push(async () => {
-						if (subscriber?.afterTransactionRollback) {
-							await subscriber.afterTransactionRollback(event);
-						}
-					});
-				}
+				saveOptions.queryRunner.afterTransactionRollback.push({
+					subscriber,
+					event,
+				});
 			}
 			if (saveOptions?.subscriber?.afterTransactionRollback) {
-				saveOptions.queryRunner.afterTransactionRollback.push(async () => {
-					if (saveOptions?.subscriber?.afterTransactionRollback) {
-						await saveOptions?.subscriber.afterTransactionRollback(event);
-					}
+				saveOptions.queryRunner.afterTransactionRollback.push({
+					subscriber: saveOptions?.subscriber,
+					event,
 				});
 			}
 
@@ -513,6 +498,7 @@ export abstract class CokeModel {
 			let databaseData: this | undefined = undefined;
 			if (subscribers.some((subscriber) => subscriber?.beforeUpdate || subscriber?.afterUpdate || subscriber?.afterTransactionCommit || subscriber?.beforeTransactionCommit || subscriber?.afterTransactionRollback || subscriber?.beforeTransactionRollback)) {
 				databaseData = await entityManager.findOne({
+					queryRunner: deleteOptions.queryRunner,
 					where: where,
 				});
 			}
@@ -574,30 +560,30 @@ export abstract class CokeModel {
 
 				// events related to transaction commit
 				for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeTransactionCommit)) {
-					if (subscriber?.beforeTransactionCommit) {
-						const beforeTransactionCommit = subscriber.beforeTransactionCommit;
-						deleteOptions.queryRunner.beforeTransactionCommit.push(() => beforeTransactionCommit(event));
-					}
+					deleteOptions.queryRunner.beforeTransactionCommit.push({
+						subscriber,
+						event,
+					});
 				}
 				for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterTransactionCommit)) {
-					if (subscriber?.afterTransactionCommit) {
-						const afterTransactionCommit = subscriber.afterTransactionCommit;
-						deleteOptions.queryRunner.afterTransactionCommit.push(() => afterTransactionCommit(event));
-					}
+					deleteOptions.queryRunner.afterTransactionCommit.push({
+						subscriber,
+						event,
+					});
 				}
 
 				// events related to transaction rollback
 				for (const subscriber of subscribers.filter((subscriber) => subscriber?.beforeTransactionRollback)) {
-					if (subscriber?.beforeTransactionRollback) {
-						const beforeTransactionRollback = subscriber.beforeTransactionRollback;
-						deleteOptions.queryRunner.beforeTransactionRollback.push(() => beforeTransactionRollback(event));
-					}
+					deleteOptions.queryRunner.beforeTransactionRollback.push({
+						subscriber,
+						event,
+					});
 				}
 				for (const subscriber of subscribers.filter((subscriber) => subscriber?.afterTransactionRollback)) {
-					if (subscriber?.afterTransactionRollback) {
-						const afterTransactionRollback = subscriber.afterTransactionRollback;
-						deleteOptions.queryRunner.afterTransactionRollback.push(() => afterTransactionRollback(event));
-					}
+					deleteOptions.queryRunner.afterTransactionRollback.push({
+						subscriber,
+						event,
+					});
 				}
 
 			}

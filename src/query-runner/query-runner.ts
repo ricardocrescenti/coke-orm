@@ -1,5 +1,7 @@
 import { Connection } from '../connection';
+import { EntityTransactionEventsInterface, TransactionCommitEvent, TransactionRollbackEvent } from '../metadata/event';
 import { QueryResult } from '../query-builder';
+import { TransactionEventInterface } from './interfaces/transaction-event.interface';
 
 /**
  * Class responsible for executing database queries
@@ -32,22 +34,22 @@ export class QueryRunner {
 	/**
 	 * List of events to be executed before the transaction confirmed.
 	 */
-	public beforeTransactionCommit: Function[] = [];
+	public beforeTransactionCommit: TransactionEventInterface<TransactionCommitEvent<any>>[] = [];
 
 	/**
 	 * List of events to be executed after the transaction confirmed.
 	 */
-	public afterTransactionCommit: Function[] = [];
+	public afterTransactionCommit: TransactionEventInterface<TransactionCommitEvent<any>>[] = [];
 
 	/**
 	 * List of events to be executed before the transaction rollback.
 	 */
-	public beforeTransactionRollback: Function[] = [];
+	public beforeTransactionRollback: TransactionEventInterface<TransactionRollbackEvent<any>>[] = [];
 
 	/**
 	 * List of events to be executed after the transaction rollback.
 	 */
-	public afterTransactionRollback: Function[] = [];
+	public afterTransactionRollback: TransactionEventInterface<TransactionRollbackEvent<any>>[] = [];
 
 	/**
 	 * Default class constructor.
@@ -92,9 +94,19 @@ export class QueryRunner {
 			throw new Error('O QueryRunner não possui uma transação iniciada para ser comitada');
 		}
 
-		await this.performEvents(this.beforeTransactionCommit);
+		await this.performEvents(this.beforeTransactionCommit, (subscriber, event) => {
+			if (subscriber?.beforeTransactionCommit) {
+				return subscriber?.beforeTransactionCommit(event);
+			}
+		});
+
 		await this.connection.driver.commitTransaction(this.client);
-		await this.performEvents(this.afterTransactionCommit);
+
+		await this.performEvents(this.afterTransactionCommit, (subscriber, event) => {
+			if (subscriber?.afterTransactionCommit) {
+				return subscriber?.afterTransactionCommit(event);
+			}
+		});
 		await this.release();
 
 		this._inTransaction = false;
@@ -110,9 +122,19 @@ export class QueryRunner {
 			throw new Error('O QueryRunner não possui uma transação iniciada para ser cancelada');
 		}
 
-		await this.performEvents(this.beforeTransactionRollback);
+		await this.performEvents(this.beforeTransactionRollback, (subscriber, event) => {
+			if (subscriber?.beforeTransactionRollback) {
+				subscriber?.beforeTransactionRollback(event);
+			}
+		});
+
 		await this.connection.driver.rollbackTransaction(this.client);
-		await this.performEvents(this.afterTransactionRollback);
+
+		await this.performEvents(this.afterTransactionRollback, (subscriber, event) => {
+			if (subscriber?.afterTransactionRollback) {
+				return subscriber?.afterTransactionRollback(event);
+			}
+		});
 		await this.release();
 
 		this._inTransaction = false;
@@ -177,11 +199,12 @@ export class QueryRunner {
 	/**
 	 * Execute the events passed by parameter.
 	 * @param {Function[]} events List of events to be executed.
+	 * @param {Function[]} func List of events to be executed.
 	 */
-	private async performEvents(events: Function[]): Promise<void> {
+	private async performEvents(events: TransactionEventInterface<any>[], func: (subscriber: EntityTransactionEventsInterface<any>, event: any) => void | Promise<void>): Promise<void> {
 
 		for (const event of events) {
-			await event();
+			await func(event.subscriber, event.event);
 		}
 
 	}
