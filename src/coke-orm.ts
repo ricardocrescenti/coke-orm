@@ -20,14 +20,14 @@ export class CokeORM {
     * 
     * @param connectionOptions 
     */
-   public static async connect(connectionOptions?: ConnectionOptions | ConnectionOptions[]): Promise<Connection> {
+   public static async connect(connectionOptions?: ConnectionOptions | ConnectionOptions[], configFile?: string): Promise<Connection> {
 
       /// if the configuration in the parameter is not informed, it will be 
       /// tried to load through the configuration file 'coke-orm.config.json' 
       /// located in the root folder
       if (!connectionOptions) {
 
-         connectionOptions = OrmUtils.loadConfigFile();
+         connectionOptions = OrmUtils.loadConfigFile(configFile);
       
       } else {
 

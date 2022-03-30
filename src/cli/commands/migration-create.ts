@@ -6,8 +6,7 @@ import { CliNotConfiguredError } from '../../errors';
 import { OrmUtils } from '../../utils';
 
 /**
- * Class invoked by CLI responsible for loading and executing pending
- * migrations.
+ * Class invoked by CLI responsible for create migrations.
  */
 export class MigrationCreateCommand implements yargs.CommandModule {
 
@@ -16,32 +15,37 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 	public describe: string = 'Generate a new migration file.';
 
 	/**
-	 * 
-	 * @param args 
-	 * @returns 
+	 * Configure the arguments for creating the migration file.
+	 * @param {yargs.Argv} args Argument manager reference.
+	 * @return {yargs.Argv} Return the argument manager reference.
 	 */
 	public builder(args: yargs.Argv): yargs.Argv {
 		return MigrationCreateCommand.defaultArgs(args);
 	};
 
 	/**
-	 * 
-	 * @param args 
+	 * Run the creation of the migrations.
+	 * @param {yargs.Arguments} args Arguments passed by the CLI.
 	 */
 	public async handler(args: yargs.Arguments) {
-		const [connectionOptions] = OrmUtils.loadConfigFile(args.connection as string);
+		const [connectionOptions] = OrmUtils.loadConfigFile(args.configFile as string, args.connection as string);
 		MigrationCreateCommand.saveMigrationFile(connectionOptions, args.name as string);
 
 		process.exit();
 	}
 
 	/**
-	 * 
-	 * @param args 
-	 * @returns 
+	 * Configure default arguments for the migration CLI.
+	 * @param {yargs.Argv} args Argument manager reference.
+	 * @return {yargs.Argv} Return the argument manager reference.
 	 */
 	public static defaultArgs(args: yargs.Argv): yargs.Argv {
 		return args
+			.option('f', {
+				alias: 'configFile',
+				default: 'coke-orm.config.json',
+				describe: 'Configuration file name.',
+			})
 			.option('c', {
 				alias: 'connection',
 				default: 'default',
@@ -57,13 +61,13 @@ export class MigrationCreateCommand implements yargs.CommandModule {
 	}
 
 	/**
-	 * 
-	 * @param name 
-	 * @param upQueries 
-	 * @param downQueries 
-	 * @returns 
+	 * Create the migrations file.
+	 * @param {string} name Migration class name.
+	 * @param {string[]} upQueries List of SQL statements for database upgrade.
+	 * @param {string[]} downQueries List of SQL statements to roll back database updates.
+	 * @return {string} Returns the content to be written to the migration file.
 	 */
-	public static getTemplace(name: string, upQueries?: string[], downQueries?: string[]) {
+	public static createMigrationsFile(name: string, upQueries?: string[], downQueries?: string[]): string {
 		return `import { MigrationInterface, QueryRunner } from '@ricardocrescenti/coke-orm';
 
 export class ${name} implements MigrationInterface {
@@ -80,19 +84,19 @@ export class ${name} implements MigrationInterface {
 	}
 
 	/**
-	 * 
-	 * @param connectionOptions 
-	 * @param name 
-	 * @param upQueries 
-	 * @param downQueries 
+	 * Save the migration file
+	 * @param {ConnectionOptions} connectionOptions Connection options
+	 * @param {string} name Migration file name
+	 * @param {string[]} upQueries List of SQL statements for database upgrade.
+	 * @param {string[]} downQueries List of SQL statements to roll back database updates.
 	 */
-	public static saveMigrationFile(connectionOptions: ConnectionOptions, name: string, upQueries?: string[], downQueries?: string[]) {
+	public static saveMigrationFile(connectionOptions: ConnectionOptions, name: string, upQueries?: string[], downQueries?: string[]): void {
 		const date: Date = new Date();
 
 		const migrationFileName: string = connectionOptions.namingStrategy?.migrationName(name, date, true) as string;
 		const migrationClassName: string = connectionOptions.namingStrategy?.migrationName(name, date, false) as string;
 
-		const migrationContent: string = this.getTemplace(migrationClassName.replace(new RegExp('-', 'g'), ''), upQueries, downQueries);
+		const migrationContent: string = this.createMigrationsFile(migrationClassName.replace(new RegExp('-', 'g'), ''), upQueries, downQueries);
 
 		if (!connectionOptions.cli?.migrationsDir) {
 			throw new CliNotConfiguredError('migration path');
