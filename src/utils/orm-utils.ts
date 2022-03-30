@@ -25,15 +25,16 @@ export class OrmUtils {
 
 	/**
 	 * Load ORM configuration file.
+	 * @param {string} configFile Configuration file name
 	 * @param {string} connectionName Name of the connection that will be
 	 * loaded, because the configuration file might be a list of connections.
 	 * @return {ConnectionOptions[]} Settings loaded, if the connection name is
 	 * entered, only it will be returned.
 	 */
-	public static loadConfigFile(connectionName?: string): ConnectionOptions[] {
+	public static loadConfigFile(configFile: string | undefined, connectionName?: string): ConnectionOptions[] {
 
 		// Default configuration file name
-		const configFileName = 'coke-orm.config.json';
+		const configFileName = (configFile ?? 'coke-orm.config.json');
 		const configFilePath = path.join(process.cwd(), configFileName);
 
 		// Mount the configuration file path

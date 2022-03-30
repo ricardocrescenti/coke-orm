@@ -116,7 +116,7 @@ export class DecoratorsStore {
 	 * @return {SubscriberOptions} Subscriber options
 	 */
 	public static getSubscribers(target: Function): SubscriberOptions[] {
-		return DecoratorsStore.subscribers.filter((event) => event.target == null || event.target == target);
+		return DecoratorsStore.subscribers.filter((event) => event.target == target || (event.target == null && target.name != 'MigrationModel'));
 	}
 
 	/**
