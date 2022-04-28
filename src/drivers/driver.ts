@@ -153,7 +153,7 @@ export abstract class Driver {
       if (columnOptions.operation) {
          return this.defaultColumnOptionsByOperation.get(columnOptions.operation);
       }
-      return this.defaultColumnOptionsByPropertyType.get(columnOptions.enum ? 'Enum' : columnOptions.propertyType.name);
+      return this.defaultColumnOptionsByPropertyType.get(columnOptions.enum ? 'Enum' : columnOptions.propertyType?.name);
    }
 
    /**
