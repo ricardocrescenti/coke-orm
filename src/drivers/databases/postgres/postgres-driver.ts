@@ -141,7 +141,7 @@ export class PostgresDriver extends Driver {
                FROM information_schema.triggers g
                INNER JOIN pg_catalog.pg_trigger ON (pg_trigger.tgname = g.trigger_name)
                INNER JOIN pg_catalog.pg_depend ON (pg_depend.refobjid = pg_trigger.tgfoid)
-               INNER JOIN pg_catalog.pg_description ON (pg_description.objoid = pg_depend.objid)
+               LEFT JOIN pg_catalog.pg_description ON (pg_description.objoid = pg_depend.objid)
                GROUP BY trigger_catalog, trigger_schema, trigger_name, event_object_table, action_timing, pg_description.description) g
             GROUP BY trigger_catalog, trigger_schema, event_object_table) g on (g.trigger_catalog = t.table_catalog and g.trigger_schema = t.table_schema and g.event_object_table = t.table_name)
          
