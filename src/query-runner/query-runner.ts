@@ -160,10 +160,18 @@ export class QueryRunner {
 
 			result = await this.connection.driver.executeQuery(client ?? this.client, query, params);
 
-		} catch (error) {
+		} catch (error: any) {
 
-			this.connection.logger.error('Query');
-			throw error;
+			if (this.connection.options.onQueryError) {
+
+				result = await this.connection.options.onQueryError(this, error, query, params);
+
+			} else {
+
+				this.connection.logger.error('Query');
+				throw error;
+
+			}
 
 		} finally {
 
