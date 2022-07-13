@@ -5,6 +5,7 @@ import { PoolOptions } from './pool-options';
 import { AdditionalOptions } from './additional-options';
 import { Logger } from '../../log';
 import { CliOptions } from './cli-options';
+import { OnQueryError } from '../types/on-query-error.type';
 
 /**
  * Connection Options.
@@ -104,6 +105,11 @@ export class ConnectionOptions {
 	public readonly logger?: boolean | Logger;
 
 	/**
+	 * Action to be performed when an error occurs in the query
+	 */
+	public readonly onQueryError?: OnQueryError;
+
+	/**
 	 * Options used for the command line.
 	 */
 	public readonly cli?: CliOptions;
@@ -136,6 +142,7 @@ export class ConnectionOptions {
 		this.namingStrategy = options.namingStrategy ?? new NamingStrategy();
 		this.additional = new AdditionalOptions(options.additional);
 		this.logger = (options.logger instanceof Logger ? options.logger : new Logger(typeof options.logger == 'boolean' ? options.logger : true));
+		this.onQueryError = options.onQueryError;
 		this.cli = new CliOptions(options.cli);
 		this.customOptions = options.customOptions;
 	}
