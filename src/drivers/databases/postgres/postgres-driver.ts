@@ -90,9 +90,10 @@ export class PostgresDriver extends Driver {
          -- load columns (with constraints, indexs and sequences)
          LEFT JOIN (
          
-            SELECT c.table_schema, c.table_name, json_agg(json_build_object('column_name', c.column_name, 'ordinal_position', c.ordinal_position, 'column_default', c.column_default, 'is_nullable', c.is_nullable, 'data_type', COALESCE(et.data_type, c.data_type)||(CASE WHEN c.data_type = 'ARRAY' THEN '[]' ELSE '' END), 'numeric_precision', c.numeric_precision, 'numeric_scale', c.numeric_scale, 'constraints', constraints, 'indexs', indexs, 'sequences', sequences) ORDER BY c.ordinal_position) as columns
+            SELECT c.table_schema, c.table_name, json_agg(json_build_object('column_name', c.column_name, 'ordinal_position', c.ordinal_position, 'column_default', c.column_default, 'is_nullable', c.is_nullable, 'data_type', (CASE WHEN c.data_type = 'ARRAY' THEN pg_catalog.format_type(a.atttypid, a.atttypmod) ELSE c.data_type END), 'numeric_precision', c.numeric_precision, 'numeric_scale', c.numeric_scale, 'constraints', constraints, 'indexs', indexs, 'sequences', sequences) ORDER BY c.ordinal_position) as columns
             FROM information_schema.columns c
-				LEFT JOIN information_schema.element_types et ON (et.object_catalog = c.table_catalog AND et.object_schema = c.table_schema AND et.object_type = 'TABLE' AND et.object_name = c.table_name AND et.collection_type_identifier::integer = c.ordinal_position)
+			
+			INNER JOIN pg_catalog.pg_attribute a ON ((c.table_schema||'.'||c.table_name)::regclass = a.attrelid and a.attname = c.column_name)
 
             -- load constraints
             LEFT JOIN (
