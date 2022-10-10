@@ -1,15 +1,22 @@
-import { ConstructorTo } from "../../common";
-import { CokeModel } from "../../manager";
-import { EntitySubscriberInterface } from "./interfaces/entity-subscriber.interface";
+import { ConstructorTo } from '../../common';
+import { CokeModel } from '../../manager';
+import { EntitySubscriberInterface } from './interfaces/entity-subscriber.interface';
 
+/**
+ * Options for configuring subscribers
+ */
 export class SubscriberOptions {
 
-   public readonly target: Function;
-   public readonly subscriber: ConstructorTo<EntitySubscriberInterface<CokeModel>>;
+	public readonly target: Function | null;
+	public readonly subscriber: ConstructorTo<EntitySubscriberInterface<CokeModel>>;
 
-   constructor(options: SubscriberOptions) {
-      this.target = options.target;
-      this.subscriber = options.subscriber;
-   }
+	/**
+	 * Class default constructor
+	 * @param {SubscriberOptions} options Options for configuring subscribers
+	 */
+	constructor(options: SubscriberOptions) {
+		this.target = options.target;
+		this.subscriber = options.subscriber;
+	}
 
 }
