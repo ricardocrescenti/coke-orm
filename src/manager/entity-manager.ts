@@ -561,7 +561,7 @@ export class EntityManager<T = any> {
 
 			// If the column has roles restrictions, it will only appear in the
 			// query result if the role is informed in the findOptions.roles
-			if ((columnMetadata.roles ?? []).length > 0 && columnMetadata.roles?.some(((role) => (findOptions.roles?.indexOf(role) ?? 0) < 0))) {
+			if ((columnMetadata.roles ?? []).length > 0 && columnMetadata.roles?.some(((role) => (findOptions.roles?.indexOf(role) ?? -1) < 0))) {
 				continue;
 			}
 
