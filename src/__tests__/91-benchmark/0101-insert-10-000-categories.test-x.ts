@@ -16,22 +16,22 @@
 // 		category = await connection.getEntityManager(CategoryModel).save({
 // 			name: 'Category 1',
 // 		});
-// 		expect(category.id).toEqual('1');
+// 		expect(category.id?.toString()).toEqual('1');
 
 // 		category = await connection.getEntityManager(CategoryModel).save({
 // 			name: 'Category 2',
 // 		});
-// 		expect(category.id).toEqual('2');
+// 		expect(category.id?.toString()).toEqual('2');
 
 // 		category = await connection.getEntityManager(CategoryModel).save({
 // 			name: 'Category 3',
 // 		});
-// 		expect(category.id).toEqual('3');
+// 		expect(category.id?.toString()).toEqual('3');
 
 // 		category = await connection.getEntityManager(CategoryModel).save({
 // 			name: 'Category 4',
 // 		});
-// 		expect(category.id).toEqual('4');
+// 		expect(category.id?.toString()).toEqual('4');
 
 // 	});
 
@@ -44,7 +44,7 @@
 
 // 		expect(query.length).toEqual(4);
 // 		for (let i = 0; i < query.length; i++) {
-// 			expect(query[i].id).toEqual((i + 1).toString());
+// 			expect(query[i].id?.toString()).toEqual((i + 1).toString());
 // 			expect(query[i].name).toEqual('Category ' + (i + 1).toString());
 // 		}
 

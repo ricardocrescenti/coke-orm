@@ -62,19 +62,19 @@ describe('Insert product with variations children', () => {
 			],
 		});
 
-		expect(product.id).toEqual('6');
+		expect(product.id?.toString()).toEqual('6');
 		expect(product.attributes?.length).toEqual(2);
-		expect(product.attributes[0].id).toEqual('3');
-		expect(product.attributes[1].id).toEqual('4');
+		expect(product.attributes[0].id?.toString()).toEqual('3');
+		expect(product.attributes[1].id?.toString()).toEqual('4');
 		expect(product.children?.length).toEqual(2);
-		expect(product.children[0].id).toEqual('7');
+		expect(product.children[0].id?.toString()).toEqual('7');
 		expect(product.children[0].attributesOptions?.length).toEqual(2);
-		expect(product.children[0].attributesOptions[0].id).toEqual('5');
-		expect(product.children[0].attributesOptions[1].id).toEqual('6');
-		expect(product.children[1].id).toEqual('8');
+		expect(product.children[0].attributesOptions[0].id?.toString()).toEqual('5');
+		expect(product.children[0].attributesOptions[1].id?.toString()).toEqual('6');
+		expect(product.children[1].id?.toString()).toEqual('8');
 		expect(product.children[1].attributesOptions?.length).toEqual(2);
-		expect(product.children[1].attributesOptions[0].id).toEqual('7');
-		expect(product.children[1].attributesOptions[1].id).toEqual('8');
+		expect(product.children[1].attributesOptions[0].id?.toString()).toEqual('7');
+		expect(product.children[1].attributesOptions[1].id?.toString()).toEqual('8');
 
 	});
 
@@ -88,7 +88,7 @@ describe('Insert product with variations children', () => {
 
 		expect(query.length).toEqual(3);
 		for (let i = 0; i < query.length; i++) {
-			expect(query[i].id).toEqual((6 + i).toString());
+			expect(query[i].id?.toString()).toEqual((6 + i).toString());
 		}
 
 	});

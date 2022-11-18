@@ -66,16 +66,16 @@ describe('Insert product with variations separately', () => {
 			},
 		});
 
-		expect(product3.id).toEqual('3');
+		expect(product3.id?.toString()).toEqual('3');
 		expect(product3.attributes.length).toEqual(2);
-		expect(product3.attributes[0].id).toEqual('1');
-		expect(product3.attributes[1].id).toEqual('2');
-		expect(product3w20.id).toEqual('4');
-		expect(product3w20.attributesOptions[0].id).toEqual('1');
-		expect(product3w20.attributesOptions[1].id).toEqual('2');
-		expect(product3r20.id).toEqual('5');
-		expect(product3r20.attributesOptions[0].id).toEqual('3');
-		expect(product3r20.attributesOptions[1].id).toEqual('4');
+		expect(product3.attributes[0].id?.toString()).toEqual('1');
+		expect(product3.attributes[1].id?.toString()).toEqual('2');
+		expect(product3w20.id?.toString()).toEqual('4');
+		expect(product3w20.attributesOptions[0].id?.toString()).toEqual('1');
+		expect(product3w20.attributesOptions[1].id?.toString()).toEqual('2');
+		expect(product3r20.id?.toString()).toEqual('5');
+		expect(product3r20.attributesOptions[0].id?.toString()).toEqual('3');
+		expect(product3r20.attributesOptions[1].id?.toString()).toEqual('4');
 
 	});
 
@@ -89,7 +89,7 @@ describe('Insert product with variations separately', () => {
 
 		expect(query.length).toEqual(3);
 		for (let i = 0; i < query.length; i++) {
-			expect(query[i].id).toEqual((3 + i).toString());
+			expect(query[i].id?.toString()).toEqual((3 + i).toString());
 		}
 
 	});

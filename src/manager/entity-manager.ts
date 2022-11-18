@@ -639,40 +639,49 @@ export class EntityManager<T = any> {
 			.map((relation) => relation.substring(relation.indexOf('.') + 1, relation.length));
 
 		const queryWhereColumns: QueryWhereColumnBuilder<T>[] = [];
-		if (OrmUtils.isNotEmpty(findOptions.where)) {
 
-			let subqueryWhere: any[] = [];
-			if (!Array.isArray(findOptions.where)) {
-				subqueryWhere = [findOptions.where];
-			} else {
-				subqueryWhere = findOptions.where;
-			}
+		const adjustWhere = (where: QueryWhere<T> | QueryWhere<T>[] | undefined) => {
+			if (OrmUtils.isNotEmpty(where)) {
 
-			for (let i = 0; i < subqueryWhere.length; i++) {
+				let subqueryWhere: any[] = [];
+				if (!Array.isArray(where)) {
+					subqueryWhere = [where];
+				} else {
+					subqueryWhere = where;
+				}
 
-				const queryWhere: any = subqueryWhere[i];
-				const whereValue: any = queryWhere[columnMetadata.propertyName];
-				const wherekeys = (OrmUtils.isNotEmpty(whereValue) ? Object.keys(whereValue) : []);
+				for (let i = 0; i < subqueryWhere.length; i++) {
 
-				if (wherekeys.length > 0 && (wherekeys.length != 1 || !QueryManager.operatorsConstructor[wherekeys[0]])) {
+					const queryWhere: any = subqueryWhere[i];
+					const whereValue: any = queryWhere[columnMetadata.propertyName];
+					const wherekeys = (OrmUtils.isNotEmpty(whereValue) ? Object.keys(whereValue) : []);
 
-					const sha1Where: string = StringUtils.sha1(JSON.stringify(queryWhere[columnMetadata.propertyName]));
-					if (queryWhereColumns.filter((column) => column.alias == sha1Where).length == 0) {
+					if (wherekeys.length > 0 && (wherekeys.length != 1 || !QueryManager.operatorsConstructor[wherekeys[0]])) {
 
-						queryWhereColumns.push(new QueryWhereColumnBuilder({
-							where: whereValue,
-							alias: sha1Where,
-						}));
+						const sha1Where: string = StringUtils.sha1(JSON.stringify(queryWhere[columnMetadata.propertyName]));
+						if (queryWhereColumns.filter((column) => column.alias == sha1Where).length == 0) {
+
+							queryWhereColumns.push(new QueryWhereColumnBuilder({
+								where: whereValue,
+								alias: sha1Where,
+							}));
+
+						}
+
+						subqueryWhere[i][`${columnMetadata.propertyName}_${columnMetadata.relation?.referencedEntity}.${sha1Where}`] = { equal: true };
+						delete queryWhere[columnMetadata.propertyName];
 
 					}
-
-					subqueryWhere[i][`${columnMetadata.propertyName}_${columnMetadata.relation?.referencedEntity}.${sha1Where}`] = { equal: true };
-					delete queryWhere[columnMetadata.propertyName];
 
 				}
 
 			}
 
+		};
+
+		adjustWhere(findOptions.where);
+		if ((findOptions.where as any)?.AND) {
+			adjustWhere((findOptions.where as any)!.AND);
 		}
 
 		const subqueryOrderBy: any = (findOptions.orderBy as any ?? {})[columnMetadata.propertyName];

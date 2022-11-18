@@ -28,10 +28,10 @@ describe('Insert categories with parent', () => {
 		]);
 
 		expect(categories.length).toBe(2);
-		expect(categories[0].id).toEqual('9');
-		expect(categories[0].parent?.id).toEqual('1');
-		expect(categories[1].id).toEqual('10');
-		expect(categories[1].parent?.id).toEqual('2');
+		expect(categories[0].id?.toString()).toEqual('9');
+		expect(categories[0].parent?.id?.toString()).toEqual('1');
+		expect(categories[1].id?.toString()).toEqual('10');
+		expect(categories[1].parent?.id?.toString()).toEqual('2');
 
 	});
 
@@ -45,8 +45,8 @@ describe('Insert categories with parent', () => {
 
 		expect(query.length).toEqual(2);
 		for (let i = 0; i < query.length; i++) {
-			expect(query[i].id).toEqual((9 + i).toString());
-			expect(query[i].parent_id).toEqual((1 + i).toString());
+			expect(query[i].id?.toString()).toEqual((9 + i).toString());
+			expect(query[i].parent_id?.toString()).toEqual((1 + i).toString());
 		}
 
 	});

@@ -26,9 +26,9 @@ describe('Delete category', () => {
 		]);
 
 		expect(categories.length).toBe(1);
-		expect(categories[0].id).toEqual('1');
+		expect(categories[0].id?.toString()).toEqual('1');
 		expect(categories[0].name).toEqual('Category 1 (changed)');
-		expect(categories[0].children[0].id).toEqual('9');
+		expect(categories[0].children[0].id?.toString()).toEqual('9');
 		expect(categories[0].children[0].name).toEqual('Category 1.1 (changed)');
 
 	});
@@ -42,9 +42,9 @@ describe('Delete category', () => {
 			ORDER BY id`);
 
 		expect(query.length).toEqual(2);
-		expect(query[0].id).toEqual('1');
+		expect(query[0].id?.toString()).toEqual('1');
 		expect(query[0].name).toEqual('Category 1 (changed)');
-		expect(query[1].id).toEqual('9');
+		expect(query[1].id?.toString()).toEqual('9');
 		expect(query[1].name).toEqual('Category 1.1 (changed)');
 		expect(query[1].parent_id).toEqual('1');
 

@@ -28,10 +28,10 @@ describe('Insert categories in batch', () => {
 		]);
 
 		expect(categories.length).toBe(4);
-		expect(categories[0].id).toEqual('5');
-		expect(categories[1].id).toEqual('6');
-		expect(categories[2].id).toEqual('7');
-		expect(categories[3].id).toEqual('8');
+		expect(categories[0].id?.toString()).toEqual('5');
+		expect(categories[1].id?.toString()).toEqual('6');
+		expect(categories[2].id?.toString()).toEqual('7');
+		expect(categories[3].id?.toString()).toEqual('8');
 
 	});
 
@@ -44,7 +44,7 @@ describe('Insert categories in batch', () => {
 
 		expect(query.length).toEqual(8);
 		for (let i = 4; i < query.length; i++) {
-			expect(query[i].id).toEqual((i + 1).toString());
+			expect(query[i].id?.toString()).toEqual((i + 1).toString());
 			expect(query[i].name).toEqual('Category ' + (i + 1).toString());
 		}
 

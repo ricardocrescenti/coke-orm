@@ -28,12 +28,12 @@ describe('Insert product simple with categories', () => {
 			],
 		});
 
-		expect(product.id).toEqual('9');
+		expect(product.id?.toString()).toEqual('9');
 		expect(product.categories.length).toEqual(2);
-		expect(product.categories[0].id).toEqual('1');
-		expect(product.categories[0].category.id).toEqual('1');
-		expect(product.categories[1].id).toEqual('2');
-		expect(product.categories[1].category.id).toEqual('2');
+		expect(product.categories[0].id?.toString()).toEqual('1');
+		expect(product.categories[0].category.id?.toString()).toEqual('1');
+		expect(product.categories[1].id?.toString()).toEqual('2');
+		expect(product.categories[1].category.id?.toString()).toEqual('2');
 
 	});
 
@@ -47,7 +47,7 @@ describe('Insert product simple with categories', () => {
 
 		expect(query.length).toEqual(2);
 		for (let i = 0; i < query.length; i++) {
-			expect(query[i].id).toEqual((i + 1).toString());
+			expect(query[i].id?.toString()).toEqual((i + 1).toString());
 			expect(query[i].category_id).toEqual((i + 1).toString());
 		}
 

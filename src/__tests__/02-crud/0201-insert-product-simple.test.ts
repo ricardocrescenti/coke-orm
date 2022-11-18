@@ -15,9 +15,19 @@ describe('Insert product simple', () => {
 		const products: any = await connection.getEntityManager(ProductModel).save([
 			{
 				name: 'Product 1',
+				barcodes: [
+					{
+						barcode: '7894561230146'
+					}
+				]
 			},
 			{
 				name: 'Product 2',
+				barcodes: [
+					{
+						barcode: '7894561230147'
+					}
+				]
 			},
 		]);
 		expect(products.length).toEqual(2);
@@ -33,7 +43,7 @@ describe('Insert product simple', () => {
 
 		expect(query.length).toEqual(2);
 		for (let i = 0; i < query.length; i++) {
-			expect(query[i].id).toEqual((i + 1).toString());
+			expect(query[i].id?.toString()).toEqual((i + 1).toString());
 			expect(query[i].name).toEqual('Product ' + (i + 1).toString());
 		}
 

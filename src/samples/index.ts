@@ -28,44 +28,73 @@ export async function test() {
 	// 	DELETE FROM cities;
 	// 	DELETE FROM files;`);
 
-	let product = await connection.getEntityManager(ProductModel).save({
-		name: 'Product With Image Debug 1',
-		image: {
-			privateUrl: 'privateurl/image1.jpg',
-		},
-		releaseDate: new Date(2022, 1, 7),
-		releasedForSale: true,
-		price: 89.90,
-	});
-	console.log(product);
+	// let product: ProductModel = await connection.getEntityManager(ProductModel).save({
+	// 	name: 'Product With Image Debug 1',
+	// 	image: {
+	// 		privateUrl: 'privateurl/image1.jpg',
+	// 	},
+	// 	barcodes: [
+	// 		{
+	// 			barcode: '7894561230147',
+	// 		},
+	// 	],
+	// 	releaseDate: new Date(2022, 1, 7),
+	// 	releasedForSale: true,
+	// 	price: 89.90,
+	// });
+	// console.log(product);
 
-	product = await connection.getEntityManager(ProductModel).create({
-		name: 'Product With Image Debug 2',
-		image: {
-			privateUrl: 'privateurl/image2.jpg',
-		},
-	});
-	await product.save({ queryRunner: connection.queryRunner });
-	console.log(product);
+	// product = await connection.getEntityManager(ProductModel).create({
+	// 	name: 'Product With Image Debug 2',
+	// 	barcodes: [
+	// 		{
+	// 			barcode: '7894561230146',
+	// 		},
+	// 	],
+	// 	image: {
+	// 		privateUrl: 'privateurl/image2.jpg',
+	// 	},
+	// });
+	// await product.save({ queryRunner: connection.queryRunner });
+	// console.log(product);
 
-	await connection.getEntityManager(ProductModel).find({
+	// await connection.getEntityManager(ProductModel).find({
+	// 	relations: [
+	// 		'children',
+	// 	],
+	// 	where: {
+	// 		parent: { isNull: true },
+	// 		AND: [
+	// 			{
+	// 				name: { iLike: 'lalala%' },
+	// 			},
+	// 			{
+	// 				children: {
+	// 					name: { iLike: 'lalala%' },
+	// 				} as any,
+	// 			},
+	// 		],
+	// 	},
+	// });
+
+	const products: ProductModel[] = await connection.getEntityManager(ProductModel).find({
 		relations: [
-			'children',
+			'barcodes',
 		],
 		where: {
-			parent: { isNull: true },
+			// barcodes: {
+			// 	barcode: { iLike: '7894561230147%' },
+			// } as any,
 			AND: [
 				{
-					name: { iLike: 'lalala%' },
-				},
-				{
-					children: {
-						name: { iLike: 'lalala%' },
+					barcodes: {
+						barcode: { iLike: '7894561230147%' },
 					} as any,
 				},
 			],
 		},
 	});
+	console.log(products);
 
 	await insertCity(connection);
 

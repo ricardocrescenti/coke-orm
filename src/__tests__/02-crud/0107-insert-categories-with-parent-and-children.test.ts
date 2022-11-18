@@ -50,13 +50,13 @@ describe('Insert categories with parent and children', () => {
 		]);
 
 		expect(categories.length).toBe(4);
-		expect(categories[0].id).toEqual('15');
-		expect(categories[0].parent.id).toEqual('5');
-		expect(categories[0].children[0].id).toEqual('16');
-		expect(categories[1].id).toEqual('17');
-		expect(categories[1].parent.id).toEqual('6');
-		expect(categories[1].children[0].id).toEqual('18');
-		expect(categories[1].children[1].id).toEqual('19');
+		expect(categories[0].id?.toString()).toEqual('15');
+		expect(categories[0].parent.id?.toString()).toEqual('5');
+		expect(categories[0].children[0].id?.toString()).toEqual('16');
+		expect(categories[1].id?.toString()).toEqual('17');
+		expect(categories[1].parent.id?.toString()).toEqual('6');
+		expect(categories[1].children[0].id?.toString()).toEqual('18');
+		expect(categories[1].children[1].id?.toString()).toEqual('19');
 
 	});
 
@@ -69,16 +69,16 @@ describe('Insert categories with parent and children', () => {
 			ORDER BY name`);
 
 		expect(query.length).toEqual(5);
-		expect(query[0].id).toEqual('15');
-		expect(query[0].parent_id).toEqual('5');
-		expect(query[1].id).toEqual('16');
-		expect(query[1].parent_id).toEqual('15');
-		expect(query[2].id).toEqual('17');
-		expect(query[2].parent_id).toEqual('6');
-		expect(query[3].id).toEqual('18');
-		expect(query[3].parent_id).toEqual('17');
-		expect(query[4].id).toEqual('19');
-		expect(query[4].parent_id).toEqual('17');
+		expect(query[0].id?.toString()).toEqual('15');
+		expect(query[0].parent_id?.toString()).toEqual('5');
+		expect(query[1].id?.toString()).toEqual('16');
+		expect(query[1].parent_id?.toString()).toEqual('15');
+		expect(query[2].id?.toString()).toEqual('17');
+		expect(query[2].parent_id?.toString()).toEqual('6');
+		expect(query[3].id?.toString()).toEqual('18');
+		expect(query[3].parent_id?.toString()).toEqual('17');
+		expect(query[4].id?.toString()).toEqual('19');
+		expect(query[4].parent_id?.toString()).toEqual('17');
 
 	});
 
