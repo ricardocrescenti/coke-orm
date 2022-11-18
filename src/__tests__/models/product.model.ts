@@ -4,6 +4,7 @@ import { FileModel } from './file.model';
 import { PatternModel } from './pattern.model';
 import { ProductAttributeOptionModel } from './product-attribute-options.model';
 import { ProductAttributeModel } from './product-attribute.model';
+import { ProductBarCodeModel } from './product-barcode.model';
 import { ProductCategoryModel } from './product-category.model';
 
 @Entity({ name: 'products' })
@@ -42,6 +43,9 @@ export class ProductModel extends PatternModel {
 
 	@Column({ nullable: true })
 	public price?: number;
+
+	@OneToMany({ relation: { referencedEntity: 'ProductBarCodeModel', referencedColumn: 'product', cascade: ['insert', 'update', 'remove'] } })
+	public barcodes?: ProductBarCodeModel[];
 
 	@ManyToOne({ nullable: true, relation: { referencedEntity: 'ProductModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' } })
 	public parent?: ProductModel;

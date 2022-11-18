@@ -38,12 +38,12 @@ describe('Insert categories with children', () => {
 		]);
 
 		expect(categories.length).toBe(2);
-		expect(categories[0].id).toEqual('3');
-		expect(categories[0].children[0].id).toEqual('11');
-		expect(categories[0].children[1].id).toEqual('12');
-		expect(categories[1].id).toEqual('4');
-		expect(categories[1].children[0].id).toEqual('13');
-		expect(categories[1].children[1].id).toEqual('14');
+		expect(categories[0].id?.toString()).toEqual('3');
+		expect(categories[0].children[0].id?.toString()).toEqual('11');
+		expect(categories[0].children[1].id?.toString()).toEqual('12');
+		expect(categories[1].id?.toString()).toEqual('4');
+		expect(categories[1].children[0].id?.toString()).toEqual('13');
+		expect(categories[1].children[1].id?.toString()).toEqual('14');
 
 	});
 
@@ -57,8 +57,8 @@ describe('Insert categories with children', () => {
 
 		expect(query.length).toEqual(4);
 		for (let i = 0; i < query.length; i++) {
-			expect(query[i].id).toEqual((11 + i).toString());
-			expect(query[i].parent_id).toEqual((i < 2 ? 3 : 4).toString());
+			expect(query[i].id?.toString()).toEqual((11 + i).toString());
+			expect(query[i].parent_id?.toString()).toEqual((i < 2 ? 3 : 4).toString());
 		}
 
 	});

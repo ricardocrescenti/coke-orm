@@ -23,10 +23,10 @@ describe('Insert product simple removing one category', () => {
 			],
 		});
 
-		expect(product.id).toEqual('9');
+		expect(product.id?.toString()).toEqual('9');
 		expect(product.categories.length).toEqual(1);
-		expect(product.categories[0].id).toEqual('1');
-		expect(product.categories[0].category.id).toEqual('1');
+		expect(product.categories[0].id?.toString()).toEqual('1');
+		expect(product.categories[0].category.id?.toString()).toEqual('1');
 
 	});
 
@@ -39,7 +39,7 @@ describe('Insert product simple removing one category', () => {
 			ORDER BY id`);
 
 		expect(query.length).toEqual(1);
-		expect(query[0].id).toEqual('1');
+		expect(query[0].id?.toString()).toEqual('1');
 		expect(query[0].category_id).toEqual('1');
 
 	});

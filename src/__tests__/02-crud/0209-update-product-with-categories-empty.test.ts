@@ -17,7 +17,7 @@ describe('Update product with categories empty', () => {
 			categories: [],
 		});
 
-		expect(product.id).toEqual('9');
+		expect(product.id?.toString()).toEqual('9');
 		expect(product.categories.length).toEqual(0);
 
 	});

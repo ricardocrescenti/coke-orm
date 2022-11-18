@@ -17,7 +17,7 @@ describe('Update product with categories null', () => {
 			categories: null,
 		});
 
-		expect(product.id).toEqual('9');
+		expect(product.id?.toString()).toEqual('9');
 		expect(product.categories).toBeNull();
 
 	});
