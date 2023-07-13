@@ -20,11 +20,17 @@ export class IndexOptions {
     */
    public readonly unique?: boolean;
 
+   /**
+    * 
+    */
+   public readonly usedToLoadPrimaryKey?: boolean
+
    constructor(options: IndexOptions) {
       this.target = options.target;
       this.name = options.name;
       this.columns = options.columns;
       this.unique = options.unique ?? false;
+      this.usedToLoadPrimaryKey = (options.usedToLoadPrimaryKey ?? false);
    }
 
 }
