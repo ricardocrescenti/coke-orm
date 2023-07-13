@@ -617,8 +617,8 @@ export abstract class CokeModel {
 
 		// get the primary keys, unique indexes and unique keys to make the queries
 		const primaryKeys: string[] = entityManager.metadata.primaryKey?.columns as string[];
-		const indexes: ConcatArray<string[]> = entityManager.metadata.indexs.filter((index) => index.unique).map((index) => index.columns);
-		const uniques: ConcatArray<string[]> = entityManager.metadata.uniques.map((index) => index.columns);
+		const indexes: ConcatArray<string[]> = entityManager.metadata.indexs.filter((index) => index.unique && index.usedToLoadPrimaryKey).map((index) => index.columns);
+		const uniques: ConcatArray<string[]> = entityManager.metadata.uniques.filter((unique) => unique.usedToLoadPrimaryKey).map((unique) => unique.columns);
 
 		// eslint-disable-next-line no-array-constructor
 		for (const columns of (new Array<string[]>()).concat([primaryKeys], indexes, uniques)) {
