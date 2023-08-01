@@ -239,6 +239,56 @@ export class EntityManager<T = any> {
 	}
 
 	/**
+	 * 
+	 * @param entities 
+	 * @param queryRunner 
+	 */
+	private async runLoadSubscriber(entities: T | T[], findOptions: FindOptions<T>): Promise<void> {
+
+		if (!Array.isArray(entities)) {
+			entities = [entities];
+		}
+
+		// create the entity-related subscriber to run the events
+		const subscribers: EntitySubscriberInterface<T>[] = (this.createEntitySubscribers() ?? []);
+
+		for(const entity of entities as any) {
+
+			// get the columns that are related, to know which ones 
+			// should be passed to run the load subscriber
+			const objectKeys: string[] = Object.keys(entity);
+			const columns: ColumnMetadata[] = Object.values(this.metadata.columns).filter((column) => objectKeys.indexOf(column.propertyName) >= 0 && (column.relation));
+
+			// run the load subscriber on columns
+			for (const column of columns) {
+				
+				if (!entity[column.propertyName]) {
+					continue;
+				}
+
+				const entityManager = this.connection.getEntityManager(column.relation!.referencedEntity);
+				await entityManager.runLoadSubscriber(entity[column.propertyName], findOptions);
+
+			}
+
+			// run the load subscriber on current entity
+			for (const subscriber of (subscribers.filter((subscriber) => subscriber.afterLoad != undefined))) {
+				if (subscriber.afterLoad) {
+					await subscriber.afterLoad({
+						connection: (findOptions.queryRunner?.connection ?? this.connection),
+						queryRunner: findOptions.queryRunner,
+						manager: this,
+						findOptions: findOptions,
+						entity: entity,
+					});
+				}
+			}
+
+		}
+
+	}
+
+	/**
 	 * Query and return the first record that matches the query criteria.
 	 * @param {FindOptions<T>} findOptions Find Options.
 	 * @return {Promise<T>} First record found in database.
@@ -280,25 +330,15 @@ export class EntityManager<T = any> {
 
 		if (result.length > 0) {
 
-			// create the entity-related subscriber to run the events
-			const subscribers: EntitySubscriberInterface<T>[] = (findOptions.runAfterLoadEvent ? this.createEntitySubscribers() : []);
-
 			// transform the query result into its specific classes
 			for (let i = 0; i < result.length; i++) {
 				result[i] = this.create(result[i]);
-
-				for (const subscriber of (subscribers.filter((subscriber) => subscriber.afterLoad != undefined))) {
-					if (subscriber.afterLoad) {
-						await subscriber.afterLoad({
-							connection: (findOptions.queryRunner?.connection ?? this.connection),
-							queryRunner: findOptions.queryRunner,
-							manager: this,
-							findOptions: findOptions,
-							entity: result[i],
-						});
-					}
-				}
 			}
+
+			if (findOptions.runAfterLoadEvent) {
+				await this.runLoadSubscriber(result, findOptions);
+			}
+
 			return result;
 
 		}
