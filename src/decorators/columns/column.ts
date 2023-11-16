@@ -6,7 +6,7 @@ import { DecoratorsStore } from '../decorators-store';
  * @param {ColumnOptions} options Column options
  * @return {Function} Returns the function needed by the Decorator
  */
-export function Column(options?: Omit<ColumnOptions<any, ForeignKeyOptions>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'operation'>): PropertyDecorator {
+export function Column<O = any>(options?: Omit<ColumnOptions<any, ForeignKeyOptions, O>, 'target' | 'propertyName' | 'propertyType' | 'relation' | 'operation'>): PropertyDecorator {
 	return function(target: any, propertyKey: any) {
 
 		const column: ColumnOptions = new ColumnOptions({

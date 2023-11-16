@@ -1,4 +1,7 @@
+import { CokeModel } from '../../manager';
+import { QueryRunner } from '../../query-runner';
 import { ForeignKeyAction } from './foreign-key-action';
+import { ForeignKeyMetadata } from './foreign-key-metadata';
 import { ForeignKeyType } from './foreign-key-type';
 
 /**
@@ -53,6 +56,16 @@ export class ForeignKeyOptions<T = any> {
 	public readonly eager?: boolean;
 
 	/**
+	 * 
+	 */
+	public onNotPresentError?: (entity: CokeModel, foreignKey: ForeignKeyMetadata, queryRunner: QueryRunner, error: Error) => void | Promise<void>;
+
+	/**
+	 * 
+	 */
+	public onReferencedError?: (entity: CokeModel, foreignKey: ForeignKeyMetadata, queryRunner: QueryRunner, error: Error) => void | Promise<void>;
+
+	/**
 	 * Default class constructor.
 	 * @param {ForeignKeyOptions} options Foreign Key Options.
 	 */
@@ -66,5 +79,7 @@ export class ForeignKeyOptions<T = any> {
 		this.onDelete = options.onDelete ?? 'NO ACTION';
 		this.onUpdate = options.onUpdate ?? 'NO ACTION';
 		this.eager = options.eager ?? false;
+		this.onNotPresentError = options.onNotPresentError;
+		this.onReferencedError = options.onReferencedError;
 	}
 }

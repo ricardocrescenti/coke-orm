@@ -8,6 +8,7 @@ import { QueryBuilderDriver } from "./query-builder-driver";
 import { EntityMetadata } from "../metadata";
 import { InvalidColumnOptionError } from "../errors";
 import { QueryResult } from "../query-builder";
+import { CokeModel, EntityManager } from "../manager";
 
 export abstract class Driver {
 
@@ -214,4 +215,7 @@ export abstract class Driver {
 
       return true;
    }
+
+   public abstract handleQueryErrors(entityManager: EntityManager, objectToSave: CokeModel, queryRunner: QueryRunner, error: Error): Promise<void>;
+
 }

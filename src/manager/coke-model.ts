@@ -142,12 +142,18 @@ export abstract class CokeModel {
 			const columnsThatCannotBeUpdated: string[] = entityManager.metadata.getColumnsThatCannotBeUpdated().map((ColumnMetadata) => ColumnMetadata.propertyName);
 			const removedValues = OrmUtils.removeObjectProperties(objectToSave, columnsThatCannotBeUpdated);
 
-			// create and execute the query to update the record
-			const updateQuery: UpdateQueryBuilder<this> = entityManager.createUpdateQuery()
-				.set(objectToSave)
-				.where(where)
-				.returning(columnsToReturn);
-			await updateQuery.execute(saveOptions.queryRunner);
+			try {
+
+				// create and execute the query to update the record
+				const updateQuery: UpdateQueryBuilder<this> = entityManager.createUpdateQuery()
+					.set(objectToSave)
+					.where(where)
+					.returning(columnsToReturn);
+				await updateQuery.execute(saveOptions.queryRunner);
+
+			} catch (error: any) {
+				await saveOptions.queryRunner.connection.driver.handleQueryErrors(entityManager, objectToSave, saveOptions.queryRunner, error);
+			}
 
 			// restores removed properties on main object
 			OrmUtils.fillObject(objectToSave, removedValues);
@@ -200,11 +206,18 @@ export abstract class CokeModel {
 			const columnsThatCannotBeInserted: string[] = entityManager.metadata.getColumnsThatCannotBeInserted().map((ColumnMetadata) => ColumnMetadata.propertyName);
 			const removedValues = OrmUtils.removeObjectProperties(objectToSave, columnsThatCannotBeInserted);
 
-			// create and execute the query to insert the record
-			const insertQuery: InsertQueryBuilder<this> = entityManager.createInsertQuery()
-				.values(objectToSave)
-				.returning(columnsToReturn);
-			const insertedObject: this[] = await insertQuery.execute(saveOptions.queryRunner);
+			let insertedObject: this[] = [];
+			try {			
+				
+				// create and execute the query to insert the record
+				const insertQuery: InsertQueryBuilder<this> = entityManager.createInsertQuery()
+					.values(objectToSave)
+					.returning(columnsToReturn);
+				insertedObject = await insertQuery.execute(saveOptions.queryRunner);
+
+			} catch (error: any) {
+				await saveOptions.queryRunner.connection.driver.handleQueryErrors(entityManager, objectToSave, saveOptions.queryRunner, error);
+			}
 
 			// fill in the sent object to be saved the primary key of the registry
 			OrmUtils.fillObject(objectToSave, insertedObject[0]);

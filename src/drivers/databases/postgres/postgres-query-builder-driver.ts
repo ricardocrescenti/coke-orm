@@ -152,7 +152,7 @@ export class PostgresQueryBuilderDriver extends QueryBuilderDriver {
 		const variables = ((triggerMetadata.trigger.variables?.length ?? 0) > 0 ? `DECLARE ${triggerMetadata.trigger.variables?.map((variable) => `${variable.name} ${variable.type}`).join('; DECLARE ')};` : '');
 		return [
 			`CREATE FUNCTION "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.name}"() RETURNS trigger LANGUAGE 'plpgsql' VOLATILE AS $BODY$ ${variables} BEGIN ${triggerMetadata.trigger.code} END $BODY$;`,
-			`CREATE TRIGGER "${triggerMetadata.name}" ${triggerMetadata.trigger.fires} ${triggerMetadata.trigger.events.join(' OR ')} ON "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.entity.name}" FOR EACH ROW ${triggerMetadata.trigger.when ? ` WHEN ${triggerMetadata.trigger.when} ` : ''} EXECUTE FUNCTION "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.name}"();`,
+			`CREATE ${triggerMetadata.trigger.constraintTrigger ? 'CONSTRAINT ' : ''}TRIGGER "${triggerMetadata.name}" ${triggerMetadata.trigger.fires} ${triggerMetadata.trigger.events.join(' OR ')} ON "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.entity.name}" ${triggerMetadata.trigger.deferrable ? 'DEFERRABLE ' : ''}${triggerMetadata.trigger.deferred ? 'INITIALLY DEFERRED ' : ''}FOR EACH ROW ${triggerMetadata.trigger.when ? ` WHEN ${triggerMetadata.trigger.when} ` : ''} EXECUTE FUNCTION "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.name}"();`,
 			`COMMENT ON TRIGGER "${triggerMetadata.name}" ON "${triggerMetadata.entity.connection.options.schema ?? 'public'}"."${triggerMetadata.entity.name}" IS '${triggerMetadata.hash}';`,
 		];
 	}

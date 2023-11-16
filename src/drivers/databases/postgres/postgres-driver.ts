@@ -6,11 +6,12 @@ import { Connection } from "../../../connection";
 import { ColumnSchema, EntitySchema, ForeignKeySchema, IndexSchema, PrimaryKeySchema, TriggerSchema, UniqueSchema } from "../../../schema";
 import { QueryBuilderDriver } from "../../query-builder-driver";
 import { PostgresQueryBuilderDriver } from "./postgres-query-builder-driver";
-import { ForeignKeyMetadata, TriggerMetadata } from "../../../metadata";
+import { ForeignKeyMetadata, PrimaryKeyMetadata, TriggerMetadata } from "../../../metadata";
 import { ColumnMetadata, ColumnOperation, IndexMetadata, UniqueMetadata, EntityMetadata } from "../../../metadata";
 import { InvalidColumnOptionError, InvalidTriggerOptionError } from "../../../errors";
 import { Generate } from "../../../metadata";
 import { QueryResult } from "../../../query-builder";
+import { CokeModel, EntityManager } from "../../../manager";
 
 export class PostgresDriver extends Driver {
 
@@ -566,6 +567,14 @@ export class PostgresDriver extends Driver {
                   throw new InvalidTriggerOptionError(`The trigger name '${triggerMetadata.name}' cannot exceed 63 characters`);
                }
 
+               if (triggerMetadata.trigger.deferrable && !triggerMetadata.trigger.constraintTrigger) {
+                  throw new InvalidTriggerOptionError(`The trigger '${triggerMetadata.name}' has the 'deferrable' parameter active, it is necessary to activate the 'constraintTrigger' parameter`);
+               }
+
+               if (triggerMetadata.trigger.deferred && !triggerMetadata.trigger.deferrable) {
+                  throw new InvalidTriggerOptionError(`The trigger '${triggerMetadata.name}' has the 'deferred' parameter active, it is necessary to activate the 'deferrable' parameter`);
+               }
+
                sqlMigrationsCreateTriggers.push(...this.connection.driver.queryBuilder.createTriggerFromMetadata(triggerMetadata));
             }
 
@@ -865,5 +874,103 @@ export class PostgresDriver extends Driver {
          throw new InvalidColumnOptionError(`The '${columnMetadata.name}' column of the '${columnMetadata.entity.name}' entity cannot be longer than 63 characters.`);
       }
    }
+
+   public async handleQueryErrors(entityManager: EntityManager, objectToSave: CokeModel, queryRunner: QueryRunner, error: Error): Promise<void> {
+
+		if (error instanceof Error) {
+
+         // get the error information which is enclosed in double quotes to be used
+         // in the tests below
+         const errorData: string[] = error.message.split('"').filter((_, index: number) => index % 2 == 1);
+			
+         // not null column error
+			if (error.message.indexOf('null value in column') >= 0) {
+				
+				//ERROR:  null value in column "column_name" violates not-null constraint
+				//DETAIL:  Failing row contains (rows_values).
+
+            const column = Object.values(entityManager.metadata.columns).find((column) => column.name == errorData[0]);
+            if (column && column.onNullValueError) {
+               await column.onNullValueError(objectToSave, column, queryRunner, error);
+            }
+
+			} 
+         // primary key
+         // unique index
+         // unique constraint
+         else if (error.message.indexOf('duplicate key value violates unique constraint') >= 0) {
+
+            //ERROR:  duplicate key value violates unique constraint "constraint_name"
+            //DETAIL:  Key (column_name)=(value) already exists.
+            
+            // check if the constraint is the primary key
+            if (entityManager.metadata.primaryKey?.name == errorData[0]) {
+
+               const primaryKeyConstraint: PrimaryKeyMetadata = entityManager.metadata.primaryKey;
+               if (primaryKeyConstraint.onError) {
+                  await primaryKeyConstraint.onError(objectToSave, primaryKeyConstraint, queryRunner, error);
+               }
+               return;
+
+            }
+
+            // check if the constraint is a unique index
+            const indexConstraint: IndexMetadata | undefined = entityManager.metadata.indexs.find((index) => index.name == errorData[0]);
+            if (indexConstraint) {
+
+               if (indexConstraint.onError) {
+                  await indexConstraint.onError(objectToSave, indexConstraint, queryRunner, error);
+               }
+               return;
+
+            }
+
+            // check if constraint is a unique key
+            const uniqueConstraint: UniqueMetadata | undefined = entityManager.metadata.uniques.find((unique) => unique.name == errorData[0]);
+            if (uniqueConstraint) {
+
+               if (uniqueConstraint?.onError) {
+                  await uniqueConstraint.onError(objectToSave, uniqueConstraint, queryRunner, error);
+               }
+               return;
+
+            }
+
+         }
+         // foreign key constraint
+         else if (error.message.indexOf('violates foreign key constraint') >= 0) {
+
+            const foreignKey: ForeignKeyMetadata | undefined = entityManager.metadata.foreignKeys.find((foreignKey) => foreignKey.name == errorData[1]);
+            if (foreignKey) {
+
+               if (error.message.indexOf('is not present in table') >= 0) {
+
+                  //ERROR:  insert or update on table "table_name" violates foreign key constraint "fk_name"
+                  //DETAIL:  Key (column_name)=(value) is not present in table "referenced_table".
+                  
+                  if (foreignKey.onNotPresentError) {
+                     await foreignKey.onNotPresentError(objectToSave, foreignKey, queryRunner, error);
+                  }
+
+               } else if (error.message.indexOf('is still referenced from table') >= 0) {
+
+                  //ERROR:  update or delete on table "table_name" violates foreign key constraint "fk_name" on table "referenced_table"
+                  //DETAIL:  Key (column_name)=(value) is still referenced from table "referenced_table".
+
+                  if (foreignKey.onReferencedError) {
+                     await foreignKey.onReferencedError(objectToSave, foreignKey!, queryRunner, error);
+                  }
+
+               }
+
+            }
+
+			}
+
+		}
+		
+		throw error;
+		
+	}
 
 }

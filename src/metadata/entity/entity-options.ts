@@ -2,7 +2,7 @@ import { ConstructorTo } from "../../common";
 import { QueryOrder } from "../../query-builder";
 import { MetadataUtils } from "../../utils";
 
-export class EntityOptions<T = any> {
+export class EntityOptions<T = any, O = any> {
    
    /**
     * Class referenced to this entity.
@@ -31,7 +31,7 @@ export class EntityOptions<T = any> {
    /**
     * 
     */
-   public readonly customOptions?: any;
+   public readonly customOptions?: O;
 
    constructor(options: Omit<EntityOptions, 'inheritances'>) {
       this.target = options.target;

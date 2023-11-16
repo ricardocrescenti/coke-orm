@@ -1,3 +1,7 @@
+import { CokeModel } from "../../manager";
+import { QueryRunner } from "../../query-runner";
+import { IndexMetadata } from "./index-metadata";
+
 export class IndexOptions {
    
    /**
@@ -23,7 +27,12 @@ export class IndexOptions {
    /**
     * 
     */
-   public readonly usedToLoadPrimaryKey?: boolean
+   public readonly usedToLoadPrimaryKey?: boolean;
+
+   /**
+    * 
+    */
+   public onError?: (entity: CokeModel, index: IndexMetadata, queryRunner: QueryRunner, error: Error) => void | Promise<void>;
 
    constructor(options: IndexOptions) {
       this.target = options.target;
@@ -31,6 +40,7 @@ export class IndexOptions {
       this.columns = options.columns;
       this.unique = options.unique ?? false;
       this.usedToLoadPrimaryKey = (options.usedToLoadPrimaryKey ?? false);
+      this.onError = options.onError;
    }
 
 }
