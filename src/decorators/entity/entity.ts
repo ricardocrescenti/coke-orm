@@ -1,7 +1,7 @@
 import { EntityOptions } from "../../metadata";
 import { DecoratorsStore } from "../decorators-store";
 
-export function Entity(options?: Omit<EntityOptions, 'target' | 'inheritances' | 'className'>): ClassDecorator {
+export function Entity<O = any>(options?: Omit<EntityOptions<any, O>, 'target' | 'inheritances' | 'className'>): ClassDecorator {
     return function (target: Function) {
 
       const entity: EntityOptions = new EntityOptions({

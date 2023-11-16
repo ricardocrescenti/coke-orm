@@ -1,3 +1,7 @@
+import { CokeModel } from "../../manager";
+import { QueryRunner } from "../../query-runner";
+import { UniqueMetadata } from "./unique-metadata";
+
 export class UniqueOptions {
    
    /**
@@ -18,13 +22,19 @@ export class UniqueOptions {
    /**
     * 
     */
-   public readonly usedToLoadPrimaryKey?: boolean
+   public readonly usedToLoadPrimaryKey?: boolean;
+
+   /**
+    * 
+    */
+   public onError?: (entity: CokeModel, unique: UniqueMetadata, queryRunner: QueryRunner, error: Error) => void | Promise<void>;
 
    constructor(options: UniqueOptions) {
       this.target = options.target;
       this.name = options.name;
       this.columns = options.columns;
       this.usedToLoadPrimaryKey = (options.usedToLoadPrimaryKey ?? false);
+      this.onError = options.onError;
    }
 
 }

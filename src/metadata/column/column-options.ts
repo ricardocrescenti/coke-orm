@@ -1,13 +1,14 @@
 import { ForeignKeyOptions } from '../foreign-key';
 import { ColumnOperation } from './column-operation';
-import { EntityManager, EntityValues } from '../../manager';
+import { CokeModel, EntityManager, EntityValues } from '../../manager';
 import { ColumnMetadata } from './column-metadata';
 import 'reflect-metadata';
+import { QueryRunner } from '../../query-runner';
 
 /**
  * Entity Column Options
  */
-export class ColumnOptions<T = any, R = ForeignKeyOptions<T>> {
+export class ColumnOptions<T = any, R = ForeignKeyOptions<T>, O = any> {
 
 	/**
 	 * Class referenced to this column.
@@ -120,7 +121,12 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions<T>> {
 	/**
 	 * Additional user-defined data for this column.
 	 */
-	public readonly customOptions?: any;
+	public readonly customOptions?: O;
+
+	/**
+	 * 
+	 */
+	public onNullValueError?: (entity: CokeModel, column: ColumnMetadata, queryRunner: QueryRunner, error: Error) => void | Promise<void>;
 
 	/**
 	 * Default class constructor.
@@ -147,5 +153,6 @@ export class ColumnOptions<T = any, R = ForeignKeyOptions<T>> {
 		this.parseValue = options.parseValue;
 		this.roles = options.roles;
 		this.customOptions = options.customOptions;
+		this.onNullValueError = options.onNullValueError;
 	}
 }

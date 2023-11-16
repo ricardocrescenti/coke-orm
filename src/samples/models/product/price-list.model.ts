@@ -2,7 +2,7 @@
 import { Column, ManyToOne, Entity } from '../../../decorators';
 import { PatternModel } from '../../../__tests__/models/pattern.model';
 
-@Entity({ name: 'prices_lists' })
+@Entity({ name: 'prices_lists', customOptions: { title: 'Listas de Preços' } })
 export class PriceListModel extends PatternModel {
 
 	@Column()
@@ -11,7 +11,7 @@ export class PriceListModel extends PatternModel {
 	@Column({ nullable: true })
 	description?: string;
 
-	@ManyToOne({ relation: { referencedEntity: 'PriceListModel', referencedColumn: 'id', onDelete: 'RESTRICT', onUpdate: 'CASCADE' } })
+	@ManyToOne({ relation: { referencedEntity: 'PriceListModel', referencedColumn: 'id', onDelete: 'RESTRICT', onUpdate: 'CASCADE', onNotPresentError: (entity, foreignKey, queryRunner) => { throw Error('') } } })
 	parent?: PriceListModel;
 
 	@Column()
