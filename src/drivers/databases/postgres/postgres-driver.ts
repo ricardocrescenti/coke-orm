@@ -910,7 +910,6 @@ export class PostgresDriver extends Driver {
                if (primaryKeyConstraint.onError) {
                   await primaryKeyConstraint.onError(objectToSave, primaryKeyConstraint, queryRunner, error);
                }
-               return;
 
             }
 
@@ -932,7 +931,6 @@ export class PostgresDriver extends Driver {
                if (uniqueConstraint?.onError) {
                   await uniqueConstraint.onError(objectToSave, uniqueConstraint, queryRunner, error);
                }
-               return;
 
             }
 
