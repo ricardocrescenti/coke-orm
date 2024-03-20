@@ -66,7 +66,16 @@ export class QueryRunner {
 	 * Get a client from the connection pool.
 	 */
 	public async initializeClient() {
-		return this.connection.driver.getClient();
+		
+		const client = await this.connection.driver.getClient();
+
+		/** set timezone */
+		if (this.connection.options.timezone) {
+			await this.query(`SET TIMEZONE = '${this.connection.options.timezone}'`);
+		}
+
+		return client;
+	
 	}
 
 	/**

@@ -124,11 +124,6 @@ export class Connection {
 		const client = await this.queryRunner.initializeClient();
 		this.driver.releaseQueryRunner(client);
 
-		/** set timezone */
-		if (this.options.timezone) {
-			await this.queryRunner.query(`SET TIMEZONE = '${this.options.timezone}'`);
-		}
-
 		/** Connection success log */
 		this.logger.sucess('Connecting');
 
