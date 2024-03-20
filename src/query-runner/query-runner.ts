@@ -71,7 +71,8 @@ export class QueryRunner {
 
 		/** set timezone */
 		if (this.connection.options.timezone) {
-			await this.query(`SET TIMEZONE = '${this.connection.options.timezone}'`);
+			const query: string = `SET TIMEZONE = '${this.connection.options.timezone}'`;
+			await this.connection.driver.executeQuery(client ?? this.client, query);
 		}
 
 		return client;
