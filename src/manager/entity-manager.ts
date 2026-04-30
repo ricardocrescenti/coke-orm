@@ -615,15 +615,27 @@ export class EntityManager<T = any> {
 					const referencedColumn: ColumnMetadata = relationEntityManager.metadata.columns[columnMetadata.relation.referencedColumn];
 					const relationQuery: SelectQueryBuilder<any> = this.createChildSubquery(columnMetadata, columnData, relationEntityManager, findOptions, level + 1);
 
+					// Resolve the actual DB column name for the parent's referenced PK column
+					const parentPKName: string = this.metadata.columns[referencedColumn.relation?.referencedColumn as string]?.name
+						?? referencedColumn.relation?.referencedColumn as string;
+
+					// Store the lateral correlation condition in the subquery's query manager
+					// so that mountWhereExpression emits it as a WHERE clause inside the
+					// LATERAL subquery, enabling the database to use an index on the FK column
+					// instead of aggregating all rows before joining.
+					relationQuery.queryManager.lateralCondition = `"${relationEntityManager.metadata.className}"."${referencedColumn.name}" = "${this.metadata.className}"."${parentPKName}"`;
+
 					queryColumns[columnData[0]] = new QueryDatabaseColumnBuilder({
 						table: relationAlias,
 						column: columnMetadata.propertyName,
 						alias: columnMetadata.propertyName,
 						relation: new QueryRelationBuilder<any>({
-							type: 'left',
+							type: 'left lateral',
 							table: relationQuery,
 							alias: relationAlias,
-							condition: `"${relationAlias}"."${referencedColumn.propertyName}" = "${this.metadata.className}"."${referencedColumn.relation?.referencedColumn}"`,
+							// LATERAL joins correlate via the WHERE clause inside the subquery
+							// (see lateralCondition above), so the outer ON clause is always true.
+							condition: 'true',
 						}),
 					});
 
@@ -764,11 +776,6 @@ export class EntityManager<T = any> {
 		const relationQuery: SelectQueryBuilder<T> = this.createSubquery(columnMetadata, columnData, relationEntityManager, findOptions, level);
 
 		relationQuery.select([
-			new QueryDatabaseColumnBuilder({
-				table: relationEntityManager.metadata.className,
-				column: relationEntityManager.metadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string,
-				alias: relationEntityManager.metadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName as string,
-			}),
 			new QueryJsonAggColumnBuilder({
 				jsonColumn: new QueryJsonColumnBuilder({
 					jsonColumns: (relationQuery.queryManager.columns as QueryColumnBuilder<any>[]).filter((column) => !(column instanceof QueryWhereColumnBuilder)),
@@ -790,11 +797,12 @@ export class EntityManager<T = any> {
 				})),
 		]);
 
-		relationQuery.groupBy(new QueryDatabaseColumnBuilder({
-			table: relationEntityManager.metadata.className,
-			column: relationEntityManager.metadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName,
-			alias: relationEntityManager.metadata.columns[columnMetadata?.relation?.referencedColumn as string].propertyName,
-		}));
+		// No GROUP BY needed: the lateral correlation WHERE (set in lateralCondition
+		// by the caller in loadQueryColumns) already filters rows to the current
+		// parent, so json_agg aggregates only the relevant child rows.
+		// This is the key part of the LEFT JOIN LATERAL optimisation: the database
+		// can use an index on the FK column and avoid scanning the entire child
+		// table before joining.
 
 		// remove o order by pois ele foi adicionado dentro do SelectJsonAgg
 		relationQuery.orderBy();

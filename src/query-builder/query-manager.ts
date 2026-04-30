@@ -49,6 +49,8 @@ export class QueryManager<T> {
 
    public returning?: string[]
 
+   public lateralCondition?: string;
+
    public parameters: string[] = [];
 
    /// COLUMNS
@@ -97,7 +99,12 @@ export class QueryManager<T> {
    }
    public mountJoinsExpression(queryManager: QueryManager<any>, indentation: string): string {
       if (this.hasJoins()) {
-         return (this.joins ?? []).map(join => `${indentation}${join.type} join (${join.getTableSql(queryManager)}) "${join.alias}" on (${join.condition})`).join('\n') as string;
+         return (this.joins ?? []).map(join => {
+            if (join.type === 'left lateral') {
+               return `${indentation}left join lateral (${join.getTableSql(queryManager)}) "${join.alias}" on true`;
+            }
+            return `${indentation}${join.type} join (${join.getTableSql(queryManager)}) "${join.alias}" on (${join.condition})`;
+         }).join('\n') as string;
       }
       return '';
    }
@@ -123,11 +130,14 @@ export class QueryManager<T> {
          where = this.where;
       }
 
-      if (!this.hasWhere(where)) {
+      const hasWhere = this.hasWhere(where);
+      const hasLateralCondition = !!this.lateralCondition;
+
+      if (!hasWhere && !hasLateralCondition) {
          return '';
       }
-      
-      if (!Array.isArray(where)) {
+
+      if (!Array.isArray(where) && hasWhere) {
          where = [where];
       }
 
@@ -145,7 +155,13 @@ export class QueryManager<T> {
       // }
 
       //if (where) {
-      const expression = this.decodeWhereConditions(mainQueryManager, where as QueryWhere<T>[]);
+      let expression = hasWhere ? this.decodeWhereConditions(mainQueryManager, where as QueryWhere<T>[]) : '';
+
+      if (hasLateralCondition) {
+         const lateralExpr = `(${this.lateralCondition})`;
+         expression = expression.length > 0 ? `(${expression} and ${lateralExpr})` : lateralExpr;
+      }
+
       return (expression.length > 0 ? `where ${expression}` : '')
       //}
       //return '';

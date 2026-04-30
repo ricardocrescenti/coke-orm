@@ -1,1 +1,1 @@
-export type JoinType = 'left' | 'inner';
+export type JoinType = 'left' | 'inner' | 'left lateral';
