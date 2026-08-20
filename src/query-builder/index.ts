@@ -1,4 +1,4 @@
-import { QueryAggregateColumnBuilder, QueryColumnBuilder, QueryDatabaseColumnBuilder, QueryJsonAggColumnBuilder, QueryJsonColumnBuilder, QueryRelationBuilder, QueryWhereColumnBuilder } from "./column-builder";
+import { QueryAggregateColumnBuilder, QueryColumnBuilder, QueryDatabaseColumnBuilder, QueryExistsFilterColumnBuilder, QueryJsonAggColumnBuilder, QueryJsonColumnBuilder, QueryRelationBuilder, QueryRootFilterColumnBuilder, RootFilterContext, QueryWhereColumnBuilder } from "./column-builder";
 import { DeleteQueryBuilder } from "./delete-query-builder";
 import { InsertQueryBuilder } from "./insert-query-builder";
 import { QueryResult } from "./models";
@@ -13,9 +13,12 @@ export {
    QueryAggregateColumnBuilder,
    QueryColumnBuilder,
    QueryDatabaseColumnBuilder,
+   QueryExistsFilterColumnBuilder,
    QueryJsonAggColumnBuilder,
    QueryJsonColumnBuilder,
    QueryRelationBuilder,
+   QueryRootFilterColumnBuilder,
+   RootFilterContext,
    QueryWhereColumnBuilder,
    QueryResult,
    JoinType,

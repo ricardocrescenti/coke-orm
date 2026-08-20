@@ -636,19 +636,20 @@ export abstract class CokeModel {
 		// eslint-disable-next-line no-array-constructor
 		for (const columns of (new Array<string[]>()).concat([primaryKeys], indexes, uniques)) {
 
-			// commented on the procedure below because it was causing an infinite loop
-			//
-			// get the unique key fields to check if they are related to load the
-			// first key of them before doing the query.
-			//
-			// for (const column of columns) {
-			// 	if (entityManager.metadata.columns[column].relation) {
-			// 		const value = (this as any)[column];
-			// 		if (value instanceof CokeModel) {
-			// 			await (value as CokeModel).loadPrimaryKey(queryRunner, this);
-			// 		}
-			// 	}
-			// }
+			// load the primary keys of the unique key fields that are related
+			// to other entities, so that the object can be queried by these
+			// fields. The load is only performed when the value does not
+			// already have the referenced primary key informed, to avoid
+			// unnecessary queries and infinite loops
+			for (const column of columns) {
+				const columnMetadata: ColumnMetadata | undefined = entityManager.metadata.columns[column];
+				if (columnMetadata?.relation && columnMetadata.relation.type != 'OneToMany') {
+					const value: any = (this as any)[column];
+					if (value && typeof value === 'object' && 'loadPrimaryKey' in value && value[columnMetadata.relation.referencedColumn] == null) {
+						await value.loadPrimaryKey(queryRunner, this);
+					}
+				}
+			}
 
 			// create the condition using the first unique index or unique key to
 			// query the object

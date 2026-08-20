@@ -8,7 +8,7 @@ import { ProductBarCodeModel } from './product-barcode.model';
 import { ProductCategoryModel } from './product-category.model';
 
 @Entity({ name: 'products' })
-@Unique({ columns: ['name'] })
+@Unique({ columns: ['name'], usedToLoadPrimaryKey: true })
 export class ProductModel extends PatternModel {
 
 	@Column()

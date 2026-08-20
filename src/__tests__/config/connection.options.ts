@@ -10,10 +10,11 @@ import { ProductModel } from '../models/product.model';
 
 export const connectionOptions: ConnectionOptions = {
 	driver: 'postgres',
-	user: 'cokeorm',
-	password: 'cokeorm',
+	user: 'devmaster',
+	password: 'supadm',
 	database: 'cokeorm',
 	host: 'localhost',
+	port: 28152,
 	entities: [
 		CategoryModel,
 		ProductModel,

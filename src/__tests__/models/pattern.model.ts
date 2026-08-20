@@ -3,7 +3,7 @@ import { Column, CreatedAtColumn, DeletedIndicator, PrimaryKeyColumn, Unique, Up
 import { Generate } from '../../metadata';
 import { CokeModel } from '../../manager';
 
-@Unique({ columns: ['uuid'] })
+@Unique({ columns: ['uuid'], usedToLoadPrimaryKey: true })
 export abstract class PatternModel extends CokeModel {
 
 	@PrimaryKeyColumn({ default: new Generate({ strategy: 'sequence' }) })

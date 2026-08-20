@@ -3,7 +3,7 @@ import { Column, Entity, ManyToOne, OneToMany, Unique, VirtualColumn } from '../
 import { PatternModel } from './pattern.model';
 
 @Entity({ name: 'categories' })
-@Unique({ columns: ['name'] })
+@Unique({ columns: ['name'], usedToLoadPrimaryKey: true })
 export class CategoryModel extends PatternModel {
 
    @Column()
