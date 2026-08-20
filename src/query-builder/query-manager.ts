@@ -172,7 +172,15 @@ export class QueryManager<T> {
          if (key == 'RAW') {
             
             const rawOperator = (whereCondition as any)[key];
-            expressions.push(this.decodeWhereOperators(mainQueryManager, new QueryDatabaseColumnBuilder({ column: rawOperator.condition }), { RAW: rawOperator.params }, entityMetadata));
+
+            // when the raw condition is a column builder, its expression is
+            // rendered directly, so that parameters are registered at mount
+            // time (used by the root filter exists condition)
+            if (rawOperator instanceof QueryColumnBuilder) {
+               expressions.push(`(${rawOperator.getExpression(mainQueryManager, this, entityMetadata)})`);
+            } else {
+               expressions.push(this.decodeWhereOperators(mainQueryManager, new QueryDatabaseColumnBuilder({ column: rawOperator.condition }), { RAW: rawOperator.params }, entityMetadata));
+            }
          
          } else if (key == 'AND') {
             
@@ -182,7 +190,8 @@ export class QueryManager<T> {
          } else {
 
             const relationMetadata: ForeignKeyMetadata | undefined = entityMetadata?.columns[key]?.relation;
-            const keys = Object.keys((whereCondition as any)[key]);
+            const value: any = (whereCondition as any)[key];
+            const keys = Object.keys(value ?? {});
 
             if (relationMetadata && (keys.length != 1 || !QueryManager.operatorsConstructor[keys[0]])) {
 

@@ -38,6 +38,13 @@ export class AdditionalOptions {
 	public readonly automaticParseValues?: boolean;
 
 	/**
+	 * Indicates whether an index should be automatically created on the
+	 * foreign key columns of 'ManyToOne' relations, when the column does not
+	 * already have an index or unique constraint. (Default: false)
+	 */
+	public readonly indexForeignKeys?: boolean;
+
+	/**
 	 * Default class constructor
 	 * @param {AdditionalOptions} options The additional options to be used
 	 */
@@ -47,6 +54,7 @@ export class AdditionalOptions {
 		// this.outDir = options?.outDir ?? 'lib';
 		this.allowNullInUniqueKeyColumn = options?.allowNullInUniqueKeyColumn ?? false;
 		this.automaticParseValues = options?.automaticParseValues ?? true;
+		this.indexForeignKeys = options?.indexForeignKeys ?? false;
 	}
 
 }

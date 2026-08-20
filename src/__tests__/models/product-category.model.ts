@@ -5,7 +5,7 @@ import { PatternModel } from './pattern.model';
 import { ProductModel } from './product.model';
 
 @Entity({ name: 'products_categories' })
-@Unique({ columns: ['product', 'category'] })
+@Unique({ columns: ['product', 'category'], usedToLoadPrimaryKey: true })
 export class ProductCategoryModel extends PatternModel {
 
    @ManyToOne({ relation: { referencedEntity: 'ProductModel', referencedColumn: 'id', onDelete: 'CASCADE', onUpdate: 'CASCADE' } })

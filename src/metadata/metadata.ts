@@ -10,7 +10,7 @@ import { OrmUtils } from '../utils';
 import { ColumnMetadata, ColumnOptions } from './column';
 import { EntityMetadata, EntityOptions } from './entity';
 import { ForeignKeyMetadata, ForeignKeyOptions } from './foreign-key';
-import { IndexMetadata, TriggerMetadata } from './index';
+import { IndexMetadata, IndexOptions, TriggerMetadata } from './index';
 import { PrimaryKeyMetadata } from './primary-key';
 import { UniqueMetadata, UniqueOptions } from './unique';
 
@@ -340,6 +340,26 @@ export class Metadata {
 				} else {
 
 					sourceEntityMetadata.foreignKeys.push(sourceColumnMetadata.relation as ForeignKeyMetadata);
+
+					if (sourceColumnMetadata.relation?.type == 'ManyToOne' &&
+						this.connection.options.additional?.indexForeignKeys &&
+						sourceEntityMetadata.uniques.filter((unique) => unique.columns.length == 1 && unique.columns[0] == sourceColumnMetadata.propertyName).length == 0 &&
+						sourceEntityMetadata.indexs.filter((index) => index.columns.length == 1 && index.columns[0] == sourceColumnMetadata.propertyName).length == 0) {
+
+						const options: IndexOptions = {
+							target: sourceEntityMetadata.target,
+							columns: [sourceColumnMetadata.propertyName],
+						};
+
+						const index: IndexMetadata = new IndexMetadata({
+							...options,
+							entity: sourceEntityMetadata,
+							name: this.connection.options.namingStrategy?.indexName(sourceEntityMetadata, options),
+						});
+
+						sourceEntityMetadata.indexs.push(index);
+
+					}
 
 					if (sourceColumnMetadata.relation?.type == 'OneToOne') {
 
