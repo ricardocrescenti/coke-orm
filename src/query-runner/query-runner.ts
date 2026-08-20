@@ -2,7 +2,6 @@ import { Connection } from '../connection';
 import { EntityTransactionEventsInterface, TransactionCommitEvent, TransactionRollbackEvent } from '../metadata/event';
 import { QueryResult } from '../query-builder';
 import { TransactionEventInterface } from './interfaces/transaction-event.interface';
-import { saveQuery } from './query-saver';
 
 /**
  * Class responsible for executing database queries
@@ -160,7 +159,6 @@ export class QueryRunner {
 	public async query(query: string, params?: any[]): Promise<any[]> {
 
 		this.connection.logger.start('Query', query);
-		saveQuery(query, params);
 
 		let client: any;
 		let result: QueryResult;
