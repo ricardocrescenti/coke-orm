@@ -342,14 +342,17 @@ export class EntityManager<T = any> {
 				return [];
 			}
 
-			// the original where is kept (with the ids restriction), so the
-			// second phase has the same semantics even if the data changed
-			// between the two phases
+			// second phase loads only the ids resolved by the first phase;
+			// the ids already satisfy the full filter (including relation
+			// exists), so re-applying the relation where via aggregation
+			// would be redundant and is currently buggy for deep chains
+			// (account.customer.sellers.seller, items.product.barcodes).
+			// keep only the PK restriction – common filters were already
+			// applied in the ids query.
 			findOptions = new FindOptions({
 				...findOptions,
 				where: {
 					[primaryKeyPropertyName]: { in: parentIds },
-					AND: findOptions.where,
 				} as any,
 				skip: undefined,
 				limit: undefined,
@@ -1394,16 +1397,18 @@ export class EntityManager<T = any> {
 	 * @return {boolean} True when there is a condition on a 'OneToMany'
 	 * relation.
 	 */
-	private hasRelationCondition(where: any): boolean {
+	private hasRelationCondition(where: any, metadata?: EntityMetadata): boolean {
+
+		const currentMetadata: EntityMetadata = metadata ?? this.metadata;
 
 		if (Array.isArray(where)) {
-			return where.some((item: any) => this.hasRelationCondition(item));
+			return where.some((item: any) => this.hasRelationCondition(item, currentMetadata));
 		}
 
 		for (const key of Object.keys(where ?? {})) {
 
 			if (key == 'AND') {
-				if (this.hasRelationCondition(where[key])) {
+				if (this.hasRelationCondition(where[key], currentMetadata)) {
 					return true;
 				}
 				continue;
@@ -1413,15 +1418,27 @@ export class EntityManager<T = any> {
 				continue;
 			}
 
-			const columnMetadata: ColumnMetadata | undefined = this.metadata.columns[key];
+			const columnMetadata: ColumnMetadata | undefined = currentMetadata.columns[key];
 			const value: any = where[key];
 			if (!columnMetadata) {
 				continue;
 			}
 
 			const keys: string[] = Object.keys(value ?? {});
-			if (columnMetadata.relation?.type == 'OneToMany' && keys.length > 0 && !(keys.length == 1 && QueryManager.operatorsConstructor[keys[0]])) {
+			const isOperatorValue: boolean = keys.length == 1 && !!QueryManager.operatorsConstructor[keys[0]];
+			if (keys.length == 0 || isOperatorValue) {
+				continue;
+			}
+
+			if (columnMetadata.relation?.type == 'OneToMany') {
 				return true;
+			}
+
+			if (columnMetadata.relation) {
+				const referencedMetadata: EntityMetadata = columnMetadata.relation.getReferencedEntityMetadata();
+				if (this.hasRelationCondition(value, referencedMetadata)) {
+					return true;
+				}
 			}
 
 		}
